@@ -1,0 +1,14 @@
+# SQLite 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 数据库备份
+*.db.bak
+*.db.backup
+
+# 数据库日志
+*.db-journal
+*.db-wal
+*.db-shm
+
