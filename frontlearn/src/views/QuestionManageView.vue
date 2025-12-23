@@ -50,15 +50,74 @@
           v-for="question in questions" 
           :key="question.id" 
           class="question-item"
+          :class="{ 'done': question.attempt_count > 0 }"
         >
           <div class="question-info">
-            <span class="question-id">#{{ question.id }}</span>
-            <el-tag :type="getTypeTagType(question.question_type)" size="small">
-              {{ question.question_type }}
-            </el-tag>
-            <span class="question-title">{{ question.title }}</span>
+            <div class="question-main">
+              <span class="question-id">#{{ question.id }}</span>
+              <el-tag :type="getTypeTagType(question.question_type)" size="small">
+                {{ question.question_type }}
+              </el-tag>
+              <span class="question-title">{{ question.title }}</span>
+            </div>
+            
+            <!-- 答题状态标签 -->
+            <div class="question-status">
+              <el-tag 
+                v-if="question.attempt_count > 0" 
+                type="success" 
+                size="small"
+                effect="plain"
+              >
+                <el-icon><Check /></el-icon>
+                已做{{ question.attempt_count }}次
+              </el-tag>
+              <el-tag 
+                v-else 
+                type="info" 
+                size="small"
+                effect="plain"
+              >
+                未做过
+              </el-tag>
+              
+              <!-- 分数对比 -->
+              <div v-if="question.first_score || question.last_score" class="score-info">
+                <span v-if="question.first_score" class="score-item first">
+                  首次: {{ question.first_score }}分
+                </span>
+                <span v-if="question.last_score && question.attempt_count > 1" class="score-item last">
+                  最近: {{ question.last_score }}分
+                </span>
+                <el-tag 
+                  v-if="question.attempt_count > 1 && question.last_score > question.first_score" 
+                  type="success" 
+                  size="small"
+                >
+                  ↑ 进步{{ question.last_score - question.first_score }}分
+                </el-tag>
+                <el-tag 
+                  v-else-if="question.attempt_count > 1 && question.last_score < question.first_score" 
+                  type="danger" 
+                  size="small"
+                >
+                  ↓ 退步{{ question.first_score - question.last_score }}分
+                </el-tag>
+              </div>
+            </div>
           </div>
+          
           <div class="question-actions">
+            <el-button 
+              v-if="question.attempt_count > 0"
+              type="success" 
+              size="small" 
+              text
+              @click="viewAnswerReport(question)"
+            >
+              <el-icon><View /></el-icon>
+              答题记录
+            </el-button>
             <el-button 
               type="primary" 
               size="small" 
@@ -150,13 +209,126 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 答题记录弹窗 -->
+    <el-dialog
+      v-model="reportDialogVisible"
+      title="答题记录"
+      width="800px"
+      destroy-on-close
+    >
+      <div v-if="currentReport" class="report-content">
+        <!-- 题目信息 -->
+        <div class="report-question">
+          <h3>
+            <el-tag :type="getTypeTagType(currentReport.question_type)" size="small">
+              {{ currentReport.question_type }}
+            </el-tag>
+            {{ currentReport.title }}
+          </h3>
+        </div>
+
+        <!-- 进步概览 -->
+        <div class="progress-overview">
+          <div class="stat-card">
+            <span class="stat-label">答题次数</span>
+            <span class="stat-value">{{ currentReport.attempt_count }}</span>
+          </div>
+          <div class="stat-card first">
+            <span class="stat-label">首次得分</span>
+            <span class="stat-value">{{ currentReport.first_score || '-' }}</span>
+          </div>
+          <div class="stat-card last">
+            <span class="stat-label">最近得分</span>
+            <span class="stat-value">{{ currentReport.last_score || '-' }}</span>
+          </div>
+          <div class="stat-card improvement" :class="getImprovementClass(currentReport)">
+            <span class="stat-label">进步情况</span>
+            <span class="stat-value">
+              {{ getImprovementText(currentReport) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 答案对比 -->
+        <div class="answer-comparison">
+          <!-- 第一次答题 -->
+          <div class="answer-section first-answer">
+            <h4>
+              <el-icon><Clock /></el-icon>
+              第一次答题
+              <span class="answer-time">{{ formatDate(currentReport.first_answer_at) }}</span>
+            </h4>
+            <div class="answer-content">
+              <div class="my-answer">
+                <span class="label">我的答案：</span>
+                <div class="content">{{ currentReport.first_answer || '无记录' }}</div>
+              </div>
+              <div class="score-badge" :class="getScoreClass(currentReport.first_score)">
+                {{ currentReport.first_score || 0 }}分
+              </div>
+            </div>
+            <div v-if="currentReport.first_feedback" class="feedback">
+              <span class="label">AI评价：</span>
+              <div class="content">{{ currentReport.first_feedback }}</div>
+            </div>
+            <div v-if="currentReport.first_improvements" class="improvements">
+              <span class="label">改进建议：</span>
+              <div class="content">{{ currentReport.first_improvements }}</div>
+            </div>
+          </div>
+
+          <!-- 最近一次答题（如果不是第一次） -->
+          <div v-if="currentReport.attempt_count > 1" class="answer-section last-answer">
+            <h4>
+              <el-icon><Clock /></el-icon>
+              最近一次答题
+              <span class="answer-time">{{ formatDate(currentReport.last_answer_at) }}</span>
+            </h4>
+            <div class="answer-content">
+              <div class="my-answer">
+                <span class="label">我的答案：</span>
+                <div class="content">{{ currentReport.last_answer || '无记录' }}</div>
+              </div>
+              <div class="score-badge" :class="getScoreClass(currentReport.last_score)">
+                {{ currentReport.last_score || 0 }}分
+              </div>
+            </div>
+            <div v-if="currentReport.last_feedback" class="feedback">
+              <span class="label">AI评价：</span>
+              <div class="content">{{ currentReport.last_feedback }}</div>
+            </div>
+            <div v-if="currentReport.last_improvements" class="improvements">
+              <span class="label">改进建议：</span>
+              <div class="content">{{ currentReport.last_improvements }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 标准答案 -->
+        <div class="standard-answer-section">
+          <h4>
+            <el-icon><Ticket /></el-icon>
+            标准答案
+          </h4>
+          <div class="standard-content">
+            <ContentRenderer :content="currentReport.standard_answer" />
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <el-button @click="reportDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getQuestionsPaginated, getQuestionDetail, addQuestion, updateQuestion, deleteQuestion } from '../api'
+import { getQuestionsPaginated, getQuestionDetail, addQuestion, updateQuestion, deleteQuestion, getAnswerReport } from '../api'
+import ContentRenderer from '../components/ContentRenderer.vue'
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -180,6 +352,10 @@ const dialogVisible = ref(false)
 const dialogMode = ref('add') // 'add' | 'edit'
 const submitting = ref(false)
 const formRef = ref(null)
+
+// 答题记录弹窗
+const reportDialogVisible = ref(false)
+const currentReport = ref(null)
 
 // 当前编辑的题目ID
 const editingId = ref(null)
@@ -277,6 +453,21 @@ const openEditDialog = async (question) => {
   }
 }
 
+// 查看答题记录
+const viewAnswerReport = async (question) => {
+  try {
+    const response = await getAnswerReport(question.id)
+    if (response.data.code === 200) {
+      currentReport.value = response.data.data
+      reportDialogVisible.value = true
+    } else {
+      ElMessage.warning(response.data.message || '暂无答题记录')
+    }
+  } catch (error) {
+    ElMessage.error('获取答题记录失败：' + error.message)
+  }
+}
+
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
@@ -357,6 +548,39 @@ const getTypeTagType = (type) => {
     '自检': 'info'
   }
   return types[type] || ''
+}
+
+// 获取分数样式类
+const getScoreClass = (score) => {
+  if (!score) return 'none'
+  if (score >= 90) return 'excellent'
+  if (score >= 75) return 'good'
+  if (score >= 60) return 'pass'
+  return 'fail'
+}
+
+// 获取进步情况样式类
+const getImprovementClass = (report) => {
+  if (!report || report.attempt_count < 2) return ''
+  if (report.last_score > report.first_score) return 'positive'
+  if (report.last_score < report.first_score) return 'negative'
+  return ''
+}
+
+// 获取进步情况文字
+const getImprovementText = (report) => {
+  if (!report || report.attempt_count < 2) return '-'
+  const diff = (report.last_score || 0) - (report.first_score || 0)
+  if (diff > 0) return `+${diff}分`
+  if (diff < 0) return `${diff}分`
+  return '持平'
+}
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 // 截断文本
@@ -445,16 +669,31 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
 }
 
+.question-item.done {
+  background: #f0f9eb;
+  border-left: 3px solid #67c23a;
+}
+
+.question-item.done:hover {
+  background: #e8f5e1;
+}
+
 .question-item:last-child {
   margin-bottom: 0;
 }
 
 .question-info {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   flex: 1;
   min-width: 0;
+}
+
+.question-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .question-id {
@@ -471,6 +710,34 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 14px;
+}
+
+.question-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.score-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.score-item {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f5f7fa;
+}
+
+.score-item.first {
+  color: #909399;
+}
+
+.score-item.last {
+  color: #409eff;
 }
 
 .question-actions {
@@ -493,6 +760,205 @@ onMounted(() => {
   gap: 12px;
 }
 
+/* 答题记录弹窗样式 */
+.report-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.report-question h3 {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: #303133;
+  line-height: 1.6;
+}
+
+.progress-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.stat-card .stat-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #303133;
+}
+
+.stat-card.first .stat-value {
+  color: #909399;
+}
+
+.stat-card.last .stat-value {
+  color: #409eff;
+}
+
+.stat-card.improvement.positive .stat-value {
+  color: #67c23a;
+}
+
+.stat-card.improvement.negative .stat-value {
+  color: #f56c6c;
+}
+
+.answer-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.answer-section {
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.answer-section.first-answer {
+  background: #f5f7fa;
+  border-left: 3px solid #909399;
+}
+
+.answer-section.last-answer {
+  background: #f0f9ff;
+  border-left: 3px solid #409eff;
+}
+
+.answer-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #606266;
+}
+
+.answer-time {
+  font-weight: normal;
+  font-size: 12px;
+  color: #909399;
+}
+
+.answer-content {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.my-answer {
+  flex: 1;
+}
+
+.my-answer .label,
+.feedback .label,
+.improvements .label {
+  display: block;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.my-answer .content {
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.score-badge {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+}
+
+.score-badge.excellent {
+  background: linear-gradient(135deg, #67c23a, #85ce61);
+}
+
+.score-badge.good {
+  background: linear-gradient(135deg, #409eff, #79bbff);
+}
+
+.score-badge.pass {
+  background: linear-gradient(135deg, #e6a23c, #f0c78a);
+}
+
+.score-badge.fail {
+  background: linear-gradient(135deg, #f56c6c, #f89898);
+}
+
+.score-badge.none {
+  background: #e4e7ed;
+  color: #909399;
+}
+
+.feedback,
+.improvements {
+  margin-top: 12px;
+}
+
+.feedback .content,
+.improvements .content {
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.improvements .content {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.standard-answer-section {
+  padding: 16px;
+  background: #f0f9eb;
+  border-radius: 8px;
+  border-left: 3px solid #67c23a;
+}
+
+.standard-answer-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #67c23a;
+}
+
+.standard-content {
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  line-height: 1.8;
+}
+
 :deep(.el-dialog__body) {
   padding-top: 20px;
 }
@@ -500,5 +966,20 @@ onMounted(() => {
 :deep(.el-form-item__label) {
   font-weight: 500;
 }
-</style>
 
+@media (max-width: 768px) {
+  .progress-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .answer-content {
+    flex-direction: column;
+  }
+
+  .score-badge {
+    width: 50px;
+    height: 50px;
+    font-size: 14px;
+  }
+}
+</style>

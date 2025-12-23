@@ -5,14 +5,78 @@
       专注学习模块
     </h1>
 
-    <!-- 选择题目卡片 -->
-    <el-card v-if="!currentQuestion" class="select-card">
+    <!-- 初始状态：开始学习入口 -->
+    <el-card v-if="!currentQuestion && !showQuestionList" class="start-card">
+      <div class="start-content">
+        <div class="start-icon">
+          <el-icon :size="64"><Reading /></el-icon>
+        </div>
+        <h2>准备好开始学习了吗？</h2>
+        <p class="start-desc">一道一道题目学习，做完一道再做下一道</p>
+        
+        <div class="start-stats" v-if="stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.total_questions }}</span>
+            <span class="stat-label">题目总数</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.done_count }}</span>
+            <span class="stat-label">已做过</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ stats.undone_count }}</span>
+            <span class="stat-label">未做过</span>
+          </div>
+          <div class="stat-item" v-if="stats.avg_score > 0">
+            <span class="stat-value">{{ stats.avg_score }}</span>
+            <span class="stat-label">平均分</span>
+          </div>
+        </div>
+
+        <div class="start-actions">
+          <el-button type="primary" size="large" @click="startRandomQuestion">
+            <el-icon><Promotion /></el-icon>
+            随机开始一道
+          </el-button>
+          <el-button size="large" @click="showQuestionList = true">
+            <el-icon><List /></el-icon>
+            选择题目学习
+          </el-button>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 题目选择列表 -->
+    <el-card v-if="showQuestionList && !currentQuestion" class="select-card">
       <template #header>
         <div class="card-header">
           <el-icon><List /></el-icon>
-          <span>选择今日学习题目</span>
+          <span>选择题目</span>
+          <el-button text type="primary" @click="showQuestionList = false">
+            <el-icon><Back /></el-icon>
+            返回
+          </el-button>
         </div>
       </template>
+
+      <!-- 筛选器 -->
+      <div class="filter-bar">
+        <el-select v-model="filterStatus" placeholder="答题状态" clearable @change="loadQuestions">
+          <el-option label="全部" value="" />
+          <el-option label="未做过" value="undone" />
+          <el-option label="已做过" value="done" />
+        </el-select>
+        <el-select v-model="filterType" placeholder="题目类型" clearable @change="loadQuestions">
+          <el-option label="全部类型" value="" />
+          <el-option label="基础" value="基础" />
+          <el-option label="进阶" value="进阶" />
+          <el-option label="高频" value="高频" />
+          <el-option label="手写" value="手写" />
+          <el-option label="原理" value="原理" />
+          <el-option label="面经" value="面经" />
+          <el-option label="自检" value="自检" />
+        </el-select>
+      </div>
 
       <div v-if="loading" class="loading-wrapper">
         <el-icon class="is-loading" :size="32"><Loading /></el-icon>
@@ -28,13 +92,29 @@
           v-for="question in questions" 
           :key="question.id" 
           class="question-item"
+          :class="{ 'done': question.attempt_count > 0 }"
           @click="startLearning(question)"
         >
           <div class="question-header">
             <el-tag :type="getTagType(question.question_type)" size="small">
               {{ question.question_type }}
             </el-tag>
-            <span class="question-date">{{ formatDate(question.created_at) }}</span>
+            <el-tag 
+              v-if="question.attempt_count > 0" 
+              type="success" 
+              size="small"
+              effect="plain"
+            >
+              已做{{ question.attempt_count }}次
+            </el-tag>
+            <el-tag 
+              v-if="question.last_score" 
+              :type="getScoreTagType(question.last_score)" 
+              size="small"
+              effect="plain"
+            >
+              {{ question.last_score }}分
+            </el-tag>
           </div>
           <div class="question-title-preview">
             <ContentRenderer :content="question.title" />
@@ -48,7 +128,7 @@
     </el-card>
 
     <!-- 学习进行中 -->
-    <div v-else class="learning-session">
+    <div v-if="currentQuestion" class="learning-session">
       <!-- 顶部进度条和计时器 -->
       <div class="session-header">
         <div class="progress-section">
@@ -271,15 +351,20 @@
 
             <div v-else class="evaluation-placeholder">
               <el-icon><InfoFilled /></el-icon>
-              点击上方按钮获取AI评分（后期功能）
+              点击上方按钮获取AI评分
             </div>
           </div>
         </el-card>
 
-        <div class="step-actions">
+        <!-- 完成学习后的操作 -->
+        <div class="step-actions finish-actions">
+          <el-button type="success" size="large" @click="goNextQuestion">
+            <el-icon><Right /></el-icon>
+            做下一题
+          </el-button>
           <el-button type="primary" size="large" @click="finishLearning">
             <el-icon><Check /></el-icon>
-            完成学习，返回题目列表
+            结束学习
           </el-button>
         </div>
       </div>
@@ -290,7 +375,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getQuestions, evaluateAnswer, saveLearningRecord } from '../api'
+import { getLearningQuestions, getRandomQuestion, getNextQuestion, evaluateAnswer, saveAnswerReport, getAnswerStats } from '../api'
 import ContentRenderer from '../components/ContentRenderer.vue'
 
 // 学习步骤配置
@@ -308,6 +393,12 @@ const currentStep = ref(0)
 const myAnswer = ref('')
 const aiEvaluation = ref(null)
 const evaluating = ref(false)
+const showQuestionList = ref(false)
+const stats = ref(null)
+
+// 筛选条件
+const filterStatus = ref('')
+const filterType = ref('')
 
 // 计时器
 const timer = ref(null)
@@ -354,6 +445,14 @@ const getTagType = (type) => {
   return types[type] || ''
 }
 
+// 获取分数标签类型
+const getScoreTagType = (score) => {
+  if (score >= 90) return 'success'
+  if (score >= 75) return ''
+  if (score >= 60) return 'warning'
+  return 'danger'
+}
+
 // 获取分数等级样式
 const getScoreClass = (score) => {
   if (score >= 90) return 'excellent'
@@ -362,16 +461,48 @@ const getScoreClass = (score) => {
   return 'fail'
 }
 
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const res = await getAnswerStats()
+    if (res.data.code === 200) {
+      stats.value = res.data.data
+    }
+  } catch (error) {
+    console.error('加载统计失败:', error)
+  }
+}
+
 // 加载题目列表
 const loadQuestions = async () => {
   loading.value = true
   try {
-    const res = await getQuestions()
+    const res = await getLearningQuestions({
+      type: filterType.value,
+      status: filterStatus.value
+    })
     if (res.data.code === 200) {
       questions.value = res.data.data
     }
   } catch (error) {
     ElMessage.error('加载题目失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 随机开始一道题
+const startRandomQuestion = async () => {
+  loading.value = true
+  try {
+    const res = await getRandomQuestion({ prefer_undone: 'true' })
+    if (res.data.code === 200) {
+      startLearning(res.data.data)
+    } else {
+      ElMessage.warning(res.data.message || '暂无可学习的题目')
+    }
+  } catch (error) {
+    ElMessage.error('获取题目失败')
   } finally {
     loading.value = false
   }
@@ -383,6 +514,7 @@ const startLearning = (question) => {
   currentStep.value = 0
   myAnswer.value = ''
   aiEvaluation.value = null
+  showQuestionList.value = false
   startStepTimer()
 }
 
@@ -437,6 +569,7 @@ const exitSession = async () => {
     currentStep.value = 0
     myAnswer.value = ''
     aiEvaluation.value = null
+    loadStats() // 刷新统计
   } catch {
     // 用户取消
   }
@@ -455,25 +588,51 @@ const requestAiEvaluation = async () => {
       question_id: currentQuestion.value.id,
       question: currentQuestion.value.title,
       standard_answer: currentQuestion.value.answer,
-      user_answer: myAnswer.value
+      user_answer: myAnswer.value,
+      score_type: 'learn' // 标记为学习时的评分
     })
     
     if (res.data.code === 200) {
       aiEvaluation.value = res.data.data
       ElMessage.success('AI评分完成')
+      
+      // 保存答题报告
+      await saveAnswerReport({
+        question_id: currentQuestion.value.id,
+        user_answer: myAnswer.value,
+        ai_score: res.data.data.score,
+        ai_feedback: res.data.data.feedback,
+        ai_improvements: res.data.data.improvements
+      })
     } else {
       ElMessage.error(res.data.message || 'AI评分失败')
     }
   } catch (error) {
-    // 暂时模拟一个评分结果（后端接口未实现时）
-    aiEvaluation.value = {
-      score: 75,
-      feedback: '您的回答涵盖了主要知识点，理解基本正确。',
-      improvements: '建议补充更多细节和示例，使回答更加完整。'
-    }
-    ElMessage.info('AI评分功能即将上线，这是模拟结果')
+    ElMessage.error('AI评分服务暂时不可用，请稍后重试')
   } finally {
     evaluating.value = false
+  }
+}
+
+// 做下一题
+const goNextQuestion = async () => {
+  stopTimer()
+  
+  try {
+    const res = await getNextQuestion({
+      current_id: currentQuestion.value.id,
+      type: filterType.value
+    })
+    
+    if (res.data.code === 200) {
+      startLearning(res.data.data)
+      ElMessage.success('开始下一题！')
+    } else {
+      ElMessage.info('恭喜！已经没有更多题目了')
+      finishLearning()
+    }
+  } catch (error) {
+    ElMessage.error('获取下一题失败')
   }
 }
 
@@ -481,29 +640,19 @@ const requestAiEvaluation = async () => {
 const finishLearning = async () => {
   stopTimer()
   
-  // 尝试保存学习记录
-  try {
-    await saveLearningRecord({
-      question_id: currentQuestion.value.id,
-      my_answer: myAnswer.value,
-      ai_score: aiEvaluation.value?.score || null,
-      ai_feedback: aiEvaluation.value?.feedback || null,
-      learned_at: new Date().toISOString()
-    })
-  } catch (error) {
-    console.warn('保存学习记录失败:', error)
-  }
-
   ElMessage.success('学习完成！继续加油！')
   currentQuestion.value = null
   currentStep.value = 0
   myAnswer.value = ''
   aiEvaluation.value = null
+  
+  // 刷新统计
+  await loadStats()
 }
 
 // 生命周期
 onMounted(() => {
-  loadQuestions()
+  loadStats()
 })
 
 onUnmounted(() => {
@@ -516,6 +665,80 @@ onUnmounted(() => {
   max-width: 1100px;
 }
 
+/* 开始卡片 */
+.start-card {
+  margin-bottom: 20px;
+}
+
+.start-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.start-icon {
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #409eff, #79bbff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.start-content h2 {
+  font-size: 24px;
+  color: #303133;
+  margin: 0 0 8px 0;
+}
+
+.start-desc {
+  color: #909399;
+  font-size: 14px;
+  margin: 0 0 32px 0;
+}
+
+.start-stats {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 32px;
+  padding: 20px 40px;
+  background: #f5f7fa;
+  border-radius: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #409eff;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+}
+
+.start-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.start-actions .el-button {
+  min-width: 160px;
+  height: 48px;
+  font-size: 16px;
+}
+
 /* 选择题目卡片 */
 .select-card {
   margin-bottom: 20px;
@@ -526,6 +749,20 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-weight: 600;
+}
+
+.card-header .el-button {
+  margin-left: auto;
+}
+
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-bar .el-select {
+  width: 150px;
 }
 
 .loading-wrapper,
@@ -558,6 +795,15 @@ onUnmounted(() => {
   border-color: #409eff;
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
   transform: translateY(-2px);
+}
+
+.question-item.done {
+  background: #f0f9eb;
+  border-color: #c2e7b0;
+}
+
+.question-item.done:hover {
+  border-color: #67c23a;
 }
 
 .question-header {
@@ -992,6 +1238,10 @@ onUnmounted(() => {
   font-size: 16px;
 }
 
+.finish-actions {
+  gap: 16px;
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .session-header {
@@ -1015,6 +1265,20 @@ onUnmounted(() => {
   .score-display {
     display: flex;
     justify-content: center;
+  }
+
+  .start-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .start-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .start-actions .el-button {
+    width: 100%;
   }
 }
 </style>

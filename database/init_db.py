@@ -13,7 +13,7 @@ def init_database():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 题目表
+    # ==================== 题目表（纯净题库，不记录任何答题信息） ====================
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,7 +25,7 @@ def init_database():
         )
     ''')
     
-    # 复习记录表 (用于遗忘曲线)
+    # ==================== 复习记录表 (用于遗忘曲线) ====================
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS review_records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +34,53 @@ def init_database():
             review_level INTEGER DEFAULT 1,
             next_review_date TIMESTAMP,
             is_remembered INTEGER DEFAULT 1,
-            FOREIGN KEY (question_id) REFERENCES questions(id)
+            FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+        )
+    ''')
+    
+    # ==================== 答题报告表（核心：记录答题进步） ====================
+    # 这个表记录用户对每道题的答题情况，包括第一次和最近一次的答案对比
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS answer_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL UNIQUE,
+            
+            -- 第一次答题记录
+            first_answer TEXT,
+            first_score INTEGER,
+            first_feedback TEXT,
+            first_improvements TEXT,
+            first_answer_at TIMESTAMP,
+            
+            -- 最近一次答题记录（如果只答过一次，则与第一次相同）
+            last_answer TEXT,
+            last_score INTEGER,
+            last_feedback TEXT,
+            last_improvements TEXT,
+            last_answer_at TIMESTAMP,
+            
+            -- 统计信息
+            attempt_count INTEGER DEFAULT 0,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+        )
+    ''')
+    
+    # ==================== AI评分历史记录表（可选：保留所有历史评分） ====================
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ai_score_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            user_answer TEXT NOT NULL,
+            ai_score INTEGER NOT NULL,
+            ai_feedback TEXT,
+            ai_improvements TEXT,
+            score_type TEXT DEFAULT 'learn',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
         )
     ''')
     
@@ -44,4 +90,3 @@ def init_database():
 
 if __name__ == '__main__':
     init_database()
-
