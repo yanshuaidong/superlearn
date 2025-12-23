@@ -1,79 +1,16 @@
 <template>
   <div class="learn-view">
     <h1 class="page-title">
-      <el-icon><Edit /></el-icon>
-      学习主模块
+      <el-icon><Reading /></el-icon>
+      专注学习模块
     </h1>
 
-    <!-- 添加新题目 -->
-    <el-card class="add-card">
+    <!-- 选择题目卡片 -->
+    <el-card v-if="!currentQuestion" class="select-card">
       <template #header>
         <div class="card-header">
-          <el-icon><Plus /></el-icon>
-          <span>{{ editingId ? '编辑题目' : '添加新题目' }}</span>
-        </div>
-      </template>
-      <el-form :model="form" label-position="top">
-        <el-form-item label="题目类型">
-          <el-select v-model="form.question_type" placeholder="选择题目类型" style="width: 200px;">
-            <el-option 
-              v-for="type in questionTypes" 
-              :key="type" 
-              :label="type" 
-              :value="type"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="题目内容">
-          <el-input
-            v-model="form.title"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入面试题目..."
-          />
-        </el-form-item>
-        <el-form-item label="我的答案">
-          <el-input
-            v-model="form.answer"
-            type="textarea"
-            :rows="8"
-            placeholder="请输入你理解的答案..."
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSubmit" :loading="submitting">
-            <el-icon><Check /></el-icon>
-            {{ editingId ? '更新题目' : '保存题目' }}
-          </el-button>
-          <el-button v-if="editingId" @click="cancelEdit">
-            取消编辑
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 题目列表 -->
-    <el-card class="list-card">
-      <template #header>
-        <div class="card-header-with-filter">
-          <div class="card-header">
-            <el-icon><Document /></el-icon>
-            <span>题目列表 ({{ questions.length }})</span>
-          </div>
-          <el-select 
-            v-model="filterType" 
-            placeholder="筛选类型" 
-            clearable 
-            style="width: 140px;"
-            @change="loadQuestions"
-          >
-            <el-option 
-              v-for="type in questionTypes" 
-              :key="type" 
-              :label="type" 
-              :value="type"
-            />
-          </el-select>
+          <el-icon><List /></el-icon>
+          <span>选择今日学习题目</span>
         </div>
       </template>
 
@@ -83,7 +20,7 @@
       </div>
 
       <div v-else-if="!questions.length" class="empty-wrapper">
-        <el-empty description="暂无题目，快来添加第一道题目吧！" />
+        <el-empty description="暂无可学习的题目，请先在「题目AI加工」模块添加题目" />
       </div>
 
       <div v-else class="question-list">
@@ -91,64 +28,319 @@
           v-for="question in questions" 
           :key="question.id" 
           class="question-item"
+          @click="startLearning(question)"
         >
           <div class="question-header">
             <el-tag :type="getTagType(question.question_type)" size="small">
               {{ question.question_type }}
             </el-tag>
             <span class="question-date">{{ formatDate(question.created_at) }}</span>
-            <div class="question-actions">
-              <el-button 
-                type="primary" 
-                size="small" 
-                text 
-                @click="handleEdit(question)"
-              >
-                <el-icon><Edit /></el-icon>
-              </el-button>
-              <el-button 
-                type="danger" 
-                size="small" 
-                text 
-                @click="handleDelete(question.id)"
-              >
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </div>
           </div>
-          <div class="question-title">{{ question.title }}</div>
-          <el-collapse>
-            <el-collapse-item title="查看答案">
-              <div class="question-answer">{{ question.answer }}</div>
-            </el-collapse-item>
-          </el-collapse>
+          <div class="question-title-preview">
+            <ContentRenderer :content="question.title" />
+          </div>
+          <div class="start-hint">
+            <el-icon><Right /></el-icon>
+            点击开始学习
+          </div>
         </div>
       </div>
     </el-card>
+
+    <!-- 学习进行中 -->
+    <div v-else class="learning-session">
+      <!-- 顶部进度条和计时器 -->
+      <div class="session-header">
+        <div class="progress-section">
+          <div class="step-indicators">
+            <div 
+              v-for="(step, index) in steps" 
+              :key="index"
+              class="step-indicator"
+              :class="{ 
+                'active': currentStep === index, 
+                'completed': currentStep > index 
+              }"
+            >
+              <div class="step-icon">
+                <el-icon v-if="currentStep > index"><Check /></el-icon>
+                <span v-else>{{ index + 1 }}</span>
+              </div>
+              <div class="step-info">
+                <span class="step-name">{{ step.name }}</span>
+                <span class="step-time">{{ step.duration }}分钟</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="timer-section">
+          <div class="timer-display" :class="{ 'warning': remainingTime <= 60 }">
+            <el-icon><Clock /></el-icon>
+            <span class="time-value">{{ formatTime(remainingTime) }}</span>
+          </div>
+          <el-progress 
+            :percentage="stepProgress" 
+            :stroke-width="8"
+            :show-text="false"
+            :color="currentStep === 0 ? '#67c23a' : (currentStep === 1 ? '#e6a23c' : '#409eff')"
+          />
+        </div>
+
+        <div class="session-actions">
+          <el-button text type="danger" @click="exitSession">
+            <el-icon><Close /></el-icon>
+            退出学习
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 第一步：快速浏览 (40% = 4分钟) -->
+      <div v-if="currentStep === 0" class="step-content step-scan">
+        <el-card class="content-card">
+          <template #header>
+            <div class="content-header">
+              <div class="step-badge scan">
+                <el-icon><View /></el-icon>
+                第一步：快速浏览
+              </div>
+              <span class="step-tip">认真阅读题目和答案，理解核心要点</span>
+            </div>
+          </template>
+          
+          <div class="question-section">
+            <h3 class="section-title">
+              <el-icon><QuestionFilled /></el-icon>
+              题目
+            </h3>
+            <div class="content-box question-box">
+              <ContentRenderer :content="currentQuestion.title" />
+            </div>
+          </div>
+
+          <div class="answer-section">
+            <h3 class="section-title">
+              <el-icon><Ticket /></el-icon>
+              标准答案
+            </h3>
+            <div class="content-box answer-box">
+              <ContentRenderer :content="currentQuestion.answer" />
+            </div>
+          </div>
+        </el-card>
+
+        <div class="step-actions">
+          <el-button type="success" size="large" @click="nextStep">
+            <el-icon><Right /></el-icon>
+            我已理解，进入下一步
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 第二步：自己讲和写要点 (40% = 4分钟) -->
+      <div v-if="currentStep === 1" class="step-content step-write">
+        <el-card class="content-card">
+          <template #header>
+            <div class="content-header">
+              <div class="step-badge write">
+                <el-icon><EditPen /></el-icon>
+                第二步：自己讲&写要点
+              </div>
+              <span class="step-tip">先用自己的话讲出来，再写下关键要点</span>
+            </div>
+          </template>
+          
+          <div class="question-section">
+            <h3 class="section-title">
+              <el-icon><QuestionFilled /></el-icon>
+              题目
+            </h3>
+            <div class="content-box question-box">
+              <ContentRenderer :content="currentQuestion.title" />
+            </div>
+          </div>
+
+          <div class="my-answer-section">
+            <h3 class="section-title">
+              <el-icon><Edit /></el-icon>
+              我的理解 <span class="core-tip">（核心：用自己的话讲清楚！）</span>
+            </h3>
+            <el-input
+              v-model="myAnswer"
+              type="textarea"
+              :rows="10"
+              placeholder="请用自己的语言描述这道题的答案...
+
+💡 学习技巧：
+1. 先大声说出来（就像面试一样）
+2. 再写下关键要点
+3. 注意逻辑清晰，条理分明"
+              class="answer-input"
+            />
+          </div>
+
+          <div class="answer-hidden-hint">
+            <el-icon><Hide /></el-icon>
+            标准答案已隐藏，请独立思考
+          </div>
+        </el-card>
+
+        <div class="step-actions">
+          <el-button type="warning" size="large" @click="nextStep" :disabled="!myAnswer.trim()">
+            <el-icon><Right /></el-icon>
+            提交我的答案，查看结果
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 第三步：复习和AI评分 (20% = 2分钟) -->
+      <div v-if="currentStep === 2" class="step-content step-review">
+        <el-card class="content-card">
+          <template #header>
+            <div class="content-header">
+              <div class="step-badge review">
+                <el-icon><Medal /></el-icon>
+                第三步：复习与评估
+              </div>
+              <span class="step-tip">对比标准答案，看看差距在哪里</span>
+            </div>
+          </template>
+
+          <div class="comparison-container">
+            <!-- 左侧：我的答案 -->
+            <div class="comparison-column my-column">
+              <h3 class="column-title">
+                <el-icon><User /></el-icon>
+                我的答案
+              </h3>
+              <div class="content-box my-answer-box">
+                {{ myAnswer }}
+              </div>
+            </div>
+
+            <!-- 右侧：标准答案 -->
+            <div class="comparison-column standard-column">
+              <h3 class="column-title">
+                <el-icon><CircleCheck /></el-icon>
+                标准答案
+              </h3>
+              <div class="content-box standard-answer-box">
+                <ContentRenderer :content="currentQuestion.answer" />
+              </div>
+            </div>
+          </div>
+
+          <!-- AI评分区域 -->
+          <div class="ai-evaluation">
+            <div class="evaluation-header">
+              <el-icon><MagicStick /></el-icon>
+              <span>AI 智能评估</span>
+              <el-button 
+                v-if="!aiEvaluation && !evaluating" 
+                type="primary" 
+                size="small"
+                @click="requestAiEvaluation"
+              >
+                获取AI评分
+              </el-button>
+            </div>
+
+            <div v-if="evaluating" class="evaluating-status">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              AI正在分析你的答案...
+            </div>
+
+            <div v-else-if="aiEvaluation" class="evaluation-result">
+              <div class="score-display">
+                <div class="score-circle" :class="getScoreClass(aiEvaluation.score)">
+                  <span class="score-value">{{ aiEvaluation.score }}</span>
+                  <span class="score-label">分</span>
+                </div>
+              </div>
+              <div class="evaluation-content">
+                <div v-if="aiEvaluation.feedback" class="feedback-section">
+                  <h4><el-icon><ChatLineRound /></el-icon> 评价反馈</h4>
+                  <ContentRenderer :content="aiEvaluation.feedback" />
+                </div>
+                <div v-if="aiEvaluation.improvements" class="improvements-section">
+                  <h4><el-icon><WarnTriangleFilled /></el-icon> 需要改进</h4>
+                  <ContentRenderer :content="aiEvaluation.improvements" />
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="evaluation-placeholder">
+              <el-icon><InfoFilled /></el-icon>
+              点击上方按钮获取AI评分（后期功能）
+            </div>
+          </div>
+        </el-card>
+
+        <div class="step-actions">
+          <el-button type="primary" size="large" @click="finishLearning">
+            <el-icon><Check /></el-icon>
+            完成学习，返回题目列表
+          </el-button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getQuestions, addQuestion, updateQuestion, deleteQuestion } from '../api'
+import { getQuestions, evaluateAnswer, saveLearningRecord } from '../api'
+import ContentRenderer from '../components/ContentRenderer.vue'
 
-// 题目类型
-const questionTypes = ['基础', '进阶', '高频', '手写', '原理', '面经', '自检']
+// 学习步骤配置
+const steps = [
+  { name: '快速浏览', duration: 4, percentage: 40 },
+  { name: '自己讲写', duration: 4, percentage: 40 },
+  { name: '复习评估', duration: 2, percentage: 20 }
+]
 
-// 表单数据
-const form = reactive({
-  title: '',
-  answer: '',
-  question_type: '基础'
+// 状态
+const loading = ref(false)
+const questions = ref([])
+const currentQuestion = ref(null)
+const currentStep = ref(0)
+const myAnswer = ref('')
+const aiEvaluation = ref(null)
+const evaluating = ref(false)
+
+// 计时器
+const timer = ref(null)
+const remainingTime = ref(0) // 秒
+const stepStartTime = ref(0)
+
+// 当前步骤总时间（秒）
+const currentStepDuration = computed(() => {
+  return steps[currentStep.value].duration * 60
 })
 
-const editingId = ref(null)
-const submitting = ref(false)
-const loading = ref(false)
-const filterType = ref('')
-const questions = ref([])
+// 步骤进度百分比
+const stepProgress = computed(() => {
+  if (currentStepDuration.value === 0) return 0
+  const elapsed = currentStepDuration.value - remainingTime.value
+  return Math.min(100, Math.round((elapsed / currentStepDuration.value) * 100))
+})
 
+// 格式化时间 MM:SS
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+// 获取标签类型
 const getTagType = (type) => {
   const types = {
     '基础': '',
@@ -162,109 +354,170 @@ const getTagType = (type) => {
   return types[type] || ''
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+// 获取分数等级样式
+const getScoreClass = (score) => {
+  if (score >= 90) return 'excellent'
+  if (score >= 75) return 'good'
+  if (score >= 60) return 'pass'
+  return 'fail'
 }
 
+// 加载题目列表
 const loadQuestions = async () => {
   loading.value = true
   try {
-    const res = await getQuestions(filterType.value)
+    const res = await getQuestions()
     if (res.data.code === 200) {
       questions.value = res.data.data
     }
   } catch (error) {
-    ElMessage.error('加载失败')
+    ElMessage.error('加载题目失败')
   } finally {
     loading.value = false
   }
 }
 
-const handleSubmit = async () => {
-  if (!form.title.trim() || !form.answer.trim()) {
-    ElMessage.warning('请填写题目和答案')
-    return
-  }
+// 开始学习
+const startLearning = (question) => {
+  currentQuestion.value = question
+  currentStep.value = 0
+  myAnswer.value = ''
+  aiEvaluation.value = null
+  startStepTimer()
+}
 
-  submitting.value = true
-  try {
-    if (editingId.value) {
-      const res = await updateQuestion(editingId.value, form)
-      if (res.data.code === 200) {
-        ElMessage.success('更新成功')
-        cancelEdit()
-        loadQuestions()
-      } else {
-        ElMessage.error(res.data.message || '更新失败')
-      }
+// 启动当前步骤计时器
+const startStepTimer = () => {
+  stopTimer()
+  remainingTime.value = currentStepDuration.value
+  stepStartTime.value = Date.now()
+  
+  timer.value = setInterval(() => {
+    if (remainingTime.value > 0) {
+      remainingTime.value--
     } else {
-      const res = await addQuestion(form)
-      if (res.data.code === 200) {
-        ElMessage.success('添加成功')
-        form.title = ''
-        form.answer = ''
-        form.question_type = '基础'
-        loadQuestions()
+      // 时间到，自动进入下一步
+      if (currentStep.value < 2) {
+        ElMessage.warning('时间到！自动进入下一步')
+        nextStep()
       } else {
-        ElMessage.error(res.data.message || '添加失败')
+        stopTimer()
+        ElMessage.info('复习时间结束')
       }
     }
-  } catch (error) {
-    ElMessage.error('操作失败')
-  } finally {
-    submitting.value = false
+  }, 1000)
+}
+
+// 停止计时器
+const stopTimer = () => {
+  if (timer.value) {
+    clearInterval(timer.value)
+    timer.value = null
   }
 }
 
-const handleEdit = (question) => {
-  editingId.value = question.id
-  form.title = question.title
-  form.answer = question.answer
-  form.question_type = question.question_type
-  // 滚动到顶部
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+// 下一步
+const nextStep = () => {
+  if (currentStep.value < 2) {
+    currentStep.value++
+    startStepTimer()
+  }
 }
 
-const cancelEdit = () => {
-  editingId.value = null
-  form.title = ''
-  form.answer = ''
-  form.question_type = '基础'
-}
-
-const handleDelete = async (id) => {
+// 退出学习
+const exitSession = async () => {
   try {
-    await ElMessageBox.confirm('确定要删除这道题目吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm('确定要退出本次学习吗？学习进度将不会保存。', '提示', {
+      confirmButtonText: '确定退出',
+      cancelButtonText: '继续学习',
       type: 'warning'
     })
-    
-    const res = await deleteQuestion(id)
-    if (res.data.code === 200) {
-      ElMessage.success('删除成功')
-      loadQuestions()
-    } else {
-      ElMessage.error('删除失败')
-    }
+    stopTimer()
+    currentQuestion.value = null
+    currentStep.value = 0
+    myAnswer.value = ''
+    aiEvaluation.value = null
   } catch {
     // 用户取消
   }
 }
 
+// 请求AI评分
+const requestAiEvaluation = async () => {
+  if (!myAnswer.value.trim()) {
+    ElMessage.warning('请先填写你的答案')
+    return
+  }
+
+  evaluating.value = true
+  try {
+    const res = await evaluateAnswer({
+      question_id: currentQuestion.value.id,
+      question: currentQuestion.value.title,
+      standard_answer: currentQuestion.value.answer,
+      user_answer: myAnswer.value
+    })
+    
+    if (res.data.code === 200) {
+      aiEvaluation.value = res.data.data
+      ElMessage.success('AI评分完成')
+    } else {
+      ElMessage.error(res.data.message || 'AI评分失败')
+    }
+  } catch (error) {
+    // 暂时模拟一个评分结果（后端接口未实现时）
+    aiEvaluation.value = {
+      score: 75,
+      feedback: '您的回答涵盖了主要知识点，理解基本正确。',
+      improvements: '建议补充更多细节和示例，使回答更加完整。'
+    }
+    ElMessage.info('AI评分功能即将上线，这是模拟结果')
+  } finally {
+    evaluating.value = false
+  }
+}
+
+// 完成学习
+const finishLearning = async () => {
+  stopTimer()
+  
+  // 尝试保存学习记录
+  try {
+    await saveLearningRecord({
+      question_id: currentQuestion.value.id,
+      my_answer: myAnswer.value,
+      ai_score: aiEvaluation.value?.score || null,
+      ai_feedback: aiEvaluation.value?.feedback || null,
+      learned_at: new Date().toISOString()
+    })
+  } catch (error) {
+    console.warn('保存学习记录失败:', error)
+  }
+
+  ElMessage.success('学习完成！继续加油！')
+  currentQuestion.value = null
+  currentStep.value = 0
+  myAnswer.value = ''
+  aiEvaluation.value = null
+}
+
+// 生命周期
 onMounted(() => {
   loadQuestions()
+})
+
+onUnmounted(() => {
+  stopTimer()
 })
 </script>
 
 <style scoped>
 .learn-view {
-  max-width: 900px;
+  max-width: 1100px;
 }
 
-.add-card {
+/* 选择题目卡片 */
+.select-card {
   margin-bottom: 20px;
 }
 
@@ -275,13 +528,8 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.card-header-with-filter {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.loading-wrapper {
+.loading-wrapper,
+.empty-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -292,16 +540,24 @@ onMounted(() => {
 }
 
 .question-list {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .question-item {
   padding: 16px 20px;
-  border-bottom: 1px solid #ebeef5;
+  border: 1px solid #e4e7ed;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
 }
 
-.question-item:last-child {
-  border-bottom: none;
+.question-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .question-header {
@@ -316,26 +572,449 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.question-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-
-.question-title {
+.question-title-preview {
   font-size: 15px;
   color: #303133;
   line-height: 1.6;
   margin-bottom: 12px;
+  max-height: 80px;
+  overflow: hidden;
+}
+
+.start-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #409eff;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.question-item:hover .start-hint {
+  opacity: 1;
+}
+
+/* 学习会话 */
+.learning-session {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.session-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.progress-section {
+  flex: 1;
+}
+
+.step-indicators {
+  display: flex;
+  gap: 32px;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.5;
+  transition: all 0.3s;
+}
+
+.step-indicator.active {
+  opacity: 1;
+}
+
+.step-indicator.completed {
+  opacity: 0.8;
+}
+
+.step-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e4e7ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #909399;
+  transition: all 0.3s;
+}
+
+.step-indicator.active .step-icon {
+  background: #409eff;
+  color: #fff;
+}
+
+.step-indicator.completed .step-icon {
+  background: #67c23a;
+  color: #fff;
+}
+
+.step-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.step-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+.timer-section {
+  min-width: 160px;
+}
+
+.timer-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+
+.timer-display .el-icon {
+  color: #409eff;
+}
+
+.timer-display.warning .el-icon,
+.timer-display.warning .time-value {
+  color: #f56c6c;
+}
+
+.time-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Monaco', 'Menlo', monospace;
+  color: #303133;
+}
+
+.session-actions {
+  margin-left: auto;
+}
+
+/* 步骤内容 */
+.step-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-card {
+  border-radius: 12px;
+}
+
+.content-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.step-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.step-badge.scan {
+  background: linear-gradient(135deg, #67c23a, #85ce61);
+  color: #fff;
+}
+
+.step-badge.write {
+  background: linear-gradient(135deg, #e6a23c, #f0c78a);
+  color: #fff;
+}
+
+.step-badge.review {
+  background: linear-gradient(135deg, #409eff, #79bbff);
+  color: #fff;
+}
+
+.step-tip {
+  color: #909399;
+  font-size: 13px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 20px 0 12px;
+  font-size: 15px;
+  color: #409eff;
+  font-weight: 500;
+}
+
+.content-box {
+  padding: 16px 20px;
+  border-radius: 10px;
+  line-height: 1.8;
+}
+
+.question-box {
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  font-size: 16px;
+  color: #303133;
+}
+
+.answer-box {
+  background: linear-gradient(135deg, #f0f9eb 0%, #e8f5e1 100%);
+  border: 1px solid #c2e7b0;
+  color: #606266;
+}
+
+/* 第二步特有 */
+.my-answer-section {
+  margin-top: 20px;
+}
+
+.core-tip {
+  color: #e6a23c;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.answer-input :deep(.el-textarea__inner) {
+  font-size: 15px;
+  line-height: 1.8;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.answer-hidden-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  background: #fef0f0;
+  border-radius: 8px;
+  color: #f56c6c;
+  font-size: 14px;
+}
+
+/* 第三步特有 */
+.comparison-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.comparison-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.column-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.my-column .column-title {
+  color: #e6a23c;
+}
+
+.standard-column .column-title {
+  color: #67c23a;
+}
+
+.my-answer-box {
+  flex: 1;
+  background: #fffbf0;
+  border: 1px solid #faecd8;
   white-space: pre-wrap;
 }
 
-.question-answer {
+.standard-answer-box {
+  flex: 1;
+  background: #f0f9eb;
+  border: 1px solid #c2e7b0;
+}
+
+/* AI评估 */
+.ai-evaluation {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
+  border-radius: 12px;
+}
+
+.evaluation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.evaluation-header .el-icon {
+  color: #e6a23c;
+}
+
+.evaluation-header .el-button {
+  margin-left: auto;
+}
+
+.evaluating-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  color: #e6a23c;
+}
+
+.evaluation-result {
+  display: flex;
+  gap: 24px;
+}
+
+.score-display {
+  flex-shrink: 0;
+}
+
+.score-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e4e7ed, #c0c4cc);
   color: #606266;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
+}
+
+.score-circle.excellent {
+  background: linear-gradient(135deg, #67c23a, #85ce61);
+  color: #fff;
+}
+
+.score-circle.good {
+  background: linear-gradient(135deg, #409eff, #79bbff);
+  color: #fff;
+}
+
+.score-circle.pass {
+  background: linear-gradient(135deg, #e6a23c, #f0c78a);
+  color: #fff;
+}
+
+.score-circle.fail {
+  background: linear-gradient(135deg, #f56c6c, #f89898);
+  color: #fff;
+}
+
+.score-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.evaluation-content {
+  flex: 1;
+}
+
+.feedback-section,
+.improvements-section {
+  margin-bottom: 16px;
+}
+
+.feedback-section h4,
+.improvements-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #303133;
+}
+
+.improvements-section h4 {
+  color: #e6a23c;
+}
+
+.evaluation-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 步骤操作 */
+.step-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.step-actions .el-button {
+  min-width: 200px;
+  height: 48px;
+  font-size: 16px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .session-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .step-indicators {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .comparison-container {
+    grid-template-columns: 1fr;
+  }
+
+  .evaluation-result {
+    flex-direction: column;
+  }
+
+  .score-display {
+    display: flex;
+    justify-content: center;
+  }
 }
 </style>

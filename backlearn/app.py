@@ -6,9 +6,20 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 import os
+import requests
+import json
+import re
+import threading
+import time
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+
+# AI接口调用锁，确保同一时间只有一个请求发送到AI接口
+ai_api_lock = threading.Lock()
+
+# AI接口配置
+AI_API_URL = "http://127.0.0.1:1125/ask"
 CORS(app)
 
 # 数据库路径
@@ -335,6 +346,169 @@ def get_mastery_stats():
     conn.close()
     
     return jsonify({'code': 200, 'data': level_stats})
+
+
+# ==================== AI加工相关API ====================
+
+def call_ai_api(prompt, max_retries=3, retry_delay=5):
+    """
+    调用AI接口（带锁和重试机制）
+    
+    Args:
+        prompt: 问题内容
+        max_retries: 最大重试次数
+        retry_delay: 重试间隔（秒）
+    """
+    # 使用锁确保同一时间只有一个请求发送到AI接口
+    with ai_api_lock:
+        for attempt in range(max_retries):
+            try:
+                print(f"[AI调用] 第{attempt + 1}次尝试...")
+                response = requests.post(
+                    AI_API_URL,
+                    json={'question': prompt},
+                    timeout=600  # 10分钟超时，确保单个题目有足够处理时间
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    # 根据AI接口返回的结构提取答案
+                    if 'answer' in result:
+                        return result['answer']
+                    elif 'response' in result:
+                        return result['response']
+                    elif 'content' in result:
+                        return result['content']
+                    else:
+                        return str(result)
+                elif response.status_code == 503:
+                    # AI服务繁忙，等待后重试
+                    print(f"[AI调用] AI服务繁忙(503)，{retry_delay}秒后重试...")
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # 指数退避
+                        continue
+                    else:
+                        print("[AI调用] 达到最大重试次数，AI服务持续繁忙")
+                        return None
+                else:
+                    print(f"[AI调用] 请求失败，状态码: {response.status_code}")
+                    return None
+            except Exception as e:
+                print(f"[AI调用] 接口调用失败: {e}")
+                if attempt < max_retries - 1:
+                    print(f"[AI调用] {retry_delay}秒后重试...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                return None
+        return None
+
+
+def parse_ai_response(response_text):
+    """解析AI返回的标准化题目和答案"""
+    title = ""
+    answer = ""
+    
+    # 尝试按标记解析
+    # 匹配 【标准化题目】或 **标准化题目** 等格式
+    title_patterns = [
+        r'【标准化题目】[：:]*\s*(.*?)(?=【|$)',
+        r'\*\*标准化题目\*\*[：:]*\s*(.*?)(?=\*\*|【|$)',
+        r'标准化题目[：:]\s*(.*?)(?=答案|【|\n\n|$)',
+        r'问题[：:]\s*(.*?)(?=答案|【|\n\n|$)',
+    ]
+    
+    answer_patterns = [
+        r'【答案解析】[：:]*\s*(.*)',
+        r'\*\*答案解析\*\*[：:]*\s*(.*)',
+        r'答案解析[：:]\s*(.*)',
+        r'答案[：:]\s*(.*)',
+    ]
+    
+    for pattern in title_patterns:
+        match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
+        if match:
+            title = match.group(1).strip()
+            break
+    
+    for pattern in answer_patterns:
+        match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
+        if match:
+            answer = match.group(1).strip()
+            break
+    
+    # 如果没有匹配到，使用简单分割
+    if not title or not answer:
+        lines = response_text.strip().split('\n')
+        if len(lines) >= 2:
+            # 第一行作为题目
+            title = lines[0].strip()
+            # 剩余作为答案
+            answer = '\n'.join(lines[1:]).strip()
+        else:
+            title = response_text[:100] if len(response_text) > 100 else response_text
+            answer = response_text
+    
+    return title, answer
+
+
+@app.route('/api/ai/process', methods=['POST'])
+def process_question_with_ai():
+    """使用AI加工题目"""
+    data = request.get_json()
+    raw_question = data.get('question', '').strip()
+    question_type = data.get('type', '基础')
+    
+    if not raw_question:
+        return jsonify({'code': 400, 'message': '题目不能为空'})
+    
+    # 构造prompt，让AI生成标准化的题目和答案
+    prompt = f"""你是一个专业的技术面试题目整理专家。请帮我将以下原始面试题目整理成标准化、易于学习和记忆的格式。
+
+【原始题目】
+{raw_question}
+
+【题目类型】
+{question_type}
+
+【要求】
+1. 将题目改写成清晰、准确、专业的面试题形式
+2. 提供详细、有条理的答案解析，便于理解和记忆
+3. 答案应该包含核心概念、关键点、以及面试官希望听到的要点
+4. 如果有代码示例，请提供简洁明了的代码
+5. 答案要有层次感，可以使用1、2、3或要点符号组织
+
+【输出格式】
+请严格按以下格式输出：
+
+【标准化题目】
+（改写后的标准面试题）
+
+【答案解析】
+（详细的答案，包含核心概念和要点）
+"""
+    
+    # 调用AI接口
+    ai_response = call_ai_api(prompt)
+    
+    if not ai_response:
+        return jsonify({'code': 500, 'message': 'AI接口调用失败，请检查AI服务是否启动'})
+    
+    # 解析AI返回的内容
+    title, answer = parse_ai_response(ai_response)
+    
+    if not title or not answer:
+        return jsonify({'code': 500, 'message': 'AI返回内容解析失败', 'raw_response': ai_response})
+    
+    return jsonify({
+        'code': 200,
+        'message': '处理成功',
+        'data': {
+            'title': title,
+            'answer': answer,
+            'raw_response': ai_response  # 保留原始响应，便于调试
+        }
+    })
 
 
 if __name__ == '__main__':

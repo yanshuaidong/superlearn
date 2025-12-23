@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "DeepSeek Helper",
+  "version": "1.0",
+  "description": "DeepSeek 自动化问答工具 - 自动提问并获取AI回答",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": [
+    "https://chat.deepseek.com/*",
+    "http://127.0.0.1:1125/*"
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chat.deepseek.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

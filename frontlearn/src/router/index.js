@@ -11,6 +11,11 @@ const routes = [
     component: () => import('../views/StatsView.vue')
   },
   {
+    path: '/ai-process',
+    name: 'AiProcess',
+    component: () => import('../views/AiProcessView.vue')
+  },
+  {
     path: '/learn',
     name: 'Learn',
     component: () => import('../views/LearnView.vue')
