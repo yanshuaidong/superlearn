@@ -19,6 +19,10 @@
           <el-icon><MagicStick /></el-icon>
           <span>题目AI加工</span>
         </el-menu-item>
+        <el-menu-item index="/question-manage">
+          <el-icon><Document /></el-icon>
+          <span>题目管理</span>
+        </el-menu-item>
         <el-menu-item index="/learn">
           <el-icon><Edit /></el-icon>
           <span>学习主模块</span>

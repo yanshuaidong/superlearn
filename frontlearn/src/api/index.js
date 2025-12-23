@@ -11,6 +11,10 @@ export const addQuestion = (data) => api.post('/questions', data)
 export const updateQuestion = (id, data) => api.put(`/questions/${id}`, data)
 export const deleteQuestion = (id) => api.delete(`/questions/${id}`)
 
+// 题目管理相关（分页+搜索）
+export const getQuestionsPaginated = (params = {}) => api.get('/questions/manage', { params })
+export const getQuestionDetail = (id) => api.get(`/questions/${id}`)
+
 // 复习相关
 export const getTodayReview = () => api.get('/review/today')
 export const completeReview = (data) => api.post('/review/complete', data)

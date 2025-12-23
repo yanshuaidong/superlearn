@@ -16,6 +16,11 @@ const routes = [
     component: () => import('../views/AiProcessView.vue')
   },
   {
+    path: '/question-manage',
+    name: 'QuestionManage',
+    component: () => import('../views/QuestionManageView.vue')
+  },
+  {
     path: '/learn',
     name: 'Learn',
     component: () => import('../views/LearnView.vue')

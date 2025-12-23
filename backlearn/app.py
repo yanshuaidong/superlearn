@@ -93,6 +93,83 @@ def get_questions():
     conn.close()
     return jsonify({'code': 200, 'data': questions})
 
+
+@app.route('/api/questions/manage', methods=['GET'])
+def get_questions_paginated():
+    """分页获取题目列表（支持搜索）"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 获取分页参数
+    page = request.args.get('page', 1, type=int)
+    page_size = request.args.get('page_size', 10, type=int)
+    keyword = request.args.get('keyword', '').strip()
+    
+    # 计算偏移量
+    offset = (page - 1) * page_size
+    
+    # 构建查询条件
+    if keyword:
+        # 按标题搜索
+        count_sql = 'SELECT COUNT(*) as total FROM questions WHERE title LIKE ?'
+        list_sql = '''
+            SELECT id, title, question_type, created_at, updated_at 
+            FROM questions 
+            WHERE title LIKE ? 
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?
+        '''
+        search_param = f'%{keyword}%'
+        cursor.execute(count_sql, (search_param,))
+        total = cursor.fetchone()['total']
+        cursor.execute(list_sql, (search_param, page_size, offset))
+    else:
+        count_sql = 'SELECT COUNT(*) as total FROM questions'
+        list_sql = '''
+            SELECT id, title, question_type, created_at, updated_at 
+            FROM questions 
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?
+        '''
+        cursor.execute(count_sql)
+        total = cursor.fetchone()['total']
+        cursor.execute(list_sql, (page_size, offset))
+    
+    questions = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    # 计算总页数
+    total_pages = (total + page_size - 1) // page_size
+    
+    return jsonify({
+        'code': 200,
+        'data': {
+            'list': questions,
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total': total,
+                'total_pages': total_pages
+            }
+        }
+    })
+
+
+@app.route('/api/questions/<int:question_id>', methods=['GET'])
+def get_question_detail(question_id):
+    """获取单个题目详情"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT * FROM questions WHERE id = ?', (question_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row:
+        return jsonify({'code': 200, 'data': dict(row)})
+    else:
+        return jsonify({'code': 404, 'message': '题目不存在'})
+
 @app.route('/api/questions', methods=['POST'])
 def add_question():
     """添加新题目"""
@@ -463,7 +540,7 @@ def process_question_with_ai():
         return jsonify({'code': 400, 'message': '题目不能为空'})
     
     # 构造prompt，让AI生成标准化的题目和答案
-    prompt = f"""你是一个专业的技术面试题目整理专家。请帮我将以下原始面试题目整理成标准化、易于学习和记忆的格式。
+    prompt = f"""你是资深前端技术面试教练。你的任务是把题目改写成面试标准题，并生成"候选人可直接复述、拿高分"的答案。
 
 【原始题目】
 {raw_question}
@@ -471,21 +548,48 @@ def process_question_with_ai():
 【题目类型】
 {question_type}
 
-【要求】
-1. 将题目改写成清晰、准确、专业的面试题形式
-2. 提供详细、有条理的答案解析，便于理解和记忆
-3. 答案应该包含核心概念、关键点、以及面试官希望听到的要点
-4. 如果有代码示例，请提供简洁明了的代码
-5. 答案要有层次感，可以使用1、2、3或要点符号组织
+【核心原则】
+- 禁止教材式解释！要像候选人在面试中回答问题一样
+- 语言口语化、可复述，避免学术定义堆砌
+- 结论先行，先说面试官最想听的答案，再展开
+- 用编号/要点组织，关键信息用短句
 
-【输出格式】
-请严格按以下格式输出：
+【输出格式（严格遵守）】
 
 【标准化题目】
-（改写后的标准面试题）
+（改写后的标准面试题，一句话）
 
 【答案解析】
-（详细的答案，包含核心概念和要点）
+
+## 一、结论先行（30秒版）
+面试官最想听到的核心结论，1-3句话直接给出答案。
+示例格式："XXX的本质是...，它解决的核心问题是...，最关键的点是..."
+
+## 二、答题框架（可直接复述）
+用编号列出完整答题结构，每个点一句话说清楚：
+1. 是什么：一句话定义
+2. 为什么：解决什么问题
+3. 怎么用：核心用法/步骤
+4. 注意点：关键细节
+
+## 三、最小示例
+用最容易理解的方式说明，可以是：
+- 真实场景类比（如：负载均衡就像银行多窗口分流排队）
+- 最简代码（不超过10行）
+- 对比案例（有它 vs 没它的区别）
+选择最能帮助记忆和理解的形式。
+
+## 四、面试官评分点
+- 高分点：面试官希望听到什么
+- 扣分点：常见错误回答
+
+## 五、追问与应对
+列出2-3个常见追问，每个追问给出简洁的标准回答：
+Q1: 追问问题
+A1: 标准回答
+
+Q2: 追问问题
+A2: 标准回答
 """
     
     # 调用AI接口
