@@ -1029,23 +1029,38 @@ def parse_ai_score_response(response_text):
     feedback = ""
     improvements = ""
     
-    # 尝试解析分数
-    score_patterns = [
-        r'【分数】[：:]*\s*(\d+)',
-        r'\*\*分数\*\*[：:]*\s*(\d+)',
-        r'分数[：:]\s*(\d+)',
-        r'得分[：:]\s*(\d+)',
-        r'评分[：:]\s*(\d+)',
-        r'(\d+)\s*分',
-    ]
-    
-    for pattern in score_patterns:
-        match = re.search(pattern, response_text)
-        if match:
-            score = int(match.group(1))
-            # 确保分数在0-100之间
+    # 方法1：先尝试直接匹配【分数】标签后的数字（支持换行）
+    score_tag_match = re.search(r'【分数】', response_text)
+    if score_tag_match:
+        # 从【分数】标签后开始，提取第一个数字
+        after_tag = response_text[score_tag_match.end():]
+        # 只在【分数】和【评价】之间找数字，避免匹配到评价内容中的数字
+        eval_tag_match = re.search(r'【评价】|【反馈】', after_tag)
+        if eval_tag_match:
+            score_section = after_tag[:eval_tag_match.start()]
+        else:
+            score_section = after_tag[:50]  # 只看前50个字符
+        
+        number_match = re.search(r'(\d+)', score_section)
+        if number_match:
+            score = int(number_match.group(1))
             score = max(0, min(100, score))
-            break
+    
+    # 方法2：如果方法1没找到，尝试其他模式
+    if score == 0:
+        score_patterns = [
+            r'\*\*分数\*\*[：:]*\s*(\d+)',
+            r'分数[：:]\s*(\d+)',
+            r'得分[：:]\s*(\d+)',
+            r'评分[：:]\s*(\d+)',
+        ]
+        
+        for pattern in score_patterns:
+            match = re.search(pattern, response_text, re.DOTALL)
+            if match:
+                score = int(match.group(1))
+                score = max(0, min(100, score))
+                break
     
     # 尝试解析反馈
     feedback_patterns = [
@@ -1080,6 +1095,9 @@ def parse_ai_score_response(response_text):
     # 如果没有解析到反馈，使用完整响应作为反馈
     if not feedback and not improvements:
         feedback = response_text
+    
+    # 打印调试信息
+    print(f"[AI评分解析] 分数: {score}, 反馈长度: {len(feedback)}, 改进建议长度: {len(improvements)}")
     
     return score, feedback, improvements
 
