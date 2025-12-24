@@ -1,21 +1,33 @@
 /**
- * Background Service Worker
+ * Background Service Worker - WebSocket 版本
+ * 
  * 职责：
- * 1. 维护与后端的心跳连接（每秒一次）
- * 2. 接收任务并转发给 content script 执行
- * 3. 将执行结果返回给后端
+ * 1. 与后端保持 WebSocket 持久连接
+ * 2. 接收任务推送并转发给 content script 执行
+ * 3. 将执行结果通过 WebSocket 返回给后端
+ * 
+ * 优势：
+ * - 持久连接，不会因为心跳超时而断开
+ * - 实时推送，任务响应更快
+ * - 自动重连机制
  */
 
-const BACKEND_URL = 'http://127.0.0.1:1126';
-let heartbeatInterval = null;
+const BACKEND_URL = 'http://127.0.0.1:1125';
+const WS_URL = 'ws://127.0.0.1:1125/socket.io/?EIO=4&transport=websocket';
+
+let socket = null;
 let isRunning = false;
 let currentTask = null;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 100;  // 最大重连次数
+const RECONNECT_INTERVAL = 3000;     // 重连间隔（毫秒）
 
 // 初始化 - 从 storage 恢复状态
 chrome.storage.local.get(['isRunning'], (result) => {
   if (result.isRunning) {
     isRunning = true;
-    startHeartbeat();
+    connectWebSocket();
   }
 });
 
@@ -32,6 +44,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       stopService();
       sendResponse({ success: true });
       break;
+    case 'getStatus':
+      sendResponse({
+        success: true,
+        isRunning: isRunning,
+        connected: socket && socket.readyState === WebSocket.OPEN,
+        hasTask: currentTask !== null
+      });
+      break;
     default:
       sendResponse({ success: false, message: '未知操作' });
   }
@@ -46,7 +66,7 @@ function startService() {
   
   isRunning = true;
   chrome.storage.local.set({ isRunning: true });
-  startHeartbeat();
+  connectWebSocket();
   console.log('[ChatGPT Helper] 服务已启动');
 }
 
@@ -58,72 +78,205 @@ function stopService() {
   
   isRunning = false;
   chrome.storage.local.set({ isRunning: false });
-  stopHeartbeat();
+  disconnectWebSocket();
   currentTask = null;
   console.log('[ChatGPT Helper] 服务已停止');
 }
 
 /**
- * 启动心跳
+ * 连接 WebSocket
  */
-function startHeartbeat() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-  }
-  
-  // 立即执行一次
-  doHeartbeat();
-  
-  // 每秒执行一次
-  heartbeatInterval = setInterval(doHeartbeat, 1000);
-}
-
-/**
- * 停止心跳
- */
-function stopHeartbeat() {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
-}
-
-/**
- * 执行心跳
- */
-async function doHeartbeat() {
-  if (!isRunning) return;
-  
-  // 如果正在处理任务，不再获取新任务
-  if (currentTask) {
-    notifyPopup({ hasTask: true, question: currentTask.question });
+function connectWebSocket() {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    console.log('[WebSocket] 已经连接');
     return;
   }
   
-  try {
-    const response = await fetch(`${BACKEND_URL}/heartbeat`);
-    const data = await response.json();
-    
-    // 通知 popup 后端在线
-    notifyPopup({ backendOnline: true, hasTask: false });
-    
-    if (data.has_task) {
-      console.log('[ChatGPT Helper] 收到新任务:', data.task_id);
-      currentTask = {
-        id: data.task_id,
-        question: data.question
-      };
-      
-      // 通知 popup 有任务
-      notifyPopup({ hasTask: true, question: data.question });
-      
-      // 执行任务
-      executeTask(data.task_id, data.question);
-    }
-  } catch (error) {
-    // 后端不在线
-    notifyPopup({ backendOnline: false, hasTask: false });
+  // 清理旧连接
+  if (socket) {
+    socket.close();
+    socket = null;
   }
+  
+  console.log('[WebSocket] 正在连接...');
+  
+  try {
+    socket = new WebSocket(WS_URL);
+    
+    socket.onopen = () => {
+      console.log('[WebSocket] 连接成功！');
+      reconnectAttempts = 0;
+      
+      // 发送握手消息（Socket.IO 协议）
+      // EIO=4 是 Engine.IO 版本 4 的握手
+      // 40 是 Socket.IO 的 CONNECT 消息
+      socket.send('40');
+      
+      notifyPopup({ backendOnline: true, connected: true });
+    };
+    
+    socket.onmessage = (event) => {
+      handleSocketMessage(event.data);
+    };
+    
+    socket.onclose = (event) => {
+      console.log('[WebSocket] 连接关闭:', event.code, event.reason);
+      socket = null;
+      notifyPopup({ backendOnline: false, connected: false });
+      
+      // 自动重连
+      if (isRunning) {
+        scheduleReconnect();
+      }
+    };
+    
+    socket.onerror = (error) => {
+      console.error('[WebSocket] 连接错误:', error);
+      notifyPopup({ backendOnline: false, connected: false });
+    };
+    
+  } catch (error) {
+    console.error('[WebSocket] 创建连接失败:', error);
+    scheduleReconnect();
+  }
+}
+
+/**
+ * 断开 WebSocket
+ */
+function disconnectWebSocket() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
+  
+  reconnectAttempts = 0;
+}
+
+/**
+ * 安排重连
+ */
+function scheduleReconnect() {
+  if (reconnectTimer) return;
+  
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    console.log('[WebSocket] 达到最大重连次数，停止重连');
+    return;
+  }
+  
+  reconnectAttempts++;
+  console.log(`[WebSocket] ${RECONNECT_INTERVAL/1000}秒后重连... (尝试 ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+  
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (isRunning) {
+      connectWebSocket();
+    }
+  }, RECONNECT_INTERVAL);
+}
+
+/**
+ * 处理 Socket.IO 消息
+ * Socket.IO 协议格式：
+ * - 0: CONNECT
+ * - 2: EVENT
+ * - 3: ACK
+ * - 40: 命名空间连接
+ * - 42: 事件消息
+ */
+function handleSocketMessage(data) {
+  // Engine.IO 心跳
+  if (data === '2') {
+    // 收到 ping，回复 pong
+    socket.send('3');
+    return;
+  }
+  
+  if (data === '3') {
+    // pong 响应，忽略
+    return;
+  }
+  
+  // Socket.IO 连接确认
+  if (data.startsWith('40')) {
+    console.log('[WebSocket] Socket.IO 连接已确认');
+    return;
+  }
+  
+  // Socket.IO 事件消息（格式：42["event_name", data]）
+  if (data.startsWith('42')) {
+    try {
+      const jsonStr = data.substring(2);
+      const [eventName, eventData] = JSON.parse(jsonStr);
+      
+      console.log('[WebSocket] 收到事件:', eventName, eventData);
+      
+      switch (eventName) {
+        case 'connected':
+          console.log('[WebSocket] 服务器确认连接:', eventData);
+          break;
+          
+        case 'new_task':
+          handleNewTask(eventData);
+          break;
+          
+        case 'result_received':
+          console.log('[WebSocket] 服务器确认收到结果:', eventData);
+          break;
+          
+        case 'pong':
+          // 心跳响应
+          break;
+      }
+    } catch (e) {
+      console.error('[WebSocket] 解析消息失败:', e, data);
+    }
+  }
+}
+
+/**
+ * 发送 Socket.IO 事件
+ */
+function emitEvent(eventName, data) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.error('[WebSocket] 未连接，无法发送消息');
+    return false;
+  }
+  
+  const message = '42' + JSON.stringify([eventName, data]);
+  socket.send(message);
+  return true;
+}
+
+/**
+ * 处理新任务
+ */
+async function handleNewTask(data) {
+  const { task_id, question } = data;
+  
+  console.log('[ChatGPT Helper] 收到新任务:', task_id);
+  
+  if (currentTask) {
+    console.log('[ChatGPT Helper] 当前有任务在处理，拒绝新任务');
+    emitEvent('task_result', {
+      task_id: task_id,
+      success: false,
+      message: '当前有任务在处理中',
+      answer: ''
+    });
+    return;
+  }
+  
+  currentTask = { id: task_id, question: question };
+  notifyPopup({ hasTask: true, question: question });
+  
+  // 执行任务
+  await executeTask(task_id, question);
 }
 
 /**
@@ -137,9 +290,14 @@ async function executeTask(taskId, question) {
     const tabs = await chrome.tabs.query({ url: '*://chatgpt.com/*' });
     
     if (tabs.length === 0) {
-      // 没有找到 ChatGPT 页面，报告失败
-      await reportTaskResult(taskId, '', false, '未找到 ChatGPT 页面，请先打开 chatgpt.com');
+      emitEvent('task_result', {
+        task_id: taskId,
+        success: false,
+        message: '未找到 ChatGPT 页面，请先打开 chatgpt.com',
+        answer: ''
+      });
       currentTask = null;
+      notifyPopup({ hasTask: false });
       return;
     }
     
@@ -155,7 +313,7 @@ async function executeTask(taskId, question) {
       // 可能已经注入，忽略错误
     }
     
-    // 等待一下让脚本初始化
+    // 等待脚本初始化
     await sleep(200);
     
     // 发送任务给 content script
@@ -165,46 +323,28 @@ async function executeTask(taskId, question) {
       question: question
     });
     
-    if (result && result.success) {
-      // 任务成功
-      await reportTaskResult(taskId, result.answer, true, '完成');
-    } else {
-      // 任务失败
-      await reportTaskResult(taskId, '', false, result?.message || '执行失败');
-    }
+    // 发送结果给后端
+    emitEvent('task_result', {
+      task_id: taskId,
+      success: result?.success || false,
+      message: result?.message || '执行完成',
+      answer: result?.answer || ''
+    });
+    
+    console.log('[ChatGPT Helper] 任务结果已发送:', result?.success ? '成功' : '失败');
     
   } catch (error) {
     console.error('[ChatGPT Helper] 任务执行出错:', error);
-    await reportTaskResult(taskId, '', false, '执行出错: ' + error.message);
+    emitEvent('task_result', {
+      task_id: taskId,
+      success: false,
+      message: '执行出错: ' + error.message,
+      answer: ''
+    });
   }
   
   currentTask = null;
   notifyPopup({ hasTask: false });
-}
-
-/**
- * 向后端报告任务结果
- */
-async function reportTaskResult(taskId, answer, success, message) {
-  try {
-    const response = await fetch(`${BACKEND_URL}/answer`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        task_id: taskId,
-        answer: answer,
-        success: success,
-        message: message
-      })
-    });
-    
-    const data = await response.json();
-    console.log('[ChatGPT Helper] 结果已报告:', data);
-  } catch (error) {
-    console.error('[ChatGPT Helper] 报告结果失败:', error);
-  }
 }
 
 /**
@@ -226,4 +366,21 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-console.log('[ChatGPT Helper] Background service worker 已启动');
+/**
+ * 保持 Service Worker 活跃
+ * Chrome MV3 的 Service Worker 在 30 秒无活动后会休眠
+ * 使用 chrome.alarms 来定期唤醒
+ */
+chrome.alarms.create('keepAlive', { periodInMinutes: 0.4 });  // 每 24 秒
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'keepAlive') {
+    // 检查连接状态
+    if (isRunning && (!socket || socket.readyState !== WebSocket.OPEN)) {
+      console.log('[KeepAlive] 检测到断线，尝试重连...');
+      connectWebSocket();
+    }
+  }
+});
+
+console.log('[ChatGPT Helper] Background service worker 已启动 (WebSocket 版本)');

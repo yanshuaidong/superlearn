@@ -12,7 +12,7 @@
 ## 架构
 
 ```
-外部程序 → Flask API (1126端口) → 浏览器插件 → ChatGPT 页面
+外部程序 → Flask API (1125端口) → 浏览器插件 → ChatGPT 页面
                 ↑                      ↓
                 └──────── 回答 ─────────┘
 ```
@@ -68,7 +68,7 @@ python main.py
 
 **请求示例：**
 ```bash
-curl -X POST http://127.0.0.1:1126/ask \
+curl -X POST http://127.0.0.1:1125/ask \
      -H "Content-Type: application/json" \
      -d '{"question": "你好，请介绍一下你自己"}'
 ```
@@ -95,7 +95,7 @@ curl -X POST http://127.0.0.1:1126/ask \
 ### GET /status - 获取服务状态
 
 ```bash
-curl http://127.0.0.1:1126/status
+curl http://127.0.0.1:1125/status
 ```
 
 **响应：**
@@ -103,7 +103,7 @@ curl http://127.0.0.1:1126/status
 {
     "success": true,
     "service": "ChatGPT Helper API",
-    "port": 1126,
+    "port": 1125,
     "plugin_online": true,
     "has_task": false,
     "task_status": null
@@ -113,7 +113,7 @@ curl http://127.0.0.1:1126/status
 ### GET /health - 健康检查
 
 ```bash
-curl http://127.0.0.1:1126/health
+curl http://127.0.0.1:1125/health
 ```
 
 **响应：**
@@ -148,6 +148,6 @@ curl http://127.0.0.1:1126/health
 
 ## 端口说明
 
-- **1126**: ChatGPT Helper API 服务端口
+- **1125**: ChatGPT Helper API 服务端口
 - **1125**: DeepSeek Helper API 服务端口（如果需要同时运行）
 
