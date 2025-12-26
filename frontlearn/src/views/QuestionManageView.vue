@@ -41,36 +41,43 @@
         </div>
       </template>
 
-      <div v-loading="loading" class="question-list">
-        <div v-if="questions.length === 0 && !loading" class="empty-state">
-          <el-empty description="暂无题目数据" />
-        </div>
+      <el-table
+        v-loading="loading"
+        :data="questions"
+        style="width: 100%"
+        :row-class-name="tableRowClassName"
+      >
+        <el-table-column label="序号" width="70" align="center">
+          <template #default="{ $index }">
+            {{ getRowIndex($index) }}
+          </template>
+        </el-table-column>
         
-        <div 
-          v-for="question in questions" 
-          :key="question.id" 
-          class="question-item"
-          :class="{ 'done': question.attempt_count > 0 }"
-        >
-          <div class="question-info">
-            <div class="question-main">
-              <span class="question-id">#{{ question.id }}</span>
-              <el-tag :type="getTypeTagType(question.question_type)" size="small">
-                {{ question.question_type }}
-              </el-tag>
-              <span class="question-title">{{ question.title }}</span>
-            </div>
-            
-            <!-- 答题状态标签 -->
-            <div class="question-status">
+        <el-table-column label="类型" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getTypeTagType(row.question_type)" size="small">
+              {{ row.question_type }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="题目标题" min-width="300">
+          <template #default="{ row }">
+            <div class="question-title-cell">{{ row.title }}</div>
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="答题状态" width="200">
+          <template #default="{ row }">
+            <div class="status-cell">
               <el-tag 
-                v-if="question.attempt_count > 0" 
+                v-if="row.attempt_count > 0" 
                 type="success" 
                 size="small"
                 effect="plain"
               >
                 <el-icon><Check /></el-icon>
-                已做{{ question.attempt_count }}次
+                已做{{ row.attempt_count }}次
               </el-tag>
               <el-tag 
                 v-else 
@@ -82,38 +89,40 @@
               </el-tag>
               
               <!-- 分数对比 -->
-              <div v-if="question.first_score || question.last_score" class="score-info">
-                <span v-if="question.first_score" class="score-item first">
-                  首次: {{ question.first_score }}分
+              <div v-if="row.first_score || row.last_score" class="score-info">
+                <span v-if="row.first_score" class="score-item first">
+                  首次: {{ row.first_score }}分
                 </span>
-                <span v-if="question.last_score && question.attempt_count > 1" class="score-item last">
-                  最近: {{ question.last_score }}分
+                <span v-if="row.last_score && row.attempt_count > 1" class="score-item last">
+                  最近: {{ row.last_score }}分
                 </span>
-                <el-tag 
-                  v-if="question.attempt_count > 1 && question.last_score > question.first_score" 
-                  type="success" 
-                  size="small"
-                >
-                  ↑ 进步{{ question.last_score - question.first_score }}分
-                </el-tag>
-                <el-tag 
-                  v-else-if="question.attempt_count > 1 && question.last_score < question.first_score" 
-                  type="danger" 
-                  size="small"
-                >
-                  ↓ 退步{{ question.first_score - question.last_score }}分
-                </el-tag>
               </div>
+              <el-tag 
+                v-if="row.attempt_count > 1 && row.last_score > row.first_score" 
+                type="success" 
+                size="small"
+              >
+                ↑ 进步{{ row.last_score - row.first_score }}分
+              </el-tag>
+              <el-tag 
+                v-else-if="row.attempt_count > 1 && row.last_score < row.first_score" 
+                type="danger" 
+                size="small"
+              >
+                ↓ 退步{{ row.first_score - row.last_score }}分
+              </el-tag>
             </div>
-          </div>
-          
-          <div class="question-actions">
+          </template>
+        </el-table-column>
+        
+        <el-table-column label="操作" width="220" align="center">
+          <template #default="{ row }">
             <el-button 
-              v-if="question.attempt_count > 0"
+              v-if="row.attempt_count > 0"
               type="success" 
               size="small" 
-              text
-              @click="viewAnswerReport(question)"
+              link
+              @click="viewAnswerReport(row)"
             >
               <el-icon><View /></el-icon>
               答题记录
@@ -121,8 +130,8 @@
             <el-button 
               type="primary" 
               size="small" 
-              text
-              @click="openEditDialog(question)"
+              link
+              @click="openEditDialog(row)"
             >
               <el-icon><Edit /></el-icon>
               编辑
@@ -130,15 +139,19 @@
             <el-button 
               type="danger" 
               size="small" 
-              text
-              @click="handleDelete(question)"
+              link
+              @click="handleDelete(row)"
             >
               <el-icon><Delete /></el-icon>
               删除
             </el-button>
-          </div>
-        </div>
-      </div>
+          </template>
+        </el-table-column>
+        
+        <template #empty>
+          <el-empty description="暂无题目数据" />
+        </template>
+      </el-table>
 
       <!-- 分页 -->
       <div class="pagination-wrapper">
@@ -188,6 +201,18 @@
             :rows="3"
             placeholder="请输入题目标题"
           />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button 
+            type="warning" 
+            plain 
+            @click="copyPrompt"
+            :disabled="!formData.title"
+          >
+            <el-icon><CopyDocument /></el-icon>
+            复制提示词到剪贴板
+          </el-button>
         </el-form-item>
         
         <el-form-item label="答案解析" prop="answer">
@@ -329,6 +354,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getQuestionsPaginated, getQuestionDetail, addQuestion, updateQuestion, deleteQuestion, getAnswerReport } from '../api'
 import ContentRenderer from '../components/ContentRenderer.vue'
+import { StandardizedQuestions } from '../components/prompt/StandardizedQuestions.js'
 
 // 搜索关键词
 const searchKeyword = ref('')
@@ -550,6 +576,16 @@ const getTypeTagType = (type) => {
   return types[type] || ''
 }
 
+// 计算正确的前端序号
+const getRowIndex = (index) => {
+  return (pagination.page - 1) * pagination.pageSize + index + 1
+}
+
+// 表格行样式
+const tableRowClassName = ({ row }) => {
+  return row.attempt_count > 0 ? 'done-row' : ''
+}
+
 // 获取分数样式类
 const getScoreClass = (score) => {
   if (!score) return 'none'
@@ -587,6 +623,26 @@ const formatDate = (dateStr) => {
 const truncate = (str, len) => {
   if (!str) return ''
   return str.length > len ? str.slice(0, len) + '...' : str
+}
+
+// 复制提示词到剪贴板
+const copyPrompt = async () => {
+  if (!formData.title) {
+    ElMessage.warning('请先输入题目标题')
+    return
+  }
+  
+  // 将提示词模板中的占位符替换为实际值
+  const prompt = StandardizedQuestions.prompt
+    .replace('{raw_question}', formData.title)
+    .replace('{question_type}', formData.question_type)
+  
+  try {
+    await navigator.clipboard.writeText(prompt)
+    ElMessage.success('提示词已复制到剪贴板')
+  } catch (error) {
+    ElMessage.error('复制失败：' + error.message)
+  }
 }
 
 // 组件挂载时获取数据
@@ -642,92 +698,30 @@ onMounted(() => {
   margin-left: auto;
 }
 
-.question-list {
-  min-height: 200px;
+/* 题目标题单元格 */
+.question-title-cell {
+  line-height: 1.6;
+  word-break: break-word;
+  white-space: normal;
 }
 
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-}
-
-.question-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  transition: all 0.2s;
-}
-
-.question-item:hover {
-  background: #f0f9ff;
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
-}
-
-.question-item.done {
-  background: #f0f9eb;
-  border-left: 3px solid #67c23a;
-}
-
-.question-item.done:hover {
-  background: #e8f5e1;
-}
-
-.question-item:last-child {
-  margin-bottom: 0;
-}
-
-.question-info {
+/* 状态单元格 */
+.status-cell {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.question-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.question-id {
-  font-weight: 600;
-  color: #909399;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.question-title {
-  flex: 1;
-  color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px;
-}
-
-.question-status {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
 }
 
 .score-info {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   font-size: 12px;
 }
 
 .score-item {
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
   background: #f5f7fa;
 }
@@ -740,10 +734,13 @@ onMounted(() => {
   color: #409eff;
 }
 
-.question-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+/* 已做过的行样式 */
+:deep(.el-table .done-row) {
+  background-color: #f0f9eb;
+}
+
+:deep(.el-table .done-row:hover > td) {
+  background-color: #e8f5e1 !important;
 }
 
 .pagination-wrapper {

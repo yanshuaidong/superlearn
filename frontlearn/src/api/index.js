@@ -33,9 +33,6 @@ export const completeReview = (data) => api.post('/review/complete', data)
 export const getOverviewStats = () => api.get('/stats/overview')
 export const getMasteryStats = () => api.get('/stats/mastery')
 
-// AI加工相关 - 每个题目最大等待 10 分钟
-export const processQuestionWithAi = (data) => api.post('/ai/process', data, { timeout: 600000 }) // 10分钟超时，AI处理可能较慢
-
 // AI评分相关 - 用于学习模块第三步
 export const evaluateAnswer = (data) => api.post('/ai/evaluate', data, { timeout: 300000 }) // 5分钟超时
 

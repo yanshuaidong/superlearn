@@ -15,10 +15,6 @@
           <el-icon><DataAnalysis /></el-icon>
           <span>统计信息</span>
         </el-menu-item>
-        <el-menu-item index="/ai-process">
-          <el-icon><MagicStick /></el-icon>
-          <span>题目AI加工</span>
-        </el-menu-item>
         <el-menu-item index="/question-manage">
           <el-icon><Document /></el-icon>
           <span>题目管理</span>

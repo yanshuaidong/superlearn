@@ -310,48 +310,88 @@
             </div>
           </div>
 
-          <!-- AI评分区域 -->
+          <!-- AI评分区域 - 手动模式 -->
           <div class="ai-evaluation">
             <div class="evaluation-header">
               <el-icon><MagicStick /></el-icon>
               <span>AI 智能评估</span>
               <el-button 
-                v-if="!aiEvaluation && !evaluating" 
                 type="primary" 
                 size="small"
-                @click="requestAiEvaluation"
+                @click="copyEvaluatePrompt"
               >
-                获取AI评分
+                <el-icon><DocumentCopy /></el-icon>
+                复制提示词
               </el-button>
             </div>
 
-            <div v-if="evaluating" class="evaluating-status">
-              <el-icon class="is-loading"><Loading /></el-icon>
-              AI正在分析你的答案...
-            </div>
-
-            <div v-else-if="aiEvaluation" class="evaluation-result">
-              <div class="score-display">
-                <div class="score-circle" :class="getScoreClass(aiEvaluation.score)">
-                  <span class="score-value">{{ aiEvaluation.score }}</span>
-                  <span class="score-label">分</span>
-                </div>
-              </div>
-              <div class="evaluation-content">
-                <div v-if="aiEvaluation.feedback" class="feedback-section">
-                  <h4><el-icon><ChatLineRound /></el-icon> 评价反馈</h4>
-                  <ContentRenderer :content="aiEvaluation.feedback" />
-                </div>
-                <div v-if="aiEvaluation.improvements" class="improvements-section">
-                  <h4><el-icon><WarnTriangleFilled /></el-icon> 需要改进</h4>
-                  <ContentRenderer :content="aiEvaluation.improvements" />
-                </div>
-              </div>
-            </div>
-
-            <div v-else class="evaluation-placeholder">
+            <div class="manual-evaluate-tip">
               <el-icon><InfoFilled /></el-icon>
-              点击上方按钮获取AI评分
+              <span>复制提示词后，去问 AI（如 DeepSeek、ChatGPT），然后把结果填写到下方</span>
+            </div>
+
+            <!-- 手动填写评估结果 -->
+            <div class="manual-evaluate-form">
+              <div class="form-row score-row">
+                <label class="form-label">
+                  <el-icon><Medal /></el-icon>
+                  评分（0-100）
+                </label>
+                <el-input-number 
+                  v-model="manualScore" 
+                  :min="0" 
+                  :max="100" 
+                  :step="5"
+                  placeholder="输入分数"
+                  class="score-input"
+                />
+                <div v-if="manualScore !== null" class="score-preview" :class="getScoreClass(manualScore)">
+                  {{ manualScore }}分
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">
+                  <el-icon><ChatLineRound /></el-icon>
+                  评价反馈
+                </label>
+                <el-input
+                  v-model="manualFeedback"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="粘贴 AI 给出的评价反馈..."
+                />
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">
+                  <el-icon><WarnTriangleFilled /></el-icon>
+                  需要改进
+                </label>
+                <el-input
+                  v-model="manualImprovements"
+                  type="textarea"
+                  :rows="4"
+                  placeholder="粘贴 AI 给出的改进建议..."
+                />
+              </div>
+
+              <div class="form-actions">
+                <el-button 
+                  type="success" 
+                  size="large"
+                  :loading="saving"
+                  :disabled="!canSaveEvaluation"
+                  @click="saveManualEvaluation"
+                >
+                  <el-icon><Check /></el-icon>
+                  保存评估结果
+                </el-button>
+                <span v-if="hasSaved" class="save-success">
+                  <el-icon><CircleCheck /></el-icon>
+                  已保存
+                </span>
+              </div>
             </div>
           </div>
         </el-card>
@@ -375,8 +415,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getLearningQuestions, getRandomQuestion, getNextQuestion, evaluateAnswer, saveAnswerReport, getAnswerStats } from '../api'
+import { getLearningQuestions, getRandomQuestion, getNextQuestion, saveAnswerReport, getAnswerStats } from '../api'
 import ContentRenderer from '../components/ContentRenderer.vue'
+import { Evaluate } from '../components/prompt/Evaluate.js'
 
 // 学习步骤配置
 const steps = [
@@ -391,10 +432,15 @@ const questions = ref([])
 const currentQuestion = ref(null)
 const currentStep = ref(0)
 const myAnswer = ref('')
-const aiEvaluation = ref(null)
-const evaluating = ref(false)
 const showQuestionList = ref(false)
 const stats = ref(null)
+
+// 手动评估相关
+const manualScore = ref(null)
+const manualFeedback = ref('')
+const manualImprovements = ref('')
+const saving = ref(false)
+const hasSaved = ref(false)
 
 // 筛选条件
 const filterStatus = ref('')
@@ -513,8 +559,12 @@ const startLearning = (question) => {
   currentQuestion.value = question
   currentStep.value = 0
   myAnswer.value = ''
-  aiEvaluation.value = null
   showQuestionList.value = false
+  // 重置手动评估状态
+  manualScore.value = null
+  manualFeedback.value = ''
+  manualImprovements.value = ''
+  hasSaved.value = false
   startStepTimer()
 }
 
@@ -568,49 +618,71 @@ const exitSession = async () => {
     currentQuestion.value = null
     currentStep.value = 0
     myAnswer.value = ''
-    aiEvaluation.value = null
+    // 重置手动评估状态
+    manualScore.value = null
+    manualFeedback.value = ''
+    manualImprovements.value = ''
+    hasSaved.value = false
     loadStats() // 刷新统计
   } catch {
     // 用户取消
   }
 }
 
-// 请求AI评分
-const requestAiEvaluation = async () => {
-  if (!myAnswer.value.trim()) {
-    ElMessage.warning('请先填写你的答案')
+// 是否可以保存评估结果
+const canSaveEvaluation = computed(() => {
+  return manualScore.value !== null && manualScore.value >= 0 && manualScore.value <= 100
+})
+
+// 复制评估提示词
+const copyEvaluatePrompt = async () => {
+  const prompt = Evaluate.prompt
+    .replace('{question}', currentQuestion.value.title)
+    .replace('{standard_answer}', currentQuestion.value.answer)
+    .replace('{user_answer}', myAnswer.value)
+  
+  try {
+    await navigator.clipboard.writeText(prompt)
+    ElMessage.success('提示词已复制，去问 AI 吧！')
+  } catch (error) {
+    // 降级方案
+    const textarea = document.createElement('textarea')
+    textarea.value = prompt
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ElMessage.success('提示词已复制，去问 AI 吧！')
+  }
+}
+
+// 保存手动评估结果
+const saveManualEvaluation = async () => {
+  if (!canSaveEvaluation.value) {
+    ElMessage.warning('请至少填写评分')
     return
   }
 
-  evaluating.value = true
+  saving.value = true
   try {
-    const res = await evaluateAnswer({
+    const res = await saveAnswerReport({
       question_id: currentQuestion.value.id,
-      question: currentQuestion.value.title,
-      standard_answer: currentQuestion.value.answer,
       user_answer: myAnswer.value,
-      score_type: 'learn' // 标记为学习时的评分
+      ai_score: manualScore.value,
+      ai_feedback: manualFeedback.value,
+      ai_improvements: manualImprovements.value
     })
     
     if (res.data.code === 200) {
-      aiEvaluation.value = res.data.data
-      ElMessage.success('AI评分完成')
-      
-      // 保存答题报告
-      await saveAnswerReport({
-        question_id: currentQuestion.value.id,
-        user_answer: myAnswer.value,
-        ai_score: res.data.data.score,
-        ai_feedback: res.data.data.feedback,
-        ai_improvements: res.data.data.improvements
-      })
+      hasSaved.value = true
+      ElMessage.success('评估结果已保存！')
     } else {
-      ElMessage.error(res.data.message || 'AI评分失败')
+      ElMessage.error(res.data.message || '保存失败')
     }
   } catch (error) {
-    ElMessage.error('AI评分服务暂时不可用，请稍后重试')
+    ElMessage.error('保存失败，请重试')
   } finally {
-    evaluating.value = false
+    saving.value = false
   }
 }
 
@@ -644,7 +716,11 @@ const finishLearning = async () => {
   currentQuestion.value = null
   currentStep.value = 0
   myAnswer.value = ''
-  aiEvaluation.value = null
+  // 重置手动评估状态
+  manualScore.value = null
+  manualFeedback.value = ''
+  manualImprovements.value = ''
+  hasSaved.value = false
   
   // 刷新统计
   await loadStats()
@@ -1223,6 +1299,98 @@ onUnmounted(() => {
   padding: 20px;
   color: #909399;
   font-size: 14px;
+}
+
+/* 手动评估提示 */
+.manual-evaluate-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #ecf5ff;
+  border-radius: 8px;
+  color: #409eff;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* 手动评估表单 */
+.manual-evaluate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.score-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.score-input {
+  width: 140px;
+}
+
+.score-preview {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.score-preview.excellent {
+  background: linear-gradient(135deg, #67c23a, #85ce61);
+  color: #fff;
+}
+
+.score-preview.good {
+  background: linear-gradient(135deg, #409eff, #79bbff);
+  color: #fff;
+}
+
+.score-preview.pass {
+  background: linear-gradient(135deg, #e6a23c, #f0c78a);
+  color: #fff;
+}
+
+.score-preview.fail {
+  background: linear-gradient(135deg, #f56c6c, #f89898);
+  color: #fff;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.form-actions .el-button {
+  min-width: 160px;
+}
+
+.save-success {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #67c23a;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* 步骤操作 */

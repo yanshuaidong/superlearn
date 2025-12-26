@@ -1,7 +1,7 @@
 <template>
-  <div class="content-renderer" :class="{ 'text-mode': !isHtml, 'html-mode': isHtml }">
-    <!-- HTML 内容渲染 -->
-    <div v-if="isHtml" class="html-content" v-html="content"></div>
+  <div class="content-renderer" :class="{ 'text-mode': contentType === 'text', 'html-mode': contentType !== 'text' }">
+    <!-- HTML/Markdown 内容渲染 -->
+    <div v-if="contentType !== 'text'" class="html-content" v-html="renderedContent"></div>
     <!-- 纯文本渲染 -->
     <div v-else class="text-content">{{ content }}</div>
   </div>
@@ -9,13 +9,21 @@
 
 <script setup>
 import { computed } from 'vue'
+import { marked } from 'marked'
+
+// 配置 marked
+marked.setOptions({
+  breaks: true,        // 支持 GitHub 风格的换行
+  gfm: true,           // 启用 GitHub 风格 Markdown
+  headerIds: false,    // 禁用标题ID（避免ID冲突）
+})
 
 const props = defineProps({
   content: {
     type: String,
     default: ''
   },
-  // 强制指定类型：'auto' | 'text' | 'html'
+  // 强制指定类型：'auto' | 'text' | 'html' | 'markdown'
   forceType: {
     type: String,
     default: 'auto'
@@ -27,18 +35,55 @@ const detectHtml = (str) => {
   if (!str) return false
   // 常见HTML标签检测
   const htmlPatterns = [
-    /<[a-z][\s\S]*>/i,          // 基本HTML标签
     /<(p|div|span|h[1-6]|ul|ol|li|pre|code|table|tr|td|th|blockquote|strong|em|a|br|hr)[^>]*>/i,
     /&(nbsp|lt|gt|amp|quot|#\d+);/i  // HTML实体
   ]
   return htmlPatterns.some(pattern => pattern.test(str))
 }
 
-// 判断是否为HTML内容
-const isHtml = computed(() => {
-  if (props.forceType === 'text') return false
-  if (props.forceType === 'html') return true
-  return detectHtml(props.content)
+// 检测内容是否为 Markdown 格式
+const detectMarkdown = (str) => {
+  if (!str) return false
+  // Markdown 语法特征检测
+  const markdownPatterns = [
+    /^#{1,6}\s+/m,                    // 标题 # ## ### 等
+    /\*\*[^*]+\*\*/,                  // 粗体 **text**
+    /\*[^*]+\*/,                      // 斜体 *text*
+    /^\s*[-*+]\s+/m,                  // 无序列表 - * +
+    /^\s*\d+\.\s+/m,                  // 有序列表 1. 2. 3.
+    /```[\s\S]*?```/,                 // 代码块 ```code```
+    /`[^`]+`/,                        // 行内代码 `code`
+    /^\s*>/m,                         // 引用 >
+    /\[([^\]]+)\]\([^)]+\)/,          // 链接 [text](url)
+    /^\s*\|.*\|.*\|/m,                // 表格
+    /^---+$/m,                        // 分隔线
+  ]
+  return markdownPatterns.some(pattern => pattern.test(str))
+}
+
+// 判断内容类型：'text' | 'html' | 'markdown'
+const contentType = computed(() => {
+  if (props.forceType === 'text') return 'text'
+  if (props.forceType === 'html') return 'html'
+  if (props.forceType === 'markdown') return 'markdown'
+  
+  // 自动检测
+  if (detectHtml(props.content)) return 'html'
+  if (detectMarkdown(props.content)) return 'markdown'
+  return 'text'
+})
+
+// 渲染后的内容
+const renderedContent = computed(() => {
+  if (!props.content) return ''
+  
+  if (contentType.value === 'markdown') {
+    // 解析 Markdown 为 HTML
+    return marked(props.content)
+  }
+  
+  // HTML 内容直接返回
+  return props.content
 })
 </script>
 
