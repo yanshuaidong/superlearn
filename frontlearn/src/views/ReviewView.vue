@@ -289,15 +289,15 @@ const progressPercent = computed(() => {
 
 const getTagType = (type) => {
   const types = {
-    '基础': '',
+    '基础': 'info',
     '进阶': 'success',
     '高频': 'warning',
     '手写': 'danger',
-    '原理': 'info',
+    '原理': 'primary',
     '面经': 'success',
     '自检': 'warning'
   }
-  return types[type] || ''
+  return types[type] || 'info'
 }
 
 const getScoreClass = (score) => {

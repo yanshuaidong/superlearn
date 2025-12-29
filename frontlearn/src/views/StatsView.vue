@@ -227,7 +227,7 @@ const getPercentage = (count) => {
 
 const getTagType = (type) => {
   const types = {
-    '基础': '',
+    '基础': 'primary',
     '进阶': 'success',
     '高频': 'warning',
     '手写': 'danger',
@@ -235,7 +235,7 @@ const getTagType = (type) => {
     '面经': 'success',
     '自检': 'warning'
   }
-  return types[type] || ''
+  return types[type] || 'primary'
 }
 
 const getLevelDesc = (level) => {

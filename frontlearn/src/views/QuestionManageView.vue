@@ -565,7 +565,7 @@ const handleDelete = async (question) => {
 // 获取类型标签颜色
 const getTypeTagType = (type) => {
   const types = {
-    '基础': '',
+    '基础': undefined, // 默认样式
     '进阶': 'success',
     '高频': 'warning',
     '手写': 'danger',
@@ -573,7 +573,7 @@ const getTypeTagType = (type) => {
     '面经': 'primary',
     '自检': 'info'
   }
-  return types[type] || ''
+  return types[type] // 如果未匹配返回 undefined，避免传入空字符串
 }
 
 // 计算正确的前端序号
