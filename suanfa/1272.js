@@ -72,3 +72,31 @@ var removeInterval = function (intervals, toBeRemoved) {
 };
 
 removeInterval([[0, 2], [3, 4], [5, 7]], [1, 6])
+
+// 更简单的算法：
+function removeInterval(intervals, toBeRemoved) {
+  let [l,r] = toBeRemoved;
+  let res = [];
+  for(let [a,b] of intervals){
+    // 1 完全不相交 区间在删除区间左侧或右侧 保留原来的
+    //  [a,b) 在左侧 
+    if(b<=l || a>=r){
+      res.push([a,b]);
+      continue;
+    }
+    // 2 有相交 最多剩余2段
+    // 左侧剩余 
+    // a b     [l,r]
+    // [1,5)   [3,10)
+    if(a<l){
+      res.push([a,l])
+      // 1 3
+    }
+    //    [l,r]     a b
+    //    [1,7)    [5,10)
+    if(b>r){
+      res.push([r,b])
+    }
+  }
+  return res;
+}
