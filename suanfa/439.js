@@ -82,3 +82,27 @@ function jisuan(stack) {
 }
 parseTernary("F?1:T?4:5")
 
+function parseTernary(expression){
+  let stack = [];
+  for (let i = expression.length-1; i >= 0; i--) {
+    let ch = expression[i];
+    // 先入栈
+    stack.push(ch);
+    // 栈顶部
+    let stack1 = stack[stack.length-1];
+    let stack2 = stack[stack.length-2];
+    // T?2:3
+
+    if((stack1 === "T" || stack1 === "F") && stack2 === '?' && stack.length>=5){
+      let tiaojian = stack.pop();
+      stack.pop(); // ?
+      let a = stack.pop();
+      stack.pop(); // :
+      let b = stack.pop();
+      let ans = tiaojian === 'T' ? a : b;
+      stack.push(ans)
+    }
+  }
+  return stack[0];
+}
+
