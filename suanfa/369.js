@@ -39,12 +39,52 @@
  */
 var plusOne = function(head) {
     let numStr = '';
-    let tempLink = head;
-    while(tempLink && tempLink.next){
-        numStr+= tempLink.val;
-        tempLink = tempLink.next;
+    let cur = head;
+    while(cur){
+        numStr+= cur.val;
+        cur = cur.next;
     }
-    let num = Number(numStr);
-    num+=1;
-    while(num%10)
+    let big1 = BigInt(numStr);
+    let big2 = big1 + 1n;
+    let newNumStr = big2.toString();
+    // 头节点
+    let newHead = new ListNode(Number(newNumStr[0]), null);
+    // 指针
+    let tempNode = newHead;
+    // 从下标1开始
+    for (let i = 1; i < newNumStr.length; i++) {
+        // 新建的节点
+        let newTempNode = new ListNode(Number(newNumStr[i]),null);
+        // 指针的下一个位置是新节点。
+        tempNode.next = newTempNode;
+        // 指针向下移动
+        tempNode = newTempNode;
+    }
+    return newHead;
 };
+
+/*
+总结：
+
+let cur = head;
+while(cur){
+ cur = cur.next;
+}
+
+let slow = head;
+let fast = head;
+while(fast && fast.next){
+
+slow = slow.next;
+fast = fast.next.next;
+}
+
+
+
+
+
+
+
+
+
+*/ 
