@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>300. 最长递增子序列 - 算法教学可视化</title>
+<style>
+:root {
+  --primary: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-bg: #eef2ff;
+  --success: #059669;
+  --success-bg: #d1fae5;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --warning: #d97706;
+  --warning-bg: #fef3c7;
+  --info: #0284c7;
+  --info-bg: #e0f2fe;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; background: var(--gray-50); color: var(--gray-800); line-height: 1.6; }
+
+.header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff; padding: 32px 0; text-align: center;
+}
+.header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 15px; opacity: .85; }
+
+.nav-tabs {
+  display: flex; justify-content: center; gap: 4px;
+  background: #fff; padding: 8px 16px; border-bottom: 1px solid var(--gray-200);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+}
+.nav-tab {
+  padding: 10px 28px; border-radius: 8px; cursor: pointer;
+  font-size: 15px; font-weight: 500; border: none; background: transparent;
+  color: var(--gray-500); transition: all .2s;
+}
+.nav-tab:hover { background: var(--gray-100); color: var(--gray-700); }
+.nav-tab.active { background: var(--primary); color: #fff; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.module { display: none; }
+.module.active { display: block; }
+
+.card {
+  background: #fff; border-radius: var(--radius); padding: 24px;
+  box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 20px; font-weight: 700; margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--primary-bg);
+  color: var(--gray-900);
+}
+.card h3 { font-size: 17px; font-weight: 600; margin: 16px 0 10px; color: var(--gray-800); }
+
+pre.code-block {
+  background: var(--gray-900); color: #e5e7eb; padding: 20px;
+  border-radius: 10px; overflow-x: auto; font-size: 13.5px;
+  line-height: 1.7; font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  margin: 12px 0;
+}
+pre.code-block .comment { color: #6ee7b7; }
+pre.code-block .keyword { color: #c4b5fd; }
+pre.code-block .func { color: #93c5fd; }
+pre.code-block .num { color: #fca5a5; }
+pre.code-block .str { color: #fde68a; }
+
+.problem-box {
+  background: var(--info-bg); border-left: 4px solid var(--info);
+  padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 12px 0;
+}
+.problem-box p { margin: 6px 0; }
+.problem-box code { background: #fff; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+
+.formula-box {
+  background: var(--warning-bg); border: 1px solid #fcd34d;
+  padding: 16px 20px; border-radius: 8px; margin: 12px 0;
+  font-size: 15px;
+}
+.formula-box code { background: #fff; padding: 2px 6px; border-radius: 3px; font-weight: 600; font-size: 14px; }
+
+/* ===== Visualization ===== */
+.vis-array-container { margin: 16px 0; }
+.vis-label { font-size: 14px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+.vis-array {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end;
+}
+.vis-cell {
+  display: flex; flex-direction: column; align-items: center; transition: all .3s;
+}
+.vis-cell .cell-val {
+  width: 56px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--gray-300); border-radius: 8px; font-size: 16px; font-weight: 700;
+  background: #fff; transition: all .3s;
+}
+.vis-cell .cell-idx { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+
+.vis-cell.highlight-i .cell-val { border-color: var(--primary); background: var(--primary-bg); color: var(--primary); }
+.vis-cell.highlight-j .cell-val { border-color: var(--warning); background: var(--warning-bg); color: var(--warning); }
+.vis-cell.highlight-valid .cell-val { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+.vis-cell.highlight-invalid .cell-val { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.vis-cell.highlight-done .cell-val { border-color: var(--primary-light); background: #c7d2fe; }
+.vis-cell.highlight-best .cell-val { border-color: #7c3aed; background: #ede9fe; color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.2); }
+
+.dp-cell .cell-val { background: var(--gray-50); }
+.dp-cell.updated .cell-val { animation: dpPulse .5s ease; }
+@keyframes dpPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.15); box-shadow: 0 0 12px rgba(79,70,229,.4); }
+}
+
+.step-info {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 10px; padding: 20px; margin: 16px 0;
+}
+.step-info .step-title {
+  font-size: 15px; font-weight: 700; color: var(--primary);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.step-info .step-title .step-badge {
+  background: var(--primary); color: #fff; padding: 2px 10px;
+  border-radius: 12px; font-size: 12px;
+}
+.step-info .step-desc { font-size: 14px; color: var(--gray-700); line-height: 1.8; }
+.step-info .step-desc .hl { font-weight: 600; padding: 1px 4px; border-radius: 3px; }
+.step-info .step-desc .hl-i { background: var(--primary-bg); color: var(--primary); }
+.step-info .step-desc .hl-j { background: var(--warning-bg); color: var(--warning); }
+.step-info .step-desc .hl-ok { background: var(--success-bg); color: var(--success); }
+.step-info .step-desc .hl-no { background: var(--danger-bg); color: var(--danger); }
+
+.enum-box {
+  background: linear-gradient(135deg, #faf5ff, #f0e7ff); border: 1px solid #ddd6fe;
+  border-radius: 10px; padding: 18px; margin: 12px 0;
+}
+.enum-box .enum-title { font-size: 14px; font-weight: 700; color: #7c3aed; margin-bottom: 8px; }
+.enum-box .subseq-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.enum-box .subseq-tag {
+  background: #fff; border: 1px solid #ddd6fe; padding: 3px 10px;
+  border-radius: 6px; font-size: 13px; font-family: monospace; color: var(--gray-700);
+}
+.enum-box .subseq-tag.best { border-color: #7c3aed; background: #ede9fe; font-weight: 600; color: #7c3aed; }
+.enum-box .enum-explain { font-size: 13.5px; color: var(--gray-600); line-height: 1.7; margin-top: 6px; }
+
+.arrow-line {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--gray-600); margin: 4px 0 4px 8px;
+}
+.arrow-line::before { content: "→"; color: var(--primary); font-weight: 700; }
+
+.controls {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  padding: 16px; flex-wrap: wrap;
+}
+.ctrl-btn {
+  padding: 8px 20px; border-radius: 8px; border: 1px solid var(--gray-300);
+  background: #fff; cursor: pointer; font-size: 14px; font-weight: 500;
+  color: var(--gray-700); transition: all .2s;
+}
+.ctrl-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-bg); }
+.ctrl-btn:disabled { opacity: .4; cursor: default; }
+.ctrl-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.ctrl-btn.primary:hover { background: #4338ca; }
+
+.progress-bar {
+  width: 100%; height: 6px; background: var(--gray-200); border-radius: 3px;
+  margin: 8px 0; overflow: hidden;
+}
+.progress-bar .fill { height: 100%; background: var(--primary); border-radius: 3px; transition: width .3s; }
+
+.speed-control { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-500); }
+.speed-control select { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--gray-300); font-size: 13px; }
+
+/* ===== Practice ===== */
+.quiz-item {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 10px; padding: 20px; margin: 16px 0;
+}
+.quiz-item .q-num {
+  display: inline-block; background: var(--primary); color: #fff;
+  width: 28px; height: 28px; border-radius: 50%; text-align: center;
+  line-height: 28px; font-size: 14px; font-weight: 700; margin-right: 8px;
+}
+.quiz-item .q-text { font-size: 15px; font-weight: 500; margin-bottom: 12px; display: inline; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.quiz-opt {
+  padding: 10px 16px; border: 1px solid var(--gray-300); border-radius: 8px;
+  cursor: pointer; font-size: 14px; transition: all .2s; background: #fff;
+}
+.quiz-opt:hover { border-color: var(--primary); background: var(--primary-bg); }
+.quiz-opt.selected { border-color: var(--primary); background: var(--primary-bg); font-weight: 600; }
+.quiz-opt.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-opt.wrong { border-color: var(--danger); background: var(--danger-bg); }
+
+.quiz-input {
+  padding: 8px 14px; border: 1px solid var(--gray-300); border-radius: 8px;
+  font-size: 15px; width: 120px; text-align: center;
+}
+.quiz-submit {
+  padding: 8px 20px; border-radius: 8px; border: none;
+  background: var(--primary); color: #fff; cursor: pointer;
+  font-size: 14px; font-weight: 500; margin-left: 10px; transition: all .2s;
+}
+.quiz-submit:hover { background: #4338ca; }
+
+.feedback {
+  margin-top: 12px; padding: 12px 16px; border-radius: 8px;
+  font-size: 14px; line-height: 1.7; display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { background: var(--success-bg); border: 1px solid #6ee7b7; color: #065f46; }
+.feedback.wrong { background: var(--danger-bg); border: 1px solid #fca5a5; color: #991b1b; }
+
+.compare-display {
+  display: flex; align-items: center; gap: 20px;
+  justify-content: center; margin: 12px 0; font-size: 18px; font-weight: 600;
+}
+.compare-display .cmp-val {
+  padding: 8px 16px; border-radius: 8px; min-width: 60px; text-align: center;
+}
+.compare-display .cmp-op { font-size: 22px; color: var(--gray-400); }
+.compare-display .cmp-result {
+  padding: 4px 12px; border-radius: 6px; font-size: 14px;
+}
+
+.maxlen-display {
+  text-align: center; margin: 10px 0; padding: 8px;
+  font-size: 15px; font-weight: 600; color: var(--gray-600);
+}
+.maxlen-display span { color: var(--primary); font-size: 20px; }
+
+.tip-box {
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+  padding: 12px 16px; margin: 12px 0; font-size: 14px; color: #166534;
+}
+.tip-box::before { content: "💡 "; }
+
+.practice-array-display {
+  display: flex; gap: 4px; justify-content: center; margin: 12px 0;
+}
+.practice-array-display .pa-cell {
+  width: 44px; height: 40px; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--gray-300); border-radius: 6px; font-size: 15px; font-weight: 600; background: #fff;
+}
+.practice-array-display .pa-idx { font-size: 11px; color: var(--gray-400); }
+
+.summary-table {
+  width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;
+}
+.summary-table th, .summary-table td {
+  padding: 8px 12px; border: 1px solid var(--gray-200); text-align: center;
+}
+.summary-table th { background: var(--gray-100); font-weight: 600; color: var(--gray-700); }
+.summary-table td { background: #fff; }
+.summary-table .best-row { background: #ede9fe; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>300. 最长递增子序列</h1>
+  <p>Longest Increasing Subsequence — 动态规划 · 交互式教学</p>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchModule(0)">📖 题目与代码</button>
+  <button class="nav-tab" onclick="switchModule(1)">🎬 演示可视化</button>
+  <button class="nav-tab" onclick="switchModule(2)">✏️ 动手练习</button>
+</div>
+
+<!-- ==================== Module 1: Problem & Code ==================== -->
+<div class="container">
+<div class="module active" id="mod0">
+
+<div class="card">
+  <h2>题目描述</h2>
+  <div class="problem-box">
+    <p><strong>给定一个整数数组 <code>nums</code>，找到其中最长严格递增子序列的长度。</strong></p>
+    <p>子序列是由数组派生而来的序列，删除（或不删除）数组中的元素而不改变其余元素的顺序。</p>
+    <p>例如，<code>[3,6,2,7]</code> 是数组 <code>[0,3,1,6,2,2,7]</code> 的子序列。</p>
+    <p style="margin-top:10px"><strong>示例：</strong></p>
+    <p><code>输入：nums = [10,9,2,5,3,7,101,18]</code></p>
+    <p><code>输出：4</code></p>
+    <p><code>解释：最长递增子序列是 [2,3,7,18]，长度为 4。</code></p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>关键思路：为什么用 DP？</h2>
+  <div class="formula-box">
+    <p><strong>核心定义：</strong><code>dp[i]</code> = 以 <code>nums[i]</code> <strong>结尾</strong>的最长严格递增子序列的长度。</p>
+  </div>
+  <p style="margin:12px 0">想要找整个数组的最长递增子序列，最直觉的思路是：<strong>枚举所有子序列，检查哪些是递增的，然后找最长的。</strong></p>
+  <p>但子序列总数是 2<sup>n</sup>，太慢了。DP 的智慧在于：</p>
+  <div class="tip-box">
+    我不需要真的枚举所有子序列！对于位置 i，我只关心"以 nums[i] 结尾的最长递增子序列有多长"。
+    而这个信息，可以从前面已经算好的 dp[0], dp[1], ..., dp[i-1] 中推导出来。
+  </div>
+
+  <h3>状态转移公式</h3>
+  <div class="formula-box">
+    <p>对于每个 <code>i</code>，枚举所有 <code>j</code>（0 ≤ j &lt; i）：</p>
+    <p>如果 <code>nums[j] &lt; nums[i]</code>，则 <code>dp[i] = Math.max(dp[i], dp[j] + 1)</code></p>
+    <p style="margin-top:8px">最终答案 = <code>max(dp[0], dp[1], ..., dp[n-1])</code></p>
+  </div>
+
+  <h3>公式背后的暴力枚举视角</h3>
+  <p style="margin:8px 0"><strong>dp[j] + 1 到底在干什么？</strong></p>
+  <p><code>dp[j]</code> 已经浓缩了"以 nums[j] 结尾的所有递增子序列"中最长那个的长度。</p>
+  <p>当 <code>nums[j] &lt; nums[i]</code> 时，就等于说：</p>
+  <div style="margin:8px 0 8px 16px; font-size:14px; color:var(--gray-600)">
+    <p>→ 把以 nums[j] 结尾的那个最长递增子序列拿过来</p>
+    <p>→ 在尾部追加 nums[i]（因为 nums[j] &lt; nums[i]，仍然递增）</p>
+    <p>→ 新子序列长度 = dp[j] + 1</p>
+  </div>
+  <p>对所有满足条件的 j 都试一遍，取最大值，就得到了 dp[i]。</p>
+  <p><strong>这就是 DP 在帮我们做的事情 —— 它把暴力枚举 2<sup>n</sup> 个子序列的工作，压缩成了 O(n<sup>2</sup>) 的比较。</strong></p>
+</div>
+
+<div class="card">
+  <h2>答案代码（带详细注释）</h2>
+  <pre class="code-block"><span class="keyword">var</span> <span class="func">lengthOfLIS</span> = <span class="keyword">function</span>(nums) {
+    <span class="comment">// 边界处理：空数组直接返回 0</span>
+    <span class="keyword">if</span> (nums.length === <span class="num">0</span>) <span class="keyword">return</span> <span class="num">0</span>;
+
+    <span class="comment">// 创建 dp 数组，全部初始化为 1</span>
+    <span class="comment">// 为什么是 1？因为每个元素自身就是一个长度为 1 的递增子序列</span>
+    <span class="keyword">const</span> dp = <span class="keyword">new</span> Array(nums.length).<span class="func">fill</span>(<span class="num">1</span>);
+
+    <span class="comment">// maxLen 记录全局最大值，初始为 1（至少有一个元素）</span>
+    <span class="keyword">let</span> maxLen = <span class="num">1</span>;
+
+    <span class="comment">// 外层循环：依次计算每个位置 i 的 dp[i]</span>
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="num">0</span>; i &lt; nums.length; i++) {
+
+        <span class="comment">// 内层循环：枚举 i 前面的每个位置 j</span>
+        <span class="comment">// 这就是"暴力枚举所有可能的前驱"</span>
+        <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="num">0</span>; j &lt; i; j++) {
+
+            <span class="comment">// 关键判断：nums[j] 必须严格小于 nums[i]</span>
+            <span class="comment">// 只有这样，nums[i] 才能接到以 nums[j] 结尾的子序列后面</span>
+            <span class="keyword">if</span> (nums[j] &lt; nums[i]) {
+                <span class="comment">// 状态转移：dp[j]+1 表示"把 nums[i] 接到 j 的最长子序列后面"</span>
+                <span class="comment">// 取 max 是因为可能有多个 j 都能接，我们要最长的那个</span>
+                dp[i] = Math.<span class="func">max</span>(dp[i], dp[j] + <span class="num">1</span>);
+            }
+        }
+
+        <span class="comment">// 每算完一个 dp[i]，更新全局最大值</span>
+        <span class="comment">// 因为最终答案不一定在最后一个位置，而是 dp 数组中的最大值</span>
+        maxLen = Math.<span class="func">max</span>(maxLen, dp[i]);
+    }
+
+    <span class="keyword">return</span> maxLen;
+};</pre>
+</div>
+
+<div class="card" style="text-align:center">
+  <p style="font-size:15px; color:var(--gray-500)">已经理解了代码框架？</p>
+  <button class="ctrl-btn primary" onclick="switchModule(1)" style="margin-top:8px">进入可视化演示 →</button>
+</div>
+
+</div>
+
+<!-- ==================== Module 2: Visualization ==================== -->
+<div class="module" id="mod1">
+
+<div class="card">
+  <h2>可视化演示</h2>
+  <p style="color:var(--gray-500); font-size:14px; margin-bottom:12px">示例数组：<code>nums = [10, 9, 2, 5, 3, 7, 101, 18]</code> &nbsp;—&nbsp; 逐步观察代码如何执行</p>
+
+  <div class="vis-array-container">
+    <div class="vis-label">nums 数组</div>
+    <div class="vis-array" id="numsArray"></div>
+  </div>
+
+  <div class="vis-array-container">
+    <div class="vis-label">dp 数组</div>
+    <div class="vis-array" id="dpArray"></div>
+  </div>
+
+  <div class="maxlen-display">当前全局最大值 maxLen = <span id="maxLenVal">1</span></div>
+
+  <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="btnFirst" onclick="goFirst()">⏮ 首步</button>
+    <button class="ctrl-btn" id="btnPrev" onclick="goPrev()">◄ 上一步</button>
+    <button class="ctrl-btn primary" id="btnNext" onclick="goNext()">下一步 ►</button>
+    <button class="ctrl-btn" id="btnLast" onclick="goLast()">末步 ⏭</button>
+    <button class="ctrl-btn" id="btnAuto" onclick="toggleAuto()">▶ 自动播放</button>
+    <div class="speed-control">
+      <label>速度：</label>
+      <select id="speedSel" onchange="changeSpeed()">
+        <option value="2000">慢</option>
+        <option value="1200" selected>中</option>
+        <option value="600">快</option>
+        <option value="300">极快</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="step-info" id="stepInfo"></div>
+
+  <div id="enumSection"></div>
+</div>
+
+</div>
+
+<!-- ==================== Module 3: Practice ==================== -->
+<div class="module" id="mod2">
+
+<div class="card">
+  <h2>动手练习</h2>
+  <p style="color:var(--gray-500); font-size:14px">用不同的示例 <code>nums = [0, 1, 0, 3, 2, 3]</code> 检验你对算法的理解。</p>
+  <div class="practice-array-display" style="margin:16px 0">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px">
+      <div style="display:flex; gap:4px">
+        <div class="pa-cell">0</div><div class="pa-cell">1</div><div class="pa-cell">0</div>
+        <div class="pa-cell">3</div><div class="pa-cell">2</div><div class="pa-cell">3</div>
+      </div>
+      <div style="display:flex; gap:4px">
+        <div class="pa-idx" style="width:44px; text-align:center">0</div>
+        <div class="pa-idx" style="width:44px; text-align:center">1</div>
+        <div class="pa-idx" style="width:44px; text-align:center">2</div>
+        <div class="pa-idx" style="width:44px; text-align:center">3</div>
+        <div class="pa-idx" style="width:44px; text-align:center">4</div>
+        <div class="pa-idx" style="width:44px; text-align:center">5</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Q1 -->
+<div class="card quiz-item" id="q1">
+  <span class="q-num">1</span>
+  <span class="q-text">dp[0] 和 dp[1] 的值分别是多少？</span>
+  <div style="margin:12px 0; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+    <span>dp[0] =</span>
+    <input class="quiz-input" id="q1a" type="number" style="width:70px" placeholder="?">
+    <span>，dp[1] =</span>
+    <input class="quiz-input" id="q1b" type="number" style="width:70px" placeholder="?">
+    <button class="quiz-submit" onclick="checkQ1()">验证</button>
+  </div>
+  <div class="feedback" id="fb1"></div>
+</div>
+
+<!-- Q2 -->
+<div class="card quiz-item" id="q2">
+  <span class="q-num">2</span>
+  <span class="q-text">当 i=2 时，dp[2] 的值是多少？为什么？</span>
+  <div class="quiz-options" id="q2opts">
+    <div class="quiz-opt" onclick="selectOpt('q2',0)">A. dp[2] = 2，因为 nums[0]=0 可以接到 nums[2]=0 前面</div>
+    <div class="quiz-opt" onclick="selectOpt('q2',1)">B. dp[2] = 1，因为前面没有严格小于 0 的元素</div>
+    <div class="quiz-opt" onclick="selectOpt('q2',2)">C. dp[2] = 0，因为 0 太小了无法构成递增子序列</div>
+  </div>
+  <button class="quiz-submit" onclick="checkQ2()" style="margin-top:4px">验证</button>
+  <div class="feedback" id="fb2"></div>
+</div>
+
+<!-- Q3 -->
+<div class="card quiz-item" id="q3">
+  <span class="q-num">3</span>
+  <span class="q-text">当 i=3（nums[3]=3）时，需要检查哪些位置 j？其中哪些满足 nums[j] &lt; nums[3]？</span>
+  <div style="margin:12px 0">
+    <p style="font-size:14px; margin-bottom:8px">请勾选所有满足 <code>nums[j] &lt; 3</code> 的 j 值：</p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="q3c0" value="0"> j=0 (nums[0]=0)
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="q3c1" value="1"> j=1 (nums[1]=1)
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+        <input type="checkbox" id="q3c2" value="2"> j=2 (nums[2]=0)
+      </label>
+    </div>
+    <button class="quiz-submit" onclick="checkQ3()" style="margin-top:10px">验证</button>
+  </div>
+  <div class="feedback" id="fb3"></div>
+</div>
+
+<!-- Q4 -->
+<div class="card quiz-item" id="q4">
+  <span class="q-num">4</span>
+  <span class="q-text">dp[3] 最终等于多少？它的值来自哪个前驱 j？</span>
+  <div style="margin:12px 0; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+    <span>dp[3] =</span>
+    <input class="quiz-input" id="q4a" type="number" style="width:70px" placeholder="?">
+    <span>，最优前驱 j =</span>
+    <input class="quiz-input" id="q4b" type="number" style="width:70px" placeholder="?">
+    <button class="quiz-submit" onclick="checkQ4()">验证</button>
+  </div>
+  <div class="feedback" id="fb4"></div>
+</div>
+
+<!-- Q5 -->
+<div class="card quiz-item" id="q5">
+  <span class="q-num">5</span>
+  <span class="q-text">当 i=5（nums[5]=3）时，j=3（nums[3]=3）能作为 dp[5] 的前驱吗？</span>
+  <div class="quiz-options" id="q5opts">
+    <div class="quiz-opt" onclick="selectOpt('q5',0)">A. 能，因为 3 ≤ 3，可以构成递增</div>
+    <div class="quiz-opt" onclick="selectOpt('q5',1)">B. 不能，因为要求严格递增，3 不严格小于 3</div>
+    <div class="quiz-opt" onclick="selectOpt('q5',2)">C. 能，因为 dp[3] 很大，所以一定要用</div>
+  </div>
+  <button class="quiz-submit" onclick="checkQ5()" style="margin-top:4px">验证</button>
+  <div class="feedback" id="fb5"></div>
+</div>
+
+<!-- Q6 -->
+<div class="card quiz-item" id="q6">
+  <span class="q-num">6</span>
+  <span class="q-text">请填写完整的 dp 数组，并给出最终答案。</span>
+  <div style="margin:12px 0">
+    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:10px">
+      <span style="font-size:14px">dp = [</span>
+      <input class="quiz-input" id="q6d0" type="number" style="width:50px" placeholder="?">
+      <input class="quiz-input" id="q6d1" type="number" style="width:50px" placeholder="?">
+      <input class="quiz-input" id="q6d2" type="number" style="width:50px" placeholder="?">
+      <input class="quiz-input" id="q6d3" type="number" style="width:50px" placeholder="?">
+      <input class="quiz-input" id="q6d4" type="number" style="width:50px" placeholder="?">
+      <input class="quiz-input" id="q6d5" type="number" style="width:50px" placeholder="?">
+      <span style="font-size:14px">]</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px">
+      <span>最终答案（最长递增子序列长度）=</span>
+      <input class="quiz-input" id="q6ans" type="number" style="width:70px" placeholder="?">
+      <button class="quiz-submit" onclick="checkQ6()">验证</button>
+    </div>
+  </div>
+  <div class="feedback" id="fb6"></div>
+</div>
+
+<!-- Q7 -->
+<div class="card quiz-item" id="q7">
+  <span class="q-num">7</span>
+  <span class="q-text">请写出一个长度为 4 的严格递增子序列（用逗号分隔数字）：</span>
+  <div style="margin:12px 0; display:flex; align-items:center; gap:8px">
+    <input class="quiz-input" id="q7a" type="text" style="width:200px" placeholder="如：0,1,2,3">
+    <button class="quiz-submit" onclick="checkQ7()">验证</button>
+  </div>
+  <div class="feedback" id="fb7"></div>
+</div>
+
+<div class="card" style="text-align:center">
+  <button class="ctrl-btn primary" onclick="checkAllPractice()">查看全部答案</button>
+</div>
+
+</div>
+</div>
+
+<script>
+// ==================== Tab Navigation ====================
+const modules = document.querySelectorAll('.module');
+const tabs = document.querySelectorAll('.nav-tab');
+function switchModule(idx) {
+  modules.forEach((m, i) => m.classList.toggle('active', i === idx));
+  tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+  if (idx === 1 && !visInitialized) initVisualization();
+}
+
+// ==================== Visualization Engine ====================
+const DEMO_NUMS = [10, 9, 2, 5, 3, 7, 101, 18];
+let steps = [];
+let currentStep = 0;
+let autoTimer = null;
+let autoSpeed = 1200;
+let visInitialized = false;
+
+function computeAllSubseqs(nums) {
+  const n = nums.length;
+  const result = Array.from({length: n}, () => []);
+  for (let i = 0; i < n; i++) {
+    result[i].push([nums[i]]);
+    for (let j = 0; j < i; j++) {
+      if (nums[j] < nums[i]) {
+        for (const seq of result[j]) {
+          result[i].push([...seq, nums[i]]);
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function getBestSubseq(allSubseqs, i) {
+  let best = [];
+  for (const s of allSubseqs[i]) {
+    if (s.length > best.length) best = s;
+  }
+  return best;
+}
+
+function generateSteps(nums) {
+  const n = nums.length;
+  const dp = new Array(n).fill(1);
+  const allSubseqs = computeAllSubseqs(nums);
+  const stepsArr = [];
+  let maxLen = 1;
+
+  stepsArr.push({
+    type: 'init',
+    dp: [...dp],
+    maxLen: 1,
+    highlights: {},
+    title: '初始化',
+    desc: `创建 dp 数组，每个位置初始化为 1。<br>含义：每个元素自身就是一个长度为 1 的递增子序列。`,
+    enumHtml: ''
+  });
+
+  for (let i = 0; i < n; i++) {
+    const validJs = [];
+
+    stepsArr.push({
+      type: 'start_i',
+      i,
+      dp: [...dp],
+      maxLen,
+      highlights: {[i]: 'highlight-i'},
+      title: `开始处理 i=${i}`,
+      desc: `现在要计算 <span class="hl hl-i">dp[${i}]</span>，即以 <span class="hl hl-i">nums[${i}]=${nums[i]}</span> 结尾的最长递增子序列长度。<br>需要枚举前面所有位置 j（0 到 ${i-1}），看谁能作为 nums[${i}] 的"前驱"。`,
+      enumHtml: i === 0
+        ? `<div class="enum-box"><div class="enum-title">枚举视角</div><div class="enum-explain">i=0 前面没有任何元素，所以 dp[0]=1，只有 nums[0]=${nums[0]} 自身构成子序列 [${nums[0]}]。</div></div>`
+        : ''
+    });
+
+    for (let j = 0; j < i; j++) {
+      const hl = {[i]: 'highlight-i', [j]: 'highlight-j'};
+      if (nums[j] < nums[i]) {
+        const oldDpI = dp[i];
+        const candidate = dp[j] + 1;
+        const updated = candidate > dp[i];
+        if (updated) dp[i] = candidate;
+        validJs.push(j);
+
+        const bestJ = getBestSubseq(allSubseqs, j);
+        const newSeq = [...bestJ, nums[i]];
+
+        hl[j] = 'highlight-valid';
+        const dpCopy = [...dp];
+
+        let enumHtml = `<div class="enum-box">
+          <div class="enum-title">🔍 枚举视角：dp[${j}] 背后的真实情况</div>
+          <div class="enum-explain">
+            <strong>dp[${j}]=${dp[j]-1+1}</strong> 代表以 nums[${j}]=${nums[j]} 结尾的最长递增子序列长度为 ${dpCopy[j] > candidate-1 ? candidate-1 : dpCopy[j]}。
+          </div>
+          <div style="margin:6px 0"><strong>以 nums[${j}]=${nums[j]} 结尾的所有递增子序列：</strong></div>
+          <div class="subseq-list">`;
+
+        const seqsJ = allSubseqs[j];
+        const showMax = 8;
+        seqsJ.slice(0, showMax).forEach(s => {
+          const isBest = s.length === getBestSubseq(allSubseqs, j).length;
+          enumHtml += `<span class="subseq-tag${isBest ? ' best' : ''}">[${s.join(', ')}]</span>`;
+        });
+        if (seqsJ.length > showMax) enumHtml += `<span class="subseq-tag">...还有 ${seqsJ.length - showMax} 个</span>`;
+        enumHtml += `</div>`;
+
+        enumHtml += `<div class="arrow-line">将 nums[${i}]=${nums[i]} 接在后面，最长的变为 <strong>[${newSeq.join(', ')}]</strong>，长度 ${candidate}</div>`;
+
+        if (updated) {
+          enumHtml += `<div class="arrow-line" style="color:var(--success)">dp[${i}] 从 ${oldDpI} <strong>更新为 ${dp[i]}</strong>（因为 ${candidate} &gt; ${oldDpI}）</div>`;
+        } else {
+          enumHtml += `<div class="arrow-line" style="color:var(--gray-400)">dp[${i}] 保持 ${dp[i]} 不变（${candidate} ≤ ${dp[i]}，已有更长的选择）</div>`;
+        }
+        enumHtml += `</div>`;
+
+        stepsArr.push({
+          type: 'compare_valid',
+          i, j, updated,
+          dp: dpCopy,
+          maxLen,
+          highlights: hl,
+          title: `i=${i}, j=${j}：✅ 可以转移`,
+          desc: `比较 <span class="hl hl-j">nums[${j}]=${nums[j]}</span> 和 <span class="hl hl-i">nums[${i}]=${nums[i]}</span>：
+                 <span class="hl hl-ok">${nums[j]} &lt; ${nums[i]} ✓</span><br>
+                 转移计算：dp[${i}] = max(dp[${i}]=${oldDpI}, dp[${j}]+1=${candidate}) = <strong>${dp[i]}</strong>${updated ? '  ← 已更新!' : '  （未更新）'}`,
+          enumHtml
+        });
+      } else {
+        stepsArr.push({
+          type: 'compare_invalid',
+          i, j,
+          dp: [...dp],
+          maxLen,
+          highlights: {...hl, [j]: 'highlight-invalid'},
+          title: `i=${i}, j=${j}：❌ 不满足条件`,
+          desc: `比较 <span class="hl hl-no">nums[${j}]=${nums[j]}</span> 和 <span class="hl hl-i">nums[${i}]=${nums[i]}</span>：
+                 <span class="hl hl-no">${nums[j]} ${nums[j] === nums[i] ? '=' : '>'} ${nums[i]}</span>，不满足严格小于，<strong>跳过</strong>。`,
+          enumHtml: `<div class="enum-box" style="background:#fff1f2; border-color:#fecdd3">
+            <div class="enum-title" style="color:var(--danger)">❌ 无法转移</div>
+            <div class="enum-explain">nums[${j}]=${nums[j]} 不严格小于 nums[${i}]=${nums[i]}，所以 nums[${i}] 不能接到以 nums[${j}] 结尾的子序列后面。</div></div>`
+        });
+      }
+    }
+
+    maxLen = Math.max(maxLen, dp[i]);
+    const bestI = getBestSubseq(allSubseqs, i);
+    const allSeqsI = allSubseqs[i];
+
+    let summaryEnum = `<div class="enum-box">
+      <div class="enum-title">📋 dp[${i}] 的完整枚举总结</div>
+      <div class="enum-explain"><strong>dp[${i}] = ${dp[i]}</strong>，代表以 nums[${i}]=${nums[i]} 结尾的最长严格递增子序列长度为 ${dp[i]}。</div>
+      <div style="margin:8px 0"><strong>以 nums[${i}]=${nums[i]} 结尾的所有递增子序列（共 ${allSeqsI.length} 个）：</strong></div>
+      <div class="subseq-list">`;
+
+    const showMaxI = 10;
+    allSeqsI.slice(0, showMaxI).forEach(s => {
+      const isBest = s.length === dp[i];
+      summaryEnum += `<span class="subseq-tag${isBest ? ' best' : ''}">[${s.join(', ')}]</span>`;
+    });
+    if (allSeqsI.length > showMaxI) summaryEnum += `<span class="subseq-tag">...还有 ${allSeqsI.length - showMaxI} 个</span>`;
+    summaryEnum += `</div>`;
+
+    if (validJs.length > 0) {
+      summaryEnum += `<div style="margin-top:8px; font-size:13.5px; color:var(--gray-600)"><strong>有效前驱：</strong>`;
+      validJs.forEach(vj => {
+        summaryEnum += `j=${vj}(dp[${vj}]+1=${dp[vj]+1}) `;
+      });
+      summaryEnum += `<br>最终取最大值得 dp[${i}]=${dp[i]}，对应最长子序列 <strong>[${bestI.join(', ')}]</strong>`;
+      summaryEnum += `</div>`;
+    } else if (i > 0) {
+      summaryEnum += `<div style="margin-top:8px; font-size:13.5px; color:var(--gray-600)">前面没有严格更小的元素可以作为前驱，所以 dp[${i}] 保持初始值 1。</div>`;
+    }
+    summaryEnum += `</div>`;
+
+    const doneHl = {};
+    for (let k = 0; k <= i; k++) doneHl[k] = 'highlight-done';
+    doneHl[i] = 'highlight-best';
+
+    stepsArr.push({
+      type: 'summary_i',
+      i,
+      dp: [...dp],
+      maxLen,
+      highlights: doneHl,
+      title: `✅ dp[${i}] = ${dp[i]} 确定`,
+      desc: `以 <span class="hl hl-i">nums[${i}]=${nums[i]}</span> 结尾的最长递增子序列长度为 <strong>${dp[i]}</strong>。
+             ${dp[i] > 1 ? `<br>最长子序列为 [${bestI.join(', ')}]。` : `<br>只有 [${nums[i]}] 自身。`}
+             <br>当前全局最大值 maxLen = <strong>${maxLen}</strong>。`,
+      enumHtml: summaryEnum
+    });
+  }
+
+  stepsArr.push({
+    type: 'final',
+    dp: [...dp],
+    maxLen,
+    highlights: (() => { const h = {}; for (let k = 0; k < n; k++) h[k] = dp[k] === maxLen ? 'highlight-best' : 'highlight-done'; return h; })(),
+    title: '🎉 算法执行完毕',
+    desc: `dp 数组为 [${dp.join(', ')}]。<br>最终答案 = max(dp) = <strong>${maxLen}</strong>。<br>
+           最长严格递增子序列长度为 ${maxLen}。`,
+    enumHtml: (() => {
+      const maxPositions = [];
+      for (let k = 0; k < n; k++) if (dp[k] === maxLen) maxPositions.push(k);
+      let html = `<div class="enum-box"><div class="enum-title">🏁 最终结果</div>
+        <div class="enum-explain">dp 中最大值为 ${maxLen}，出现在位置：${maxPositions.map(p => `i=${p}(nums[${p}]=${nums[p]})`).join('、')}。</div>
+        <div style="margin:8px 0"><strong>所有长度为 ${maxLen} 的递增子序列：</strong></div>
+        <div class="subseq-list">`;
+      maxPositions.forEach(p => {
+        allSubseqs[p].filter(s => s.length === maxLen).forEach(s => {
+          html += `<span class="subseq-tag best">[${s.join(', ')}]</span>`;
+        });
+      });
+      html += `</div></div>`;
+      return html;
+    })()
+  });
+
+  return stepsArr;
+}
+
+function initVisualization() {
+  visInitialized = true;
+  steps = generateSteps(DEMO_NUMS);
+  currentStep = 0;
+  buildArrayCells();
+  renderStep();
+}
+
+function buildArrayCells() {
+  const numsDiv = document.getElementById('numsArray');
+  const dpDiv = document.getElementById('dpArray');
+  numsDiv.innerHTML = '';
+  dpDiv.innerHTML = '';
+  DEMO_NUMS.forEach((v, i) => {
+    numsDiv.innerHTML += `<div class="vis-cell" id="numCell${i}"><div class="cell-val">${v}</div><div class="cell-idx">${i}</div></div>`;
+    dpDiv.innerHTML += `<div class="vis-cell dp-cell" id="dpCell${i}"><div class="cell-val" id="dpVal${i}">1</div><div class="cell-idx">${i}</div></div>`;
+  });
+}
+
+function renderStep() {
+  const s = steps[currentStep];
+
+  DEMO_NUMS.forEach((_, i) => {
+    const nc = document.getElementById(`numCell${i}`);
+    nc.className = 'vis-cell' + (s.highlights[i] ? ' ' + s.highlights[i] : '');
+    const dc = document.getElementById(`dpCell${i}`);
+    dc.className = 'vis-cell dp-cell' + (s.highlights[i] ? ' ' + s.highlights[i] : '');
+    document.getElementById(`dpVal${i}`).textContent = s.dp[i];
+  });
+
+  document.getElementById('maxLenVal').textContent = s.maxLen;
+
+  const info = document.getElementById('stepInfo');
+  info.innerHTML = `
+    <div class="step-title"><span class="step-badge">第 ${currentStep + 1}/${steps.length} 步</span> ${s.title}</div>
+    <div class="step-desc">${s.desc}</div>`;
+
+  document.getElementById('enumSection').innerHTML = s.enumHtml;
+
+  const pct = ((currentStep + 1) / steps.length * 100).toFixed(1);
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  document.getElementById('btnPrev').disabled = currentStep === 0;
+  document.getElementById('btnFirst').disabled = currentStep === 0;
+  document.getElementById('btnNext').disabled = currentStep === steps.length - 1;
+  document.getElementById('btnLast').disabled = currentStep === steps.length - 1;
+}
+
+function goNext() { if (currentStep < steps.length - 1) { currentStep++; renderStep(); } else stopAuto(); }
+function goPrev() { if (currentStep > 0) { currentStep--; renderStep(); } }
+function goFirst() { currentStep = 0; renderStep(); }
+function goLast() { currentStep = steps.length - 1; renderStep(); }
+
+function toggleAuto() {
+  if (autoTimer) { stopAuto(); }
+  else {
+    document.getElementById('btnAuto').textContent = '⏸ 暂停';
+    document.getElementById('btnAuto').classList.add('primary');
+    autoTimer = setInterval(() => goNext(), autoSpeed);
+  }
+}
+function stopAuto() {
+  clearInterval(autoTimer);
+  autoTimer = null;
+  document.getElementById('btnAuto').textContent = '▶ 自动播放';
+  document.getElementById('btnAuto').classList.remove('primary');
+}
+function changeSpeed() {
+  autoSpeed = parseInt(document.getElementById('speedSel').value);
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = setInterval(() => goNext(), autoSpeed); }
+}
+
+// ==================== Practice Logic ====================
+const PRACTICE_NUMS = [0, 1, 0, 3, 2, 3];
+const PRACTICE_DP = [1, 2, 1, 3, 3, 4];
+
+const selectedOpts = {};
+
+function selectOpt(qid, idx) {
+  selectedOpts[qid] = idx;
+  const opts = document.querySelectorAll(`#${qid}opts .quiz-opt`);
+  opts.forEach((o, i) => o.classList.toggle('selected', i === idx));
+}
+
+function showFeedback(id, correct, html) {
+  const fb = document.getElementById(id);
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  fb.innerHTML = html;
+}
+
+function checkQ1() {
+  const a = parseInt(document.getElementById('q1a').value);
+  const b = parseInt(document.getElementById('q1b').value);
+  if (a === 1 && b === 2) {
+    showFeedback('fb1', true,
+      `<strong>✅ 正确！</strong><br>dp[0]=1：nums[0]=0 前面没有元素，只有自身构成子序列 [0]。<br>dp[1]=2：nums[1]=1 前面有 nums[0]=0 &lt; 1，所以 dp[1] = dp[0]+1 = 2，对应子序列 [0, 1]。`);
+  } else {
+    showFeedback('fb1', false,
+      `<strong>❌ 再想想。</strong><br>dp[0]：i=0 前面没有元素，dp[0] 只能是初始值 1。<br>dp[1]：i=1 时检查 j=0，nums[0]=0 &lt; nums[1]=1 成立，dp[1] = max(1, dp[0]+1) = 2。`);
+  }
+}
+
+function checkQ2() {
+  if (selectedOpts['q2'] === 1) {
+    showFeedback('fb2', true,
+      `<strong>✅ 正确！</strong><br>i=2 时，nums[2]=0。检查 j=0：nums[0]=0，不满足 0 &lt; 0（要严格小于）；j=1：nums[1]=1，不满足 1 &lt; 0。所以没有有效前驱，dp[2] 保持初始值 1。<br>注意："严格递增"意味着相等也不行！`);
+  } else {
+    showFeedback('fb2', false,
+      `<strong>❌ 不对。</strong><br>关键点：条件是 <strong>严格小于</strong>（nums[j] &lt; nums[i]），而不是小于等于。nums[0]=0 等于 nums[2]=0，不满足条件。所以 dp[2]=1，答案是 B。`);
+  }
+}
+
+function checkQ3() {
+  const c0 = document.getElementById('q3c0').checked;
+  const c1 = document.getElementById('q3c1').checked;
+  const c2 = document.getElementById('q3c2').checked;
+  if (c0 && c1 && c2) {
+    showFeedback('fb3', true,
+      `<strong>✅ 完全正确！</strong><br>nums[3]=3，前面三个位置都满足条件：<br>• j=0：nums[0]=0 &lt; 3 ✓（dp[0]+1=2）<br>• j=1：nums[1]=1 &lt; 3 ✓（dp[1]+1=3）<br>• j=2：nums[2]=0 &lt; 3 ✓（dp[2]+1=2）<br>三个前驱都有效！`);
+  } else {
+    showFeedback('fb3', false,
+      `<strong>❌ 请检查一下。</strong><br>nums[3]=3，需要找所有 nums[j] &lt; 3 的 j：<br>• nums[0]=0 &lt; 3 ✓<br>• nums[1]=1 &lt; 3 ✓<br>• nums[2]=0 &lt; 3 ✓<br>三个都满足条件，都应该勾选。`);
+  }
+}
+
+function checkQ4() {
+  const a = parseInt(document.getElementById('q4a').value);
+  const b = parseInt(document.getElementById('q4b').value);
+  if (a === 3 && b === 1) {
+    showFeedback('fb4', true,
+      `<strong>✅ 正确！</strong><br>三个有效前驱的贡献：<br>• j=0：dp[0]+1 = 2<br>• j=1：dp[1]+1 = 3 ← 最大！<br>• j=2：dp[2]+1 = 2<br>dp[3] = max(2, 3, 2) = 3，来自 j=1。<br>对应最长子序列 [0, 1, 3]（从 j=1 的 [0, 1] 接上 3）。`);
+  } else if (a === 3) {
+    showFeedback('fb4', false,
+      `<strong>dp[3]=3 是对的，但最优前驱不对。</strong><br>j=0 贡献 dp[0]+1=2，j=1 贡献 dp[1]+1=3，j=2 贡献 dp[2]+1=2。<br>最大的是 j=1 给出的 3。`);
+  } else {
+    showFeedback('fb4', false,
+      `<strong>❌ 再算一下。</strong><br>有效前驱：j=0(dp[0]+1=2)、j=1(dp[1]+1=3)、j=2(dp[2]+1=2)。<br>dp[3] = max(2, 3, 2) = 3，最优前驱是 j=1。`);
+  }
+}
+
+function checkQ5() {
+  if (selectedOpts['q5'] === 1) {
+    showFeedback('fb5', true,
+      `<strong>✅ 正确！</strong><br>条件是 <code>nums[j] &lt; nums[i]</code>，即严格小于。nums[3]=3 和 nums[5]=3 相等，不满足 3 &lt; 3。<br>所以 j=3 不能作为 i=5 的前驱。dp 值再大也没用，必须先满足递增条件！`);
+  } else {
+    showFeedback('fb5', false,
+      `<strong>❌ 注意看条件！</strong><br>代码中写的是 <code>if (nums[j] &lt; nums[i])</code>，是严格小于，不包含等于。<br>nums[3]=3 和 nums[5]=3 相等，不满足条件，所以不能转移。答案是 B。`);
+  }
+}
+
+function checkQ6() {
+  const userDp = [];
+  for (let i = 0; i < 6; i++) {
+    userDp.push(parseInt(document.getElementById(`q6d${i}`).value));
+  }
+  const ans = parseInt(document.getElementById('q6ans').value);
+  const dpCorrect = userDp.every((v, i) => v === PRACTICE_DP[i]);
+  const ansCorrect = ans === 4;
+
+  if (dpCorrect && ansCorrect) {
+    showFeedback('fb6', true,
+      `<strong>✅ 完美！</strong><br>dp = [1, 2, 1, 3, 3, 4]，最终答案 = 4。<br>
+       <table class="summary-table"><tr><th>i</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+       <tr><th>nums[i]</th><td>0</td><td>1</td><td>0</td><td>3</td><td>2</td><td>3</td></tr>
+       <tr><th>dp[i]</th><td>1</td><td>2</td><td>1</td><td>3</td><td>3</td><td class="best-row">4</td></tr>
+       <tr><th>最优前驱</th><td>无</td><td>j=0</td><td>无</td><td>j=1</td><td>j=1</td><td>j=4</td></tr></table>
+       最长递增子序列之一：[0, 1, 2, 3]。`);
+  } else {
+    let hint = '<strong>❌ 有错误，提示如下：</strong><br>';
+    for (let i = 0; i < 6; i++) {
+      if (userDp[i] !== PRACTICE_DP[i]) hint += `dp[${i}] 应为 ${PRACTICE_DP[i]}（你填的 ${isNaN(userDp[i]) ? '空' : userDp[i]}）<br>`;
+    }
+    if (!ansCorrect) hint += `最终答案应为 4（dp 数组的最大值）<br>`;
+    hint += '<br>完整 dp: [1, 2, 1, 3, 3, 4]';
+    showFeedback('fb6', false, hint);
+  }
+}
+
+function checkQ7() {
+  const raw = document.getElementById('q7a').value.trim();
+  const parts = raw.split(/[,，\s]+/).map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) {
+    showFeedback('fb7', false, '<strong>❌ 请输入 4 个用逗号分隔的数字。</strong>');
+    return;
+  }
+  for (let i = 1; i < 4; i++) {
+    if (parts[i] <= parts[i-1]) {
+      showFeedback('fb7', false, `<strong>❌ 不是严格递增：</strong>${parts[i-1]} 到 ${parts[i]} 不满足严格递增。`);
+      return;
+    }
+  }
+  const numsSet = new Set(PRACTICE_NUMS);
+  const numsCopy = [...PRACTICE_NUMS];
+  let pos = 0;
+  for (const v of parts) {
+    let found = false;
+    for (let k = pos; k < numsCopy.length; k++) {
+      if (numsCopy[k] === v) { pos = k + 1; found = true; break; }
+    }
+    if (!found) {
+      showFeedback('fb7', false, `<strong>❌ [${parts.join(', ')}] 不是原数组 [0,1,0,3,2,3] 的子序列。</strong><br>子序列必须保持原数组中的相对顺序。`);
+      return;
+    }
+  }
+  showFeedback('fb7', true,
+    `<strong>✅ 正确！</strong>[${parts.join(', ')}] 是原数组的一个长度为 4 的严格递增子序列。<br>其他可能的答案如 [0, 1, 2, 3] 也是正确的。`);
+}
+
+function checkAllPractice() {
+  document.getElementById('q1a').value = 1;
+  document.getElementById('q1b').value = 2;
+  checkQ1();
+  selectOpt('q2', 1); checkQ2();
+  document.getElementById('q3c0').checked = true;
+  document.getElementById('q3c1').checked = true;
+  document.getElementById('q3c2').checked = true;
+  checkQ3();
+  document.getElementById('q4a').value = 3;
+  document.getElementById('q4b').value = 1;
+  checkQ4();
+  selectOpt('q5', 1); checkQ5();
+  for (let i = 0; i < 6; i++) document.getElementById(`q6d${i}`).value = PRACTICE_DP[i];
+  document.getElementById('q6ans').value = 4;
+  checkQ6();
+  document.getElementById('q7a').value = '0,1,2,3';
+  checkQ7();
+}
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('mod1').classList.contains('active')) return;
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goNext(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+});
+</script>
+
+</body>
+</html>

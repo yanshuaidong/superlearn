@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>583. 两个字符串的删除操作 - DP可视化</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6ee7b7, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 28px;
+    line-height: 1.8;
+  }
+
+  .main-layout {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+  }
+
+  .left-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  .card {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .string-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .string-row:last-child { margin-bottom: 0; }
+
+  .string-label {
+    font-size: 13px;
+    font-weight: 700;
+    min-width: 56px;
+    text-align: right;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .string-label.lw1 { color: #f59e0b; }
+  .string-label.lw2 { color: #a78bfa; }
+
+  .string-display { display: flex; gap: 6px; }
+
+  .char-box {
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700;
+    border-radius: 12px;
+    background: #252547;
+    border: 2px solid #3a3a6a;
+    transition: all 0.35s ease;
+  }
+
+  .char-box.hl-w1 {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+  }
+
+  .char-box.hl-w2 {
+    border-color: #a78bfa;
+    background: rgba(167, 139, 250, 0.15);
+    box-shadow: 0 0 16px rgba(167, 139, 250, 0.3);
+  }
+
+  .char-box.hl-match {
+    border-color: #34d399 !important;
+    background: rgba(52, 211, 153, 0.18) !important;
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.3) !important;
+  }
+
+  .char-box.hl-delete {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    opacity: 0.45;
+    position: relative;
+  }
+
+  .char-box.hl-delete::after {
+    content: '';
+    position: absolute;
+    width: 70%; height: 3px;
+    background: #ef4444;
+    border-radius: 2px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-12deg);
+  }
+
+  .char-box.hl-keep {
+    border-color: #34d399;
+    background: rgba(52, 211, 153, 0.18);
+    box-shadow: 0 0 14px rgba(52, 211, 153, 0.25);
+  }
+
+  .char-indices {
+    display: flex; gap: 6px;
+    margin-left: 68px;
+  }
+
+  .char-idx {
+    width: 48px; text-align: center;
+    font-size: 11px; color: #6b7280;
+  }
+
+  .dp-table-wrapper {
+    display: flex; justify-content: center;
+    overflow-x: auto; padding: 4px;
+  }
+
+  table.dp-table { border-collapse: separate; border-spacing: 4px; }
+
+  .dp-table th {
+    width: 48px; height: 28px;
+    font-size: 13px; font-weight: 600;
+    color: #9ca3af; text-align: center;
+  }
+
+  .dp-table th.corner { width: 56px; }
+
+  .dp-table th.col-header span { display: inline-block; padding: 2px 0; }
+  .dp-table th.row-header { text-align: right; padding-right: 8px; }
+
+  .dp-cell {
+    width: 48px; height: 48px;
+    text-align: center; vertical-align: middle;
+    border-radius: 10px;
+    font-size: 16px; font-weight: 700;
+    background: #1e1e3a;
+    border: 2px solid transparent;
+    transition: all 0.35s ease;
+  }
+
+  .dp-cell.inactive { background: #141428; color: #3a3a5a; }
+
+  .dp-cell.cell-zero {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+  }
+
+  .dp-cell.cell-pos {
+    background: rgba(56, 189, 248, 0.10);
+    color: #38bdf8;
+  }
+
+  .dp-cell.cell-pos-high {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  .dp-cell.current {
+    border-color: #facc15 !important;
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+    animation: pulse-cur 1.2s ease-in-out infinite;
+  }
+
+  .dp-cell.dependency {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+  }
+
+  .dp-cell.trace-path {
+    border-color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.18) !important;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.3);
+    color: #fbbf24 !important;
+  }
+
+  @keyframes pulse-cur {
+    0%, 100% { box-shadow: 0 0 16px rgba(250, 204, 21, 0.3); }
+    50% { box-shadow: 0 0 28px rgba(250, 204, 21, 0.55); }
+  }
+
+  .controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.15); }
+  .btn-secondary { background: #252547; color: #e0e0e0; border: 1px solid #3a3a6a; }
+  .btn-secondary:hover { background: #2f2f5a; }
+  .btn-reset { background: #3a1a1a; color: #f87171; border: 1px solid #5a2a2a; }
+  .btn-reset:hover { background: #4a2020; }
+
+  .step-info { font-size: 13px; color: #9ca3af; min-width: 90px; text-align: center; }
+
+  .speed-control { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #9ca3af; }
+  .speed-control input[type="range"] { width: 80px; accent-color: #6366f1; }
+
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  .explanation { font-size: 14px; line-height: 1.8; min-height: 80px; }
+
+  .explanation .code-like {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #252547; padding: 2px 7px; border-radius: 5px;
+    font-size: 13px; color: #a5b4fc;
+  }
+
+  .explanation .val-match { color: #34d399; font-weight: 700; }
+  .explanation .val-nomatch { color: #ef4444; font-weight: 700; }
+  .explanation .highlight { color: #facc15; font-weight: 600; }
+
+  .counter-display { text-align: center; padding: 8px; }
+
+  .counter-number {
+    font-size: 52px; font-weight: 800;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+
+  .counter-label { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+
+  .common-string-display {
+    display: flex; gap: 6px; justify-content: center;
+    margin-top: 10px; min-height: 40px; align-items: center;
+  }
+
+  .common-char-box {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #34d399;
+    border-radius: 8px;
+    background: rgba(52, 211, 153, 0.15);
+    border: 2px solid #34d399;
+    animation: pop-in 0.35s ease;
+  }
+
+  @keyframes pop-in {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .result-box {
+    font-size: 14px; line-height: 2.2;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    text-align: center; color: #9ca3af;
+  }
+
+  .result-box .rb-val { color: #34d399; font-weight: 700; }
+  .result-box .rb-ans {
+    font-size: 26px; font-weight: 800; color: #f59e0b;
+  }
+
+  .dep-arrow-info {
+    text-align: center; font-size: 13px;
+    color: #38bdf8; min-height: 20px; margin-top: 6px;
+  }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+  }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9ca3af; }
+
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; border: 2px solid; }
+
+  .legend-dot.lg-cur { border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
+  .legend-dot.lg-zero { border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.15); }
+  .legend-dot.lg-low { border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.10); }
+  .legend-dot.lg-high { border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.15); }
+  .legend-dot.lg-dep { border-color: #38bdf8; background: rgba(56, 189, 248, 0.12); }
+  .legend-dot.lg-path { border-color: #f59e0b; background: rgba(245, 158, 11, 0.15); }
+
+  @media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } }
+
+  /* ===== Practice Section ===== */
+  .practice-divider {
+    max-width: 1160px; margin: 60px auto 0;
+    border: none; border-top: 1px solid #2a2a4a;
+  }
+
+  .practice-section { max-width: 1160px; margin: 40px auto 40px; }
+
+  .practice-input-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+
+  .practice-input-row label { font-size: 15px; color: #9ca3af; }
+
+  .practice-input-row input[type="text"] {
+    background: #1a1a2e; border: 2px solid #3a3a6a; border-radius: 10px;
+    padding: 10px 14px; font-size: 18px; font-weight: 700; color: #e0e0e0;
+    letter-spacing: 3px; width: 120px; text-align: center;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    outline: none; transition: border-color 0.3s;
+  }
+
+  .practice-input-row input[type="text"]:focus { border-color: #6366f1; }
+
+  .number-buttons {
+    display: flex; gap: 8px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 16px;
+  }
+
+  .btn-num {
+    width: 46px; height: 46px;
+    border: 2px solid #3a3a6a; border-radius: 12px;
+    font-size: 20px; font-weight: 700; cursor: pointer;
+    transition: all 0.25s; font-family: inherit;
+    background: #252547; color: #e0e0e0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .btn-num:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #6366f1;
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-num:active:not(:disabled) { transform: scale(0.96); }
+  .btn-num:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .feedback-area {
+    min-height: 20px; padding: 12px 16px; border-radius: 12px;
+    font-size: 14px; line-height: 1.7; transition: all 0.3s;
+  }
+
+  .feedback-correct {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3); color: #34d399;
+  }
+
+  .feedback-wrong {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;
+  }
+
+  .practice-progress { display: flex; align-items: center; gap: 14px; }
+
+  .progress-bar { flex: 1; height: 10px; background: #252547; border-radius: 5px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #f59e0b, #34d399);
+    border-radius: 5px; transition: width 0.5s ease;
+  }
+
+  .score-display { display: flex; justify-content: space-around; text-align: center; }
+
+  .score-item { display: flex; flex-direction: column; gap: 4px; }
+  .score-num { font-size: 36px; font-weight: 800; line-height: 1; }
+  .score-label { font-size: 13px; color: #9ca3af; }
+
+  .btn-continue {
+    display: inline-block; margin-top: 10px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: filter 0.2s;
+  }
+
+  .btn-continue:hover { filter: brightness(1.15); }
+
+  .practice-complete { text-align: center; padding: 20px 0; }
+
+  .practice-complete .complete-title {
+    font-size: 22px; font-weight: 700;
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+
+  .practice-complete .complete-stats {
+    font-size: 15px; color: #9ca3af; line-height: 2;
+  }
+
+  .rule-list { font-size: 13px; line-height: 2.4; color: #d1d5db; }
+
+  .rule-num {
+    display: inline-block; width: 22px; height: 22px;
+    line-height: 22px; text-align: center; border-radius: 6px;
+    background: #252547; font-size: 12px; font-weight: 700;
+    color: #9ca3af; margin-right: 6px;
+  }
+
+  .keyboard-hint {
+    text-align: center; font-size: 12px; color: #4b5563; margin-top: 10px;
+  }
+
+  .keyboard-hint kbd {
+    background: #252547; padding: 2px 8px; border-radius: 4px;
+    font-family: 'SF Mono', monospace; font-size: 12px;
+    border: 1px solid #3a3a6a; color: #9ca3af;
+  }
+
+  @keyframes shake-it {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .shake { animation: shake-it 0.4s ease; }
+
+  @keyframes pop-cell {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop-cell 0.4s ease; }
+
+  .delete-vis {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 12px; padding: 14px;
+    background: #141428; border-radius: 12px;
+  }
+
+  .delete-vis-row {
+    display: flex; align-items: center; gap: 8px; font-size: 14px;
+  }
+
+  .delete-vis-label {
+    min-width: 50px; font-weight: 600; font-size: 12px;
+    font-family: 'SF Mono', monospace;
+  }
+
+  .dv-char {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    font-weight: 700; font-size: 16px;
+  }
+
+  .dv-keep {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3);
+  }
+
+  .dv-del {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+
+  .dv-arrow { color: #6b7280; font-size: 16px; }
+
+  .dv-result {
+    display: inline-flex; gap: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>583. 两个字符串的删除操作 — 动态规划可视化</h1>
+<p class="subtitle">
+  核心思路：dp[i][j] 表示 word1 前 i 个字符与 word2 前 j 个字符想要达到相等，所需删除元素的最少次数<br>
+  演示输入：word1 = "sea" &nbsp;|&nbsp; word2 = "eat" &nbsp;|&nbsp; 相等时 dp[i][j] = dp[i-1][j-1]，不等时 dp[i][j] = min(dp[i-1][j]+1, dp[i][j-1]+1)
+</p>
+
+<div class="main-layout">
+  <div class="left-panel">
+
+    <div class="card">
+      <div class="card-title">两个字符串</div>
+      <div class="string-row">
+        <span class="string-label lw1">word1</span>
+        <div class="string-display" id="w1Display"></div>
+      </div>
+      <div class="char-indices" id="w1Indices"></div>
+      <div class="string-row" style="margin-top:6px;">
+        <span class="string-label lw2">word2</span>
+        <div class="string-display" id="w2Display"></div>
+      </div>
+      <div class="char-indices" id="w2Indices"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DP 表（dp[i][j] = 最少删除次数）</div>
+      <div class="dp-table-wrapper">
+        <table class="dp-table" id="dpTable"></table>
+      </div>
+      <div class="dep-arrow-info" id="depInfo"></div>
+      <div class="legend" style="margin-top:14px;">
+        <div class="legend-item"><div class="legend-dot lg-cur"></div>当前</div>
+        <div class="legend-item"><div class="legend-dot lg-zero"></div>值 = 0</div>
+        <div class="legend-item"><div class="legend-dot lg-low"></div>值 1-2</div>
+        <div class="legend-item"><div class="legend-dot lg-high"></div>值 ≥ 3</div>
+        <div class="legend-item"><div class="legend-dot lg-dep"></div>依赖项</div>
+        <div class="legend-item"><div class="legend-dot lg-path"></div>回溯路径</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <button class="btn btn-reset" onclick="resetVis()">重置</button>
+        <button class="btn btn-secondary" onclick="prevStep()">◀ 上一步</button>
+        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">▶ 播放</button>
+        <button class="btn btn-secondary" onclick="nextStep()">下一步 ▶</button>
+        <span class="step-info" id="stepInfo">0 / 0</span>
+        <div class="speed-control">
+          <span>速度</span>
+          <input type="range" id="speedSlider" min="1" max="10" value="5">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+
+    <div class="card">
+      <div class="card-title">当前步骤说明</div>
+      <div class="explanation" id="explanation">
+        点击 <strong>播放</strong> 或 <strong>下一步</strong> 开始演示算法执行过程。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">最少删除次数</div>
+      <div class="counter-display">
+        <div class="counter-number" id="ansNum">—</div>
+        <div class="counter-label">dp[m][n] 的值即为答案</div>
+      </div>
+      <div class="common-string-display" id="commonStringDisplay">
+        <span style="color:#6b7280;font-size:13px;">待计算...</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">删除方案</div>
+      <div class="result-box" id="resultBox">
+        <span class="code-like">dp[m][n]</span> = <span class="rb-ans">?</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="practice-divider">
+<div class="practice-section">
+  <h1>动手练习</h1>
+  <p class="subtitle">轮到你了！手动填写 DP 表的每一步，巩固对删除操作 DP 思路的理解 &nbsp;|&nbsp; 键盘：数字键选择答案，Enter 继续</p>
+
+  <div class="practice-input-row">
+    <label>word1：</label>
+    <input type="text" id="pInput1" value="abcd" maxlength="5" placeholder="1-5字符">
+    <label>word2：</label>
+    <input type="text" id="pInput2" value="ace" maxlength="5" placeholder="1-5字符">
+    <button class="btn btn-primary" onclick="startPractice()">开始练习</button>
+  </div>
+
+  <div class="main-layout" id="practiceArea" style="display:none;">
+    <div class="left-panel">
+      <div class="card">
+        <div class="card-title">练习字符串</div>
+        <div class="string-row">
+          <span class="string-label lw1">word1</span>
+          <div class="string-display" id="pw1Display"></div>
+        </div>
+        <div class="char-indices" id="pw1Indices"></div>
+        <div class="string-row" style="margin-top:6px;">
+          <span class="string-label lw2">word2</span>
+          <div class="string-display" id="pw2Display"></div>
+        </div>
+        <div class="char-indices" id="pw2Indices"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">DP 表 — 请填写每个格子</div>
+        <div class="dp-table-wrapper">
+          <table class="dp-table" id="pDpTable"></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="practice-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <span class="step-info" id="progressText">0 / 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="card">
+        <div class="card-title">算法规则速查</div>
+        <div class="rule-list">
+          <div><span class="rule-num">1</span>若 <span class="code-like">word1[i-1] === word2[j-1]</span></div>
+          <div style="margin-left:30px;color:#34d399;">dp[i][j] = dp[i-1][j-1]</div>
+          <div style="margin-top:6px;"><span class="rule-num">2</span>若 <span class="code-like">word1[i-1] !== word2[j-1]</span></div>
+          <div style="margin-left:30px;color:#ef4444;">dp[i][j] = min(dp[i-1][j] + 1, dp[i][j-1] + 1)</div>
+          <div style="margin-top:6px;"><span class="rule-num">3</span>边界：<span class="code-like">dp[i][0] = i，dp[0][j] = j</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">当前任务</div>
+        <div class="explanation" id="pQuestion">点击「开始练习」生成题目。</div>
+      </div>
+
+      <div class="card" id="answerCard">
+        <div class="card-title">你的答案</div>
+        <div class="number-buttons" id="numBtns"></div>
+        <div id="pFeedback" class="feedback-area"></div>
+        <div class="keyboard-hint">键盘：<kbd>0</kbd>-<kbd>9</kbd> 选数字 &nbsp; <kbd>Enter</kbd> 继续</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">成绩统计</div>
+        <div class="score-display">
+          <div class="score-item">
+            <span class="score-num" id="scoreCorrect" style="color:#34d399">0</span>
+            <span class="score-label">正确</span>
+          </div>
+          <div class="score-item">
+            <span class="score-num" id="scoreWrong" style="color:#ef4444">0</span>
+            <span class="score-label">错误</span>
+          </div>
+          <div class="score-item">
+            <span class="score-num" id="scoreStreak" style="color:#facc15">0</span>
+            <span class="score-label">连对</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== DEMO SCRIPT ======================== -->
+<script>
+var W1 = "sea";
+var W2 = "eat";
+var M = W1.length;
+var N = W2.length;
+
+var steps = [];
+var currentStep = -1;
+var playing = false;
+var playTimer = null;
+
+function deepCopy(arr) { return arr.map(function(r) { return r.slice(); }); }
+
+function tracebackDeletions(dp, w1, w2) {
+  var m = w1.length, n = w2.length;
+  var i = m, j = n;
+  var w1Keep = {}, w2Keep = {};
+  var pathCells = [];
+
+  while (i > 0 && j > 0) {
+    if (w1[i - 1] === w2[j - 1]) {
+      w1Keep[i - 1] = true;
+      w2Keep[j - 1] = true;
+      pathCells.push([i, j]);
+      i--; j--;
+    } else if (dp[i - 1][j] <= dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+
+  return { w1Keep: w1Keep, w2Keep: w2Keep, pathCells: pathCells };
+}
+
+function generateSteps() {
+  var dp = [];
+  for (var r = 0; r <= M; r++) {
+    dp[r] = [];
+    for (var c = 0; c <= N; c++) dp[r][c] = null;
+  }
+  steps = [];
+
+  steps.push({
+    type: 'init', dp: deepCopy(dp),
+    ci: -1, cj: -1, deps: [],
+    text: '初始化 DP 表，大小为 <span class="code-like">(' + (M + 1) + ') × (' + (N + 1) + ')</span>。<br><br>' +
+      '<span class="highlight">dp[i][j]</span> 表示以 i-1 为结尾的字符串 word1，和以 j-1 为结尾的字符串 word2，想要达到相等，所需要删除元素的最少次数。<br><br>' +
+      '本题两个字符串都可以删除，不等时有三种情况：① 删 word1[i-1] ② 删 word2[j-1] ③ 同时删两个。<br>' +
+      '由于 ③ 总是 ≥ min(①, ②)，所以递推公式可简化为取 ①② 的最小值。'
+  });
+
+  for (var i = 0; i <= M; i++) dp[i][0] = i;
+  for (var j = 0; j <= N; j++) dp[0][j] = j;
+
+  steps.push({
+    type: 'base', dp: deepCopy(dp),
+    ci: -1, cj: -1, deps: [],
+    text: '<span class="highlight">边界条件</span>：<br><br>' +
+      '<span class="code-like">dp[i][0] = i</span>：word1 的前 i 个字符要与空字符串相等，需要删除 i 个字符。<br>' +
+      '<span class="code-like">dp[0][j] = j</span>：空字符串要与 word2 的前 j 个字符相等，需要删除 j 个字符。<br><br>' +
+      '例如 <span class="code-like">dp[3][0] = 3</span>：把 "sea" 变成 "" 需要删除 3 次。'
+  });
+
+  for (var i = 1; i <= M; i++) {
+    for (var j = 1; j <= N; j++) {
+      var text = '';
+      var deps = [];
+
+      text += "比较 <span class=\"code-like\">word1[" + (i - 1) + "] = '" + W1[i - 1] + "'</span> 与 " +
+        "<span class=\"code-like\">word2[" + (j - 1) + "] = '" + W2[j - 1] + "'</span>：";
+
+      if (W1[i - 1] === W2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+        deps = [[i - 1, j - 1]];
+        text += '<span class="val-match">相等 ✓</span><br><br>';
+        text += '字符相同，不需要删除！直接继承左上角的值。<br>';
+        text += '<span class="code-like">dp[' + i + '][' + j + ']</span> = ' +
+          '<span class="code-like">dp[' + (i - 1) + '][' + (j - 1) + ']</span> = ' +
+          '<span class="val-match">' + dp[i][j] + '</span>';
+      } else {
+        var delW1 = dp[i - 1][j] + 1;
+        var delW2 = dp[i][j - 1] + 1;
+        dp[i][j] = Math.min(delW1, delW2);
+        deps = [[i - 1, j], [i, j - 1]];
+        text += '<span class="val-nomatch">不相等 ✗</span><br><br>';
+        text += '字符不同，有两种删除方案（取最小值）：<br>';
+        text += '① 删 word1[' + (i - 1) + ']：<span class="code-like">dp[' + (i - 1) + '][' + j + ']</span> + 1 = ' + dp[i - 1][j] + ' + 1 = ' + delW1 + '<br>';
+        text += '② 删 word2[' + (j - 1) + ']：<span class="code-like">dp[' + i + '][' + (j - 1) + ']</span> + 1 = ' + dp[i][j - 1] + ' + 1 = ' + delW2 + '<br>';
+        text += '<span class="code-like">dp[' + i + '][' + j + ']</span> = min(' + delW1 + ', ' + delW2 + ') = <span class="val-match">' + dp[i][j] + '</span>';
+      }
+
+      steps.push({
+        type: 'fill', dp: deepCopy(dp),
+        ci: i, cj: j, deps: deps,
+        text: text
+      });
+    }
+  }
+
+  var ans = dp[M][N];
+  var traceInfo = tracebackDeletions(dp, W1, W2);
+  var w1DelCount = 0, w2DelCount = 0;
+  for (var k = 0; k < M; k++) { if (!traceInfo.w1Keep[k]) w1DelCount++; }
+  for (var k2 = 0; k2 < N; k2++) { if (!traceInfo.w2Keep[k2]) w2DelCount++; }
+
+  var commonStr = '';
+  for (var k3 = 0; k3 < M; k3++) { if (traceInfo.w1Keep[k3]) commonStr += W1[k3]; }
+
+  var doneText = '算法执行完毕！<br><br>';
+  doneText += '最少删除次数 = <span class="code-like">dp[' + M + '][' + N + ']</span> = <span class="val-match">' + ans + '</span><br><br>';
+
+  doneText += '<div class="delete-vis">';
+  doneText += '<div class="delete-vis-row"><span class="delete-vis-label lw1">word1:</span><span class="dv-result">';
+  for (var d1 = 0; d1 < M; d1++) {
+    doneText += '<span class="dv-char ' + (traceInfo.w1Keep[d1] ? 'dv-keep' : 'dv-del') + '">' + W1[d1] + '</span>';
+  }
+  doneText += '</span><span class="dv-arrow">→</span> 删除 <span class="val-nomatch">' + w1DelCount + '</span> 个</div>';
+
+  doneText += '<div class="delete-vis-row"><span class="delete-vis-label lw2">word2:</span><span class="dv-result">';
+  for (var d2 = 0; d2 < N; d2++) {
+    doneText += '<span class="dv-char ' + (traceInfo.w2Keep[d2] ? 'dv-keep' : 'dv-del') + '">' + W2[d2] + '</span>';
+  }
+  doneText += '</span><span class="dv-arrow">→</span> 删除 <span class="val-nomatch">' + w2DelCount + '</span> 个</div>';
+  doneText += '</div>';
+
+  if (commonStr.length > 0) {
+    doneText += '<br>删除后两个字符串均变为 "<span class="val-match">' + commonStr + '</span>"';
+  }
+
+  steps.push({
+    type: 'done', dp: deepCopy(dp),
+    ci: -1, cj: -1, deps: [],
+    traceInfo: traceInfo, ans: ans, commonStr: commonStr,
+    w1DelCount: w1DelCount, w2DelCount: w2DelCount,
+    text: doneText
+  });
+}
+
+function buildUI() {
+  var w1d = document.getElementById('w1Display');
+  var w2d = document.getElementById('w2Display');
+  var w1i = document.getElementById('w1Indices');
+  var w2i = document.getElementById('w2Indices');
+  w1d.innerHTML = ''; w2d.innerHTML = '';
+  w1i.innerHTML = ''; w2i.innerHTML = '';
+
+  for (var k = 0; k < M; k++) {
+    var b = document.createElement('div');
+    b.className = 'char-box'; b.id = 'w1c-' + k; b.textContent = W1[k];
+    w1d.appendChild(b);
+    var idx = document.createElement('div');
+    idx.className = 'char-idx'; idx.textContent = k;
+    w1i.appendChild(idx);
+  }
+
+  for (var k2 = 0; k2 < N; k2++) {
+    var b2 = document.createElement('div');
+    b2.className = 'char-box'; b2.id = 'w2c-' + k2; b2.textContent = W2[k2];
+    w2d.appendChild(b2);
+    var idx2 = document.createElement('div');
+    idx2.className = 'char-idx'; idx2.textContent = k2;
+    w2i.appendChild(idx2);
+  }
+
+  var table = document.getElementById('dpTable');
+  table.innerHTML = '';
+
+  var hrow = document.createElement('tr');
+  var corner = document.createElement('th');
+  corner.className = 'corner'; corner.textContent = 'i \\ j';
+  hrow.appendChild(corner);
+  for (var j = 0; j <= N; j++) {
+    var th = document.createElement('th');
+    th.className = 'col-header';
+    if (j === 0) {
+      th.innerHTML = '<span style="color:#6b7280;">""</span>';
+    } else {
+      th.innerHTML = '<span>' + j + '<br><small style="color:#a78bfa;">' + W2[j - 1] + '</small></span>';
+    }
+    hrow.appendChild(th);
+  }
+  table.appendChild(hrow);
+
+  for (var i = 0; i <= M; i++) {
+    var row = document.createElement('tr');
+    var rh = document.createElement('th');
+    rh.className = 'row-header';
+    if (i === 0) {
+      rh.innerHTML = '<span style="color:#6b7280;">""</span>';
+    } else {
+      rh.innerHTML = '<span style="color:#f59e0b;">' + W1[i - 1] + '</span> <small style="color:#6b7280;">' + i + '</small>';
+    }
+    row.appendChild(rh);
+    for (var j2 = 0; j2 <= N; j2++) {
+      var td = document.createElement('td');
+      td.className = 'dp-cell inactive';
+      td.id = 'cell-' + i + '-' + j2;
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+  }
+}
+
+function cellClass(val) {
+  if (val === 0) return 'cell-zero';
+  if (val <= 2) return 'cell-pos';
+  return 'cell-pos-high';
+}
+
+function renderStep(idx) {
+  if (idx < 0 || idx >= steps.length) return;
+  var step = steps[idx];
+  currentStep = idx;
+
+  for (var k = 0; k < M; k++) {
+    document.getElementById('w1c-' + k).className = 'char-box';
+  }
+  for (var k2 = 0; k2 < N; k2++) {
+    document.getElementById('w2c-' + k2).className = 'char-box';
+  }
+
+  if (step.type === 'fill' && step.ci >= 1 && step.cj >= 1) {
+    document.getElementById('w1c-' + (step.ci - 1)).classList.add('hl-w1');
+    document.getElementById('w2c-' + (step.cj - 1)).classList.add('hl-w2');
+    if (W1[step.ci - 1] === W2[step.cj - 1]) {
+      document.getElementById('w1c-' + (step.ci - 1)).classList.add('hl-match');
+      document.getElementById('w2c-' + (step.cj - 1)).classList.add('hl-match');
+    }
+  }
+
+  if (step.type === 'done' && step.traceInfo) {
+    for (var a = 0; a < M; a++) {
+      document.getElementById('w1c-' + a).classList.add(step.traceInfo.w1Keep[a] ? 'hl-keep' : 'hl-delete');
+    }
+    for (var b = 0; b < N; b++) {
+      document.getElementById('w2c-' + b).classList.add(step.traceInfo.w2Keep[b] ? 'hl-keep' : 'hl-delete');
+    }
+  }
+
+  var depSet = {};
+  for (var d = 0; d < step.deps.length; d++) {
+    depSet[step.deps[d][0] + ',' + step.deps[d][1]] = true;
+  }
+
+  var pathSet = {};
+  if (step.type === 'done' && step.traceInfo) {
+    for (var p = 0; p < step.traceInfo.pathCells.length; p++) {
+      var pc = step.traceInfo.pathCells[p];
+      pathSet[pc[0] + ',' + pc[1]] = true;
+    }
+  }
+
+  for (var i = 0; i <= M; i++) {
+    for (var j = 0; j <= N; j++) {
+      var cell = document.getElementById('cell-' + i + '-' + j);
+      var val = step.dp[i][j];
+
+      cell.className = 'dp-cell';
+
+      if (val === null) {
+        cell.classList.add('inactive');
+        cell.textContent = '';
+      } else {
+        cell.classList.add(cellClass(val));
+        cell.textContent = val;
+      }
+
+      if (step.ci === i && step.cj === j) {
+        cell.classList.add('current');
+      }
+
+      var key = i + ',' + j;
+      if (depSet[key]) {
+        cell.classList.add('dependency');
+      }
+      if (pathSet[key]) {
+        cell.classList.add('trace-path');
+      }
+    }
+  }
+
+  var depInfo = document.getElementById('depInfo');
+  if (step.deps.length === 1) {
+    var di = step.deps[0][0], dj = step.deps[0][1];
+    depInfo.innerHTML = '↖ 依赖: dp[' + di + '][' + dj + '] = ' + step.dp[di][dj];
+  } else if (step.deps.length === 2) {
+    var dd1 = step.deps[0], dd2 = step.deps[1];
+    depInfo.innerHTML = '↑ dp[' + dd1[0] + '][' + dd1[1] + '] = ' + step.dp[dd1[0]][dd1[1]] +
+      ' &nbsp;&nbsp; ← dp[' + dd2[0] + '][' + dd2[1] + '] = ' + step.dp[dd2[0]][dd2[1]];
+  } else {
+    depInfo.innerHTML = '';
+  }
+
+  document.getElementById('explanation').innerHTML = step.text;
+  document.getElementById('stepInfo').textContent = idx + ' / ' + (steps.length - 1);
+
+  if (step.type === 'done') {
+    document.getElementById('ansNum').textContent = step.ans;
+    var commonDisp = document.getElementById('commonStringDisplay');
+    if (step.commonStr.length > 0) {
+      commonDisp.innerHTML = step.commonStr.split('').map(function(ch) {
+        return '<div class="common-char-box">' + ch + '</div>';
+      }).join('');
+    } else {
+      commonDisp.innerHTML = '<span style="color:#6b7280;font-size:13px;">无公共字符</span>';
+    }
+    document.getElementById('resultBox').innerHTML =
+      'word1 删除 <span class="rb-val">' + step.w1DelCount + '</span> 个字符<br>' +
+      'word2 删除 <span class="rb-val">' + step.w2DelCount + '</span> 个字符<br>' +
+      '总计 = <span class="rb-ans">' + step.ans + '</span>';
+  } else {
+    document.getElementById('ansNum').textContent = '—';
+    document.getElementById('commonStringDisplay').innerHTML = '<span style="color:#6b7280;font-size:13px;">待计算...</span>';
+    document.getElementById('resultBox').innerHTML =
+      '<span class="code-like">dp[' + M + '][' + N + ']</span> = <span class="rb-ans">?</span>';
+  }
+}
+
+function nextStep() {
+  if (currentStep < steps.length - 1) renderStep(currentStep + 1);
+  else if (playing) stopPlay();
+}
+
+function prevStep() {
+  if (currentStep > 0) renderStep(currentStep - 1);
+}
+
+function togglePlay() {
+  if (playing) stopPlay(); else startPlay();
+}
+
+function startPlay() {
+  if (currentStep >= steps.length - 1) renderStep(0);
+  playing = true;
+  document.getElementById('playBtn').textContent = '⏸ 暂停';
+  scheduleNext();
+}
+
+function stopPlay() {
+  playing = false;
+  document.getElementById('playBtn').textContent = '▶ 播放';
+  clearTimeout(playTimer);
+}
+
+function scheduleNext() {
+  if (!playing) return;
+  var speed = document.getElementById('speedSlider').value;
+  var delay = 1800 - speed * 150;
+  playTimer = setTimeout(function() {
+    nextStep();
+    if (playing && currentStep < steps.length - 1) scheduleNext();
+    else stopPlay();
+  }, delay);
+}
+
+function resetVis() {
+  stopPlay();
+  currentStep = -1;
+  renderStep(0);
+}
+
+generateSteps();
+buildUI();
+renderStep(0);
+</script>
+
+<!-- ======================== PRACTICE SCRIPT ======================== -->
+<script>
+var prac = {
+  w1: '', w2: '', m: 0, n: 0,
+  dp: [], steps: [],
+  currentIdx: 0,
+  maxVal: 0,
+  score: { correct: 0, wrong: 0, streak: 0 },
+  waiting: false
+};
+
+function startPractice() {
+  var r1 = document.getElementById('pInput1').value.trim().toLowerCase();
+  var r2 = document.getElementById('pInput2').value.trim().toLowerCase();
+  if (!r1 || r1.length < 1 || r1.length > 5) { alert('word1 请输入 1-5 个字符'); return; }
+  if (!r2 || r2.length < 1 || r2.length > 5) { alert('word2 请输入 1-5 个字符'); return; }
+
+  prac.w1 = r1; prac.w2 = r2;
+  prac.m = r1.length; prac.n = r2.length;
+  prac.currentIdx = 0;
+  prac.score = { correct: 0, wrong: 0, streak: 0 };
+  prac.waiting = false;
+
+  var m = prac.m, n = prac.n;
+  prac.dp = [];
+  for (var i = 0; i <= m; i++) {
+    prac.dp[i] = [];
+    for (var j = 0; j <= n; j++) prac.dp[i][j] = 0;
+  }
+
+  for (var i2 = 0; i2 <= m; i2++) prac.dp[i2][0] = i2;
+  for (var j2 = 0; j2 <= n; j2++) prac.dp[0][j2] = j2;
+
+  prac.steps = [];
+  for (var i3 = 1; i3 <= m; i3++) {
+    for (var j3 = 1; j3 <= n; j3++) {
+      if (r1[i3 - 1] === r2[j3 - 1]) {
+        prac.dp[i3][j3] = prac.dp[i3 - 1][j3 - 1];
+      } else {
+        prac.dp[i3][j3] = Math.min(prac.dp[i3 - 1][j3] + 1, prac.dp[i3][j3 - 1] + 1);
+      }
+      prac.steps.push({ i: i3, j: j3 });
+    }
+  }
+
+  prac.maxVal = m + n;
+
+  buildPracUI();
+  document.getElementById('practiceArea').style.display = '';
+  showPracStep();
+  updatePracScore();
+  document.querySelector('.practice-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function buildPracUI() {
+  var m = prac.m, n = prac.n, w1 = prac.w1, w2 = prac.w2;
+
+  var containers = [
+    ['pw1Display', 'pw1Indices', w1, 'pw1c-'],
+    ['pw2Display', 'pw2Indices', w2, 'pw2c-']
+  ];
+
+  for (var ci = 0; ci < containers.length; ci++) {
+    var dispEl = document.getElementById(containers[ci][0]);
+    var idxEl = document.getElementById(containers[ci][1]);
+    var str = containers[ci][2];
+    var prefix = containers[ci][3];
+    dispEl.innerHTML = ''; idxEl.innerHTML = '';
+    for (var k = 0; k < str.length; k++) {
+      var b = document.createElement('div');
+      b.className = 'char-box'; b.id = prefix + k; b.textContent = str[k];
+      dispEl.appendChild(b);
+      var idx = document.createElement('div');
+      idx.className = 'char-idx'; idx.textContent = k;
+      idxEl.appendChild(idx);
+    }
+  }
+
+  var table = document.getElementById('pDpTable');
+  table.innerHTML = '';
+  var hrow = document.createElement('tr');
+  var corner = document.createElement('th');
+  corner.className = 'corner'; corner.textContent = 'i \\ j';
+  hrow.appendChild(corner);
+  for (var j = 0; j <= n; j++) {
+    var th = document.createElement('th');
+    th.className = 'col-header';
+    if (j === 0) {
+      th.innerHTML = '<span style="color:#6b7280;">""</span>';
+    } else {
+      th.innerHTML = '<span>' + j + '<br><small style="color:#a78bfa;">' + w2[j - 1] + '</small></span>';
+    }
+    hrow.appendChild(th);
+  }
+  table.appendChild(hrow);
+
+  for (var i = 0; i <= m; i++) {
+    var row = document.createElement('tr');
+    var rh = document.createElement('th');
+    rh.className = 'row-header';
+    if (i === 0) {
+      rh.innerHTML = '<span style="color:#6b7280;">""</span>';
+    } else {
+      rh.innerHTML = '<span style="color:#f59e0b;">' + w1[i - 1] + '</span> <small style="color:#6b7280;">' + i + '</small>';
+    }
+    row.appendChild(rh);
+    for (var j2 = 0; j2 <= n; j2++) {
+      var td = document.createElement('td');
+      td.id = 'pcell-' + i + '-' + j2;
+      if (i === 0 || j2 === 0) {
+        var baseVal = (i === 0 && j2 === 0) ? 0 : (i === 0 ? j2 : i);
+        td.className = 'dp-cell ' + cellClass(baseVal);
+        td.textContent = baseVal;
+      } else {
+        td.className = 'dp-cell inactive';
+        td.textContent = '';
+      }
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+  }
+
+  buildNumButtons();
+}
+
+function buildNumButtons() {
+  var container = document.getElementById('numBtns');
+  container.innerHTML = '';
+  for (var v = 0; v <= prac.maxVal; v++) {
+    var btn = document.createElement('button');
+    btn.className = 'btn-num';
+    btn.textContent = v;
+    btn.disabled = true;
+    btn.setAttribute('data-val', v);
+    (function(val) {
+      btn.onclick = function() { submitPracAnswer(val); };
+    })(v);
+    container.appendChild(btn);
+  }
+}
+
+function enableNumButtons(enable) {
+  var btns = document.getElementById('numBtns').querySelectorAll('.btn-num');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].disabled = !enable;
+  }
+}
+
+function showPracStep() {
+  var idx = prac.currentIdx;
+  if (idx >= prac.steps.length) { showPracComplete(); return; }
+
+  var si = prac.steps[idx].i, sj = prac.steps[idx].j;
+  var w1 = prac.w1, w2 = prac.w2, m = prac.m, n = prac.n;
+
+  for (var k = 0; k < m; k++) document.getElementById('pw1c-' + k).className = 'char-box';
+  for (var k2 = 0; k2 < n; k2++) document.getElementById('pw2c-' + k2).className = 'char-box';
+
+  document.getElementById('pw1c-' + (si - 1)).classList.add('hl-w1');
+  document.getElementById('pw2c-' + (sj - 1)).classList.add('hl-w2');
+  if (w1[si - 1] === w2[sj - 1]) {
+    document.getElementById('pw1c-' + (si - 1)).classList.add('hl-match');
+    document.getElementById('pw2c-' + (sj - 1)).classList.add('hl-match');
+  }
+
+  for (var r = 1; r <= m; r++) {
+    for (var c = 1; c <= n; c++) {
+      var cl = document.getElementById('pcell-' + r + '-' + c);
+      cl.classList.remove('current', 'dependency', 'shake', 'pop');
+    }
+  }
+
+  document.getElementById('pcell-' + si + '-' + sj).classList.add('current');
+  document.getElementById('pcell-' + si + '-' + sj).textContent = '?';
+  document.getElementById('pcell-' + si + '-' + sj).className = 'dp-cell current';
+
+  if (w1[si - 1] === w2[sj - 1]) {
+    document.getElementById('pcell-' + (si - 1) + '-' + (sj - 1)).classList.add('dependency');
+  } else {
+    document.getElementById('pcell-' + (si - 1) + '-' + sj).classList.add('dependency');
+    document.getElementById('pcell-' + si + '-' + (sj - 1)).classList.add('dependency');
+  }
+
+  var q = '<span class="highlight">第 ' + (idx + 1) + ' 步（共 ' + prac.steps.length + ' 步）</span><br><br>';
+  q += '请计算：<span class="code-like">dp[' + si + '][' + sj + ']</span> = ?<br><br>';
+  q += "<span class=\"code-like\">word1[" + (si - 1) + "] = '" + w1[si - 1] + "'</span> vs ";
+  q += "<span class=\"code-like\">word2[" + (sj - 1) + "] = '" + w2[sj - 1] + "'</span>";
+
+  if (w1[si - 1] === w2[sj - 1]) {
+    q += ' → <span class="val-match">相等 ✓</span><br><br>';
+    q += '已知：<span class="code-like">dp[' + (si - 1) + '][' + (sj - 1) + ']</span> = ' +
+      '<span class="val-match">' + prac.dp[si - 1][sj - 1] + '</span>';
+  } else {
+    q += ' → <span class="val-nomatch">不相等 ✗</span><br><br>';
+    q += '已知：<span class="code-like">dp[' + (si - 1) + '][' + sj + ']</span> = ' +
+      '<span class="val-match">' + prac.dp[si - 1][sj] + '</span>';
+    q += '，<span class="code-like">dp[' + si + '][' + (sj - 1) + ']</span> = ' +
+      '<span class="val-match">' + prac.dp[si][sj - 1] + '</span>';
+  }
+
+  document.getElementById('pQuestion').innerHTML = q;
+  enableNumButtons(true);
+  document.getElementById('pFeedback').innerHTML = '';
+  document.getElementById('pFeedback').className = 'feedback-area';
+
+  document.getElementById('progressFill').style.width = (idx / prac.steps.length * 100) + '%';
+  document.getElementById('progressText').textContent = idx + ' / ' + prac.steps.length;
+}
+
+function submitPracAnswer(answer) {
+  if (prac.waiting) return;
+  if (prac.currentIdx >= prac.steps.length) return;
+
+  var si = prac.steps[prac.currentIdx].i;
+  var sj = prac.steps[prac.currentIdx].j;
+  var correct = prac.dp[si][sj];
+  var w1 = prac.w1, w2 = prac.w2;
+  var cell = document.getElementById('pcell-' + si + '-' + sj);
+
+  enableNumButtons(false);
+
+  if (answer === correct) {
+    prac.score.correct++;
+    prac.score.streak++;
+
+    cell.className = 'dp-cell ' + cellClass(correct) + ' pop';
+    cell.textContent = correct;
+
+    var fb = document.getElementById('pFeedback');
+    fb.className = 'feedback-area feedback-correct';
+    fb.innerHTML = '<strong>正确！</strong> dp[' + si + '][' + sj + '] = ' + correct;
+    updatePracScore();
+
+    setTimeout(function() { prac.currentIdx++; showPracStep(); }, 700);
+  } else {
+    prac.score.wrong++;
+    prac.score.streak = 0;
+
+    cell.className = 'dp-cell ' + cellClass(correct) + ' shake';
+    cell.textContent = correct;
+
+    var expl = '<strong>不正确！</strong> 正确答案是 <span style="color:#34d399;font-weight:700;">' + correct + '</span><br><br>';
+    if (w1[si - 1] === w2[sj - 1]) {
+      expl += "word1[" + (si - 1) + "]='" + w1[si - 1] + "' === word2[" + (sj - 1) + "]='" + w2[sj - 1] + "'，字符相等<br>";
+      expl += "dp[" + si + "][" + sj + "] = dp[" + (si - 1) + "][" + (sj - 1) + "] = " + correct;
+    } else {
+      var delW1 = prac.dp[si - 1][sj] + 1, delW2 = prac.dp[si][sj - 1] + 1;
+      expl += "word1[" + (si - 1) + "]='" + w1[si - 1] + "' !== word2[" + (sj - 1) + "]='" + w2[sj - 1] + "'，字符不等<br>";
+      expl += "① 删 word1[" + (si - 1) + "]：dp[" + (si - 1) + "][" + sj + "] + 1 = " + delW1 + "<br>";
+      expl += "② 删 word2[" + (sj - 1) + "]：dp[" + si + "][" + (sj - 1) + "] + 1 = " + delW2 + "<br>";
+      expl += "dp[" + si + "][" + sj + "] = min(" + delW1 + ", " + delW2 + ") = " + correct;
+    }
+    expl += '<br><button class="btn-continue" onclick="pracNext()">继续下一步 →</button>';
+
+    var fb2 = document.getElementById('pFeedback');
+    fb2.className = 'feedback-area feedback-wrong';
+    fb2.innerHTML = expl;
+    prac.waiting = true;
+    updatePracScore();
+  }
+}
+
+function pracNext() {
+  prac.waiting = false;
+  prac.currentIdx++;
+  showPracStep();
+}
+
+function updatePracScore() {
+  document.getElementById('scoreCorrect').textContent = prac.score.correct;
+  document.getElementById('scoreWrong').textContent = prac.score.wrong;
+  document.getElementById('scoreStreak').textContent = prac.score.streak;
+}
+
+function showPracComplete() {
+  var total = prac.steps.length;
+  var correct = prac.score.correct;
+  var rate = Math.round(correct / total * 100);
+  var m = prac.m, n = prac.n;
+  var ans = prac.dp[m][n];
+
+  for (var k = 0; k < m; k++) document.getElementById('pw1c-' + k).className = 'char-box';
+  for (var k2 = 0; k2 < n; k2++) document.getElementById('pw2c-' + k2).className = 'char-box';
+
+  for (var r = 1; r <= m; r++) {
+    for (var c = 1; c <= n; c++) {
+      var cl = document.getElementById('pcell-' + r + '-' + c);
+      cl.classList.remove('current', 'dependency');
+    }
+  }
+
+  var grade, gc;
+  if (rate === 100) { grade = '完美！你已完全掌握了删除操作的状态转移！'; gc = '#34d399'; }
+  else if (rate >= 80) { grade = '很棒！再练几次就能完全掌握！'; gc = '#34d399'; }
+  else if (rate >= 50) { grade = '不错，继续练习加深理解！'; gc = '#f59e0b'; }
+  else { grade = '加油！多练几次会越来越熟练的！'; gc = '#ef4444'; }
+
+  var commonStr = (function() {
+    var dp = prac.dp, w1 = prac.w1, w2 = prac.w2;
+    var ii = m, jj = n, chars = [];
+    while (ii > 0 && jj > 0) {
+      if (w1[ii - 1] === w2[jj - 1]) {
+        chars.unshift(w1[ii - 1]); ii--; jj--;
+      } else if (dp[ii - 1][jj] <= dp[ii][jj - 1]) {
+        ii--;
+      } else {
+        jj--;
+      }
+    }
+    return chars.join('');
+  })();
+
+  document.getElementById('pQuestion').innerHTML =
+    '<div class="practice-complete">' +
+    '<div class="complete-title">练习完成！</div>' +
+    '<div class="complete-stats">' +
+    'word1 = "' + prac.w1 + '"，word2 = "' + prac.w2 + '"<br>' +
+    '最少删除次数 = <strong style="color:#f59e0b">' + ans + '</strong><br>' +
+    '删除后公共部分 = "' + commonStr + '"<br><br>' +
+    '正确率：<strong style="color:' + gc + '">' + rate + '%</strong>（' + correct + ' / ' + total + '）<br>' +
+    '<span style="color:' + gc + '">' + grade + '</span></div>' +
+    '<br><button class="btn btn-primary" onclick="startPractice()">再来一次</button>' +
+    ' <button class="btn btn-secondary" onclick="document.getElementById(\'pInput1\').focus()">换个字符串</button>' +
+    '</div>';
+
+  enableNumButtons(false);
+  document.getElementById('pFeedback').innerHTML = '';
+  document.getElementById('pFeedback').className = 'feedback-area';
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressText').textContent = total + ' / ' + total;
+}
+
+document.getElementById('pInput1').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('pInput2').focus();
+});
+document.getElementById('pInput2').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') startPractice();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT') return;
+  if (document.getElementById('practiceArea').style.display === 'none') return;
+
+  if (prac.waiting && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    pracNext();
+    return;
+  }
+  if (prac.currentIdx >= prac.steps.length) return;
+
+  var btns = document.getElementById('numBtns').querySelectorAll('.btn-num');
+  if (btns.length > 0 && btns[0].disabled) return;
+
+  var num = parseInt(e.key);
+  if (!isNaN(num) && num >= 0 && num <= prac.maxVal) {
+    submitPracAnswer(num);
+  }
+});
+</script>
+
+</body>
+</html>

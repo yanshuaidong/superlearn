@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>115. 不同的子序列 - 动态规划教学可视化</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    --bg: #f4efe6;
+    --paper: rgba(255, 251, 245, 0.92);
+    --panel: #fffdf9;
+    --ink: #2d241d;
+    --muted: #786b5f;
+    --line: #ddcfbf;
+    --primary: #c96d42;
+    --primary-deep: #a84f28;
+    --teal: #1f8a8a;
+    --gold: #d19818;
+    --olive: #7f8f41;
+    --danger: #bb4d4d;
+    --shadow: 0 18px 48px rgba(98, 73, 47, 0.12);
+  }
+
+  body {
+    margin: 0;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(201, 109, 66, 0.18), transparent 28%),
+      radial-gradient(circle at top right, rgba(31, 138, 138, 0.14), transparent 24%),
+      linear-gradient(180deg, #f8f3ea 0%, #f2ebdf 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 18px 40px;
+  }
+
+  .page {
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .hero {
+    background: var(--paper);
+    border: 1px solid rgba(201, 109, 66, 0.18);
+    border-radius: 28px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+  }
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: 34px;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 980px;
+  }
+
+  .hero-tags, .mini-tags, .legend, .choice-group, .question-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .hero-tags { margin-top: 18px; }
+
+  .tag, .mini-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.76);
+  }
+
+  .tag strong, .mini-tag strong { color: var(--primary-deep); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+
+  .intro-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.15fr);
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid rgba(120, 107, 95, 0.18);
+    border-radius: 24px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+
+  .section-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+    padding: 6px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+
+  .section-desc {
+    margin: 0 0 16px;
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  .example-strip {
+    background: rgba(201, 109, 66, 0.08);
+    border: 1px dashed rgba(201, 109, 66, 0.35);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+
+  .string-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .string-label {
+    min-width: 86px;
+    font-weight: 700;
+    color: var(--primary-deep);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    border: 2px solid transparent;
+    background: #fff;
+    transition: 0.25s ease;
+  }
+
+  .chip.active-s {
+    border-color: var(--primary);
+    background: rgba(201, 109, 66, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .chip.active-t {
+    border-color: var(--teal);
+    background: rgba(31, 138, 138, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .code-meaning {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+  }
+
+  .meaning-box {
+    padding: 16px;
+    border-radius: 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  .meaning-box strong { color: var(--primary-deep); }
+
+  .problem-box {
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    line-height: 1.8;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .problem-box strong { color: var(--ink); }
+
+  .problem-box ul {
+    margin: 10px 0 0;
+    padding-left: 18px;
+  }
+
+  .code-panel {
+    background: #2a2019;
+    color: #f8efe6;
+    border-radius: 20px;
+    border: 1px solid rgba(201, 109, 66, 0.25);
+    overflow: auto;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .code-head-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f4d8c3;
+  }
+
+  .code-head-note {
+    font-size: 12px;
+    color: rgba(248, 239, 230, 0.72);
+  }
+
+  pre.code-block {
+    margin: 0;
+    padding: 18px;
+    font-size: 13px;
+    line-height: 1.8;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    white-space: pre;
+    overflow: auto;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 18px 0 14px;
+  }
+
+  button {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform 0.2s ease, filter 0.2s ease, background 0.2s ease;
+  }
+
+  button:hover { filter: brightness(1.03); }
+  button:active { transform: scale(0.97); }
+
+  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: #fff; }
+  .btn-soft { background: #f5e4d9; color: var(--primary-deep); }
+  .btn-neutral { background: #ede6dc; color: var(--ink); }
+
+  .speed-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--panel);
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  input[type="range"] { accent-color: var(--primary); }
+
+  .step-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .step-pill {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(31, 138, 138, 0.12);
+    color: var(--teal);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .step-title {
+    margin: 0 0 6px;
+    font-size: 20px;
+  }
+
+  .step-desc {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  .formula-box {
+    margin-top: 14px;
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(31, 138, 138, 0.08), rgba(201, 109, 66, 0.08));
+    border: 1px solid rgba(31, 138, 138, 0.14);
+  }
+
+  .formula-line {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .formula-line strong { color: var(--primary-deep); }
+
+  .dp-wrap {
+    overflow: auto;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 14px;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 6px;
+    margin: 0 auto;
+  }
+
+  th, td {
+    min-width: 56px;
+    height: 54px;
+    text-align: center;
+    border-radius: 14px;
+    position: relative;
+  }
+
+  th {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .corner {
+    background: transparent;
+    color: #ab9c8f;
+  }
+
+  .hdr-cell {
+    background: #f7f1e8;
+    border: 1px solid #eadbca;
+  }
+
+  .dp-cell {
+    background: #fffdfa;
+    border: 2px solid #e9dccd;
+    font-weight: 700;
+    font-size: 18px;
+    transition: 0.25s ease;
+  }
+
+  .dp-cell.filled { color: var(--ink); }
+  .dp-cell.current {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 4px rgba(209, 152, 24, 0.14);
+    transform: translateY(-2px);
+  }
+  .dp-cell.dep {
+    border-color: var(--teal);
+    background: rgba(31, 138, 138, 0.08);
+  }
+  .dp-cell.dep-alt {
+    border-color: var(--olive);
+    background: rgba(127, 143, 65, 0.09);
+  }
+  .dp-cell.answer {
+    background: rgba(201, 109, 66, 0.12);
+    border-color: var(--primary);
+  }
+  .dp-cell.init {
+    background: rgba(121, 143, 65, 0.12);
+    border-color: var(--olive);
+  }
+
+  .cell-note {
+    position: absolute;
+    right: 6px;
+    bottom: 4px;
+    font-size: 10px;
+    color: #9d8d7f;
+    font-weight: 600;
+  }
+
+  .legend { margin-top: 14px; }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .legend-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    border: 2px solid;
+  }
+
+  .sw-current { border-color: var(--gold); background: rgba(209, 152, 24, 0.12); }
+  .sw-dep { border-color: var(--teal); background: rgba(31, 138, 138, 0.08); }
+  .sw-dep-alt { border-color: var(--olive); background: rgba(127, 143, 65, 0.09); }
+  .sw-answer { border-color: var(--primary); background: rgba(201, 109, 66, 0.12); }
+
+  .reason-card, .practice-card, .prompt-card {
+    padding: 18px;
+    border-radius: 18px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+
+  .reason-card h3, .practice-card h3, .prompt-card h3 {
+    margin: 0 0 10px;
+    font-size: 17px;
+  }
+
+  .reason-card p, .practice-card p, .prompt-card p {
+    margin: 0;
+    line-height: 1.8;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .branch-box {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px dashed var(--line);
+  }
+
+  .branch-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .branch-match {
+    background: rgba(31, 138, 138, 0.12);
+    color: var(--teal);
+  }
+
+  .branch-skip {
+    background: rgba(187, 77, 77, 0.12);
+    color: var(--danger);
+  }
+
+  .mini-list {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 14px;
+  }
+
+  .trace {
+    display: grid;
+    gap: 10px;
+    max-height: 380px;
+    overflow: auto;
+    margin-top: 16px;
+  }
+
+  .trace-item {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .trace-item strong { color: var(--ink); }
+
+  .enum-panel {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid var(--line);
+  }
+
+  .enum-panel h4 {
+    margin: 0 0 10px;
+    font-size: 15px;
+  }
+
+  .enum-meta {
+    margin: 0 0 10px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-size: 13px;
+  }
+
+  .enum-list {
+    display: grid;
+    gap: 8px;
+    max-height: 240px;
+    overflow: auto;
+  }
+
+  .enum-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #f9f4ed;
+    border: 1px solid #eadfce;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .enum-item strong {
+    color: var(--ink);
+  }
+
+  .enum-empty {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .practice-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+    gap: 22px;
+  }
+
+  .practice-board {
+    background: rgba(255,255,255,0.62);
+    border-radius: 24px;
+    padding: 18px;
+    border: 1px solid rgba(120, 107, 95, 0.18);
+  }
+
+  .practice-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .question-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  .question-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .question-title h4 {
+    margin: 0;
+    font-size: 17px;
+  }
+
+  .status {
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 6px 10px;
+    background: #f3ece2;
+    color: var(--muted);
+  }
+
+  .status.ok {
+    background: rgba(31, 138, 138, 0.12);
+    color: var(--teal);
+  }
+
+  .status.bad {
+    background: rgba(187, 77, 77, 0.12);
+    color: var(--danger);
+  }
+
+  .choice-btn {
+    background: #f8f4ee;
+    color: var(--ink);
+    border: 1px solid #eadfce;
+  }
+
+  .choice-btn.selected {
+    background: rgba(201, 109, 66, 0.14);
+    color: var(--primary-deep);
+    border-color: rgba(201, 109, 66, 0.35);
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  input[type="number"] {
+    width: 88px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #d8c6b2;
+    font-size: 15px;
+    background: #fffefc;
+  }
+
+  .feedback {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: #f8f4ee;
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 14px;
+    display: none;
+  }
+
+  .feedback.show { display: block; }
+  .feedback.ok {
+    background: rgba(31, 138, 138, 0.1);
+    color: #1e6d6d;
+  }
+  .feedback.bad {
+    background: rgba(187, 77, 77, 0.1);
+    color: #943d3d;
+  }
+
+  .score-box {
+    display: grid;
+    gap: 14px;
+  }
+
+  .score-ring {
+    background: linear-gradient(135deg, rgba(201, 109, 66, 0.12), rgba(31, 138, 138, 0.12));
+    border: 1px solid rgba(201, 109, 66, 0.18);
+    border-radius: 22px;
+    padding: 22px;
+    text-align: center;
+  }
+
+  .score-number {
+    font-size: 54px;
+    line-height: 1;
+    font-weight: 800;
+    color: var(--primary-deep);
+  }
+
+  .score-caption {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .result-note {
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px dashed var(--line);
+    line-height: 1.8;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .tiny-code {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    background: rgba(120, 107, 95, 0.08);
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .footer-note {
+    margin-top: 18px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 1100px) {
+    .grid, .intro-grid, .practice-layout, .code-meaning { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 700px) {
+    body { padding: 16px 12px 28px; }
+    .hero, .card { padding: 18px; border-radius: 22px; }
+    h1 { font-size: 28px; }
+    th, td { min-width: 48px; height: 48px; }
+    .chip { width: 34px; height: 34px; }
+    .controls { align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>115. 不同的子序列</h1>
+      <p class="subtitle">
+        这个页面只围绕你给出的动态规划代码来教学。我们不会泛泛讲“DP 是什么”，而是把
+        <span class="tiny-code">dp[i][j]</span> 的含义、初始化、双层循环、以及
+        <span class="tiny-code">相等时相加 / 不等时向上继承</span>
+        这几步，拆成可以观察、可以动手、可以自查的过程。
+      </p>
+      <div class="hero-tags">
+        <div class="tag"><strong>模块一</strong>演示代码如何一格一格填表</div>
+        <div class="tag"><strong>模块二</strong>练习自己判断转移来源和结果</div>
+        <div class="tag"><strong>核心目标</strong>理解“为什么这样转移”，不是只记答案</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title"><span class="section-badge">模块零</span>题目与答案代码</h2>
+      <p class="section-desc">
+        先把题目要做什么、以及这段代码到底写了什么放在最前面。建议先扫一遍题意，再看右侧这份带中文注释的代码，后面的可视化和练习都会严格对应它来展开。
+      </p>
+
+      <div class="intro-grid">
+        <div class="problem-box">
+          <strong>题目要求</strong><br>
+          给定两个字符串 <span class="tiny-code">s</span> 和 <span class="tiny-code">t</span>，
+          统计在 <span class="tiny-code">s</span> 中有多少个不同的子序列，能够恰好等于 <span class="tiny-code">t</span>。
+          <ul>
+            <li>子序列的意思是：可以删除一些字符，也可以一个都不删，但不能打乱原来的相对顺序。</li>
+            <li>“不同”通常体现在选择位置不同。哪怕拼出来的字符一样，只要选的位置不同，也算不同方案。</li>
+            <li>这道题的关键不是暴力枚举，而是把“前缀能拼出前缀”的问题拆成很多小状态。</li>
+          </ul>
+          <br>
+          <strong>这份答案代码在做什么</strong>
+          <ul>
+            <li>先定义 <span class="tiny-code">dp[i][j]</span> 的含义。</li>
+            <li>先处理最基础的情况：目标串为空时答案恒为 1。</li>
+            <li>然后按代码顺序双层循环填表。</li>
+            <li>如果当前字符相等，就把“使用它”和“不使用它”两种方案相加；不相等就只能跳过它。</li>
+          </ul>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-head">
+            <div class="code-head-title">带中文注释的参考答案</div>
+            <div class="code-head-note">展示用代码，和下方教学模块完全对应</div>
+          </div>
+          <pre class="code-block"><code>/**
+ * 115. 不同的子序列
+ * 动态规划
+ *
+ * dp[i][j] 表示：
+ * 在 s 的前 i 个字符中，
+ * 组成 t 的前 j 个字符的不同子序列个数
+ */
+var numDistinct = function(s, t) {
+  const m = s.length;
+  const n = t.length;
+
+  // 创建 (m + 1) x (n + 1) 的 dp 表
+  // 多出来的一行一列，用来表示“空前缀”
+  const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+  // 初始化第 0 列：
+  // t 的前 0 个字符就是空串
+  // 不管 s 取前多少个字符，组成空串都只有 1 种方法：什么都不选
+  for (let i = 0; i &lt;= m; i++) {
+    dp[i][0] = 1;
+  }
+
+  // dp[0][j] 默认保持 0（j > 0）
+  // 因为空字符串 s 不可能组成非空字符串 t
+
+  // 开始填表
+  for (let i = 1; i &lt;= m; i++) {
+    for (let j = 1; j &lt;= n; j++) {
+      // 当前比较的是 s[i - 1] 和 t[j - 1]
+      if (s[i - 1] !== t[j - 1]) {
+        // 字符不相等：
+        // 当前 s 字符不能拿来匹配 t 的当前字符
+        // 只能跳过它，继承上方结果
+        dp[i][j] = dp[i - 1][j];
+      } else {
+        // 字符相等时有两种选择：
+        //
+        // 1. 使用 s[i - 1] 去匹配 t[j - 1]
+        //    那前面要在 s 的前 i - 1 个字符里组成 t 的前 j - 1 个字符
+        //    对应 dp[i - 1][j - 1]
+        //
+        // 2. 不使用 s[i - 1]
+        //    继续在 s 的前 i - 1 个字符里组成 t 的前 j 个字符
+        //    对应 dp[i - 1][j]
+        dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j];
+      }
+    }
+  }
+
+  // 右下角就是最终答案
+  return dp[m][n];
+};</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2 class="section-title"><span class="section-badge">模块一</span>演示可视化模块</h2>
+        <p class="section-desc">
+          演示例子使用 <span class="tiny-code">s = "babgbag"</span>，<span class="tiny-code">t = "bag"</span>。
+          你会看到页面严格按照代码执行顺序推进：先初始化，再进入双层循环，然后根据字符是否相等决定当前格子的来源。
+        </p>
+
+        <div class="example-strip">
+          <div class="string-line">
+            <span class="string-label">演示字符串 s</span>
+            <div class="chips" id="demoSChips"></div>
+          </div>
+          <div class="string-line">
+            <span class="string-label">目标字符串 t</span>
+            <div class="chips" id="demoTChips"></div>
+          </div>
+        </div>
+
+        <div class="code-meaning">
+          <div class="meaning-box">
+            <strong>状态含义</strong><br>
+            <span class="tiny-code">dp[i][j]</span> 表示：在 <span class="tiny-code">s</span> 的前 <span class="tiny-code">i</span> 个字符中，
+            组成 <span class="tiny-code">t</span> 的前 <span class="tiny-code">j</span> 个字符的不同子序列个数。
+          </div>
+          <div class="meaning-box">
+            <strong>本题最重要的想法</strong><br>
+            每次都只考虑 <span class="tiny-code">s[i-1]</span> 这个“新加入的字符”要不要用。
+            如果它能匹配 <span class="tiny-code">t[j-1]</span>，就有“用”和“不用”两条路；不能匹配时，只能“不用”。
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="btn-primary" id="prevStepBtn">上一步</button>
+          <button class="btn-primary" id="nextStepBtn">下一步</button>
+          <button class="btn-soft" id="autoPlayBtn">自动播放</button>
+          <button class="btn-neutral" id="resetBtn">重置演示</button>
+          <div class="speed-wrap">
+            播放速度
+            <input id="speedRange" type="range" min="400" max="1600" step="100" value="900">
+          </div>
+        </div>
+
+        <div class="step-head">
+          <div>
+            <div class="step-pill" id="stepCounter">步骤 1 / 1</div>
+            <h3 class="step-title" id="stepTitle"></h3>
+            <p class="step-desc" id="stepDesc"></p>
+          </div>
+          <div class="mini-tags" id="focusTags"></div>
+        </div>
+
+        <div class="formula-box">
+          <div class="formula-line" id="formulaText"></div>
+        </div>
+
+        <div class="dp-wrap">
+          <table id="demoTable"></table>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch sw-current"></span> 当前正在计算的格子</div>
+          <div class="legend-item"><span class="legend-swatch sw-dep"></span> 主要依赖格</div>
+          <div class="legend-item"><span class="legend-swatch sw-dep-alt"></span> 另一条依赖路径</div>
+          <div class="legend-item"><span class="legend-swatch sw-answer"></span> 本步刚得到的值</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="reason-card">
+          <h3>当前分支解释</h3>
+          <p id="branchSummary">
+            先点击“下一步”，页面会从 <span class="tiny-code">dp[i][0] = 1</span> 的初始化开始。
+          </p>
+          <div class="branch-box">
+            <div id="branchState" class="branch-state branch-match">等待开始</div>
+            <div id="branchFormula" class="formula-line">先观察这个格子属于初始化还是循环填表阶段。</div>
+          </div>
+          <ul class="mini-list" id="reasonList"></ul>
+          <div class="enum-panel">
+            <h4 id="enumTitle">当前格子的方案枚举</h4>
+            <p class="enum-meta" id="enumMeta">这里会同步展示当前 <span class="tiny-code">dp[i][j]</span> 到底在数哪些不同子序列。</p>
+            <div class="enum-list" id="enumList"></div>
+          </div>
+        </div>
+
+        <div class="prompt-card" style="margin-top: 16px;">
+          <h3>看演示时建议盯住这 3 个点</h3>
+          <p>
+            1. 行号 <span class="tiny-code">i</span> 决定我们在看 <span class="tiny-code">s</span> 的前多少个字符。<br>
+            2. 列号 <span class="tiny-code">j</span> 决定目标是拼出 <span class="tiny-code">t</span> 的前多少个字符。<br>
+            3. 每一格都在回答：“新字符 <span class="tiny-code">s[i-1]</span> 到底用不用？”
+          </p>
+        </div>
+
+        <div class="prompt-card" style="margin-top: 16px;">
+          <h3>步骤日志</h3>
+          <div class="trace" id="traceList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="section-title"><span class="section-badge">模块二</span>动手练习模块</h2>
+      <p class="section-desc">
+        练习例子故意换成 <span class="tiny-code">s = "aabc"</span>，<span class="tiny-code">t = "abc"</span>，
+        这样你不会直接照搬上面的答案。每道题都要求你先判断“代码会走哪一个分支”，再写出本格的值。
+      </p>
+
+      <div class="practice-layout">
+        <div class="practice-board">
+          <div class="example-strip">
+            <div class="string-line">
+              <span class="string-label">练习字符串 s</span>
+              <div class="chips" id="practiceSChips"></div>
+            </div>
+            <div class="string-line">
+              <span class="string-label">目标字符串 t</span>
+              <div class="chips" id="practiceTChips"></div>
+            </div>
+          </div>
+
+          <div class="dp-wrap">
+            <table id="practiceTable"></table>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="legend-swatch sw-current"></span> 本题要你思考的格子</div>
+            <div class="legend-item"><span class="legend-swatch sw-dep"></span> 先去找的来源格</div>
+            <div class="legend-item"><span class="legend-swatch sw-dep-alt"></span> 可能还要加上的另一格</div>
+          </div>
+        </div>
+
+        <div class="practice-grid">
+          <div class="question-card" data-question="q1">
+            <div class="question-title">
+              <h4>题 1：先理解状态的意思</h4>
+              <span class="status" id="status-q1">未作答</span>
+            </div>
+            <p>当我们说 <span class="tiny-code">dp[3][2]</span> 时，代码里的意思到底是哪一句？</p>
+            <div class="choice-group" id="choices-q1" style="margin-top: 12px;"></div>
+            <div class="feedback" id="feedback-q1"></div>
+          </div>
+
+          <div class="question-card" data-question="q2">
+            <div class="question-title">
+              <h4>题 2：初始化不是背结论，要懂原因</h4>
+              <span class="status" id="status-q2">未作答</span>
+            </div>
+            <p>请填写：<span class="tiny-code">dp[4][0]</span> 应该是多少？为什么？</p>
+            <div class="input-row">
+              <input type="number" id="input-q2" min="0" step="1" placeholder="填数字">
+              <button class="btn-soft" data-check="q2">检查这一题</button>
+            </div>
+            <div class="feedback" id="feedback-q2"></div>
+          </div>
+
+          <div class="question-card" data-question="q3">
+            <div class="question-title">
+              <h4>题 3：字符不相等时，代码会走哪条路？</h4>
+              <span class="status" id="status-q3">未作答</span>
+            </div>
+            <p>观察高亮格 <span class="tiny-code">dp[2][2]</span>。此时比较的是 <span class="tiny-code">s[1]</span> 和 <span class="tiny-code">t[1]</span>。</p>
+            <div class="choice-group" id="choices-q3" style="margin-top: 12px;"></div>
+            <div class="input-row">
+              <input type="number" id="input-q3" min="0" step="1" placeholder="再填结果">
+              <button class="btn-soft" data-check="q3">检查这一题</button>
+            </div>
+            <div class="feedback" id="feedback-q3"></div>
+          </div>
+
+          <div class="question-card" data-question="q4">
+            <div class="question-title">
+              <h4>题 4：字符相等时，为什么要相加？</h4>
+              <span class="status" id="status-q4">未作答</span>
+            </div>
+            <p>观察高亮格 <span class="tiny-code">dp[3][2]</span>。此时 <span class="tiny-code">s[2] = 'b'</span>，<span class="tiny-code">t[1] = 'b'</span>。</p>
+            <div class="choice-group" id="choices-q4" style="margin-top: 12px;"></div>
+            <div class="input-row">
+              <input type="number" id="input-q4" min="0" step="1" placeholder="再填结果">
+              <button class="btn-soft" data-check="q4">检查这一题</button>
+            </div>
+            <div class="feedback" id="feedback-q4"></div>
+          </div>
+
+          <div class="question-card" data-question="q5">
+            <div class="question-title">
+              <h4>题 5：终点格到底在数什么？</h4>
+              <span class="status" id="status-q5">未作答</span>
+            </div>
+            <p>请填写最终答案格 <span class="tiny-code">dp[4][3]</span> 的值，并说出它表示什么。</p>
+            <div class="input-row">
+              <input type="number" id="input-q5" min="0" step="1" placeholder="填数字">
+              <button class="btn-soft" data-check="q5">检查这一题</button>
+            </div>
+            <div class="feedback" id="feedback-q5"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top: 20px; margin-bottom: 0;">
+        <div class="score-box">
+          <div class="score-ring">
+            <div class="score-number" id="scoreNumber">0 / 5</div>
+            <div class="score-caption">这里统计的是“过程题”的掌握情况</div>
+          </div>
+          <div class="result-note" id="summaryNote">
+            完成练习后，这里会告诉你更适合回看哪一种转移情况。
+          </div>
+        </div>
+
+        <div class="practice-card">
+          <h3>练习模块的教学意图</h3>
+          <p>
+            这组题不是让你抄表，而是逼着你每次都回答三个问题：
+            现在比较的是哪两个字符？它们相等吗？当前格应该继承谁，还是把两条路加起来？
+            只要这三个问题能稳定回答出来，你就真正懂了这段代码。
+          </p>
+        </div>
+      </div>
+
+      <p class="footer-note">
+        你可以先完整看一遍演示，再回来做练习；也可以边看演示边暂停，尝试自己先算下一格。
+      </p>
+    </section>
+  </div>
+
+<script>
+  const demo = { s: "babgbag", t: "bag" };
+  const practice = { s: "aabc", t: "abc" };
+
+  const demoState = {
+    steps: [],
+    current: 0,
+    timer: null,
+    speed: 900
+  };
+
+  const practiceAnswers = {
+    q1: false,
+    q2: false,
+    q3: false,
+    q4: false,
+    q5: false
+  };
+
+  const practiceSelections = {
+    q1: null,
+    q3: null,
+    q4: null
+  };
+
+  const practiceChoices = {
+    q1: [
+      "在 s 的前 3 个字符中，组成 t 的前 2 个字符的不同子序列个数",
+      "在 s 的第 3 个字符中，组成 t 的第 2 个字符的方案数",
+      "在 t 的前 3 个字符中，组成 s 的前 2 个字符的方案数"
+    ],
+    q3: [
+      "走 if 分支：dp[i][j] = dp[i - 1][j]",
+      "走 else 分支：dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j]",
+      "直接把左边 dp[i][j - 1] 复制过来"
+    ],
+    q4: [
+      "因为相等时只有“使用当前字符”这一条路",
+      "因为相等时有“使用当前字符”和“不使用当前字符”两条路",
+      "因为相等时要把左边和上边相加"
+    ]
+  };
+
+  function buildChips(containerId, text) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+    [...text].forEach((ch, idx) => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.id = `${containerId}-${idx}`;
+      chip.textContent = ch;
+      container.appendChild(chip);
+    });
+  }
+
+  function createDpTable(tableId, s, t, options = {}) {
+    const table = document.getElementById(tableId);
+    const m = s.length;
+    const n = t.length;
+    table.innerHTML = "";
+
+    const header = document.createElement("tr");
+    header.appendChild(makeHeaderCell("i / j", "corner"));
+    header.appendChild(makeHeaderCell("空", "hdr-cell"));
+    for (let j = 1; j <= n; j++) {
+      header.appendChild(makeHeaderCell(`${t[j - 1]}<br><small>j=${j}</small>`, "hdr-cell"));
+    }
+    table.appendChild(header);
+
+    for (let i = 0; i <= m; i++) {
+      const row = document.createElement("tr");
+      if (i === 0) {
+        row.appendChild(makeHeaderCell("空", "hdr-cell"));
+      } else {
+        row.appendChild(makeHeaderCell(`${s[i - 1]}<br><small>i=${i}</small>`, "hdr-cell"));
+      }
+      for (let j = 0; j <= n; j++) {
+        const td = document.createElement("td");
+        td.className = "dp-cell";
+        td.id = `${tableId}-cell-${i}-${j}`;
+        if (options.showCellNote) {
+          const note = document.createElement("span");
+          note.className = "cell-note";
+          note.textContent = `${i},${j}`;
+          td.appendChild(note);
+        }
+        row.appendChild(td);
+      }
+      table.appendChild(row);
+    }
+  }
+
+  function makeHeaderCell(html, className) {
+    const th = document.createElement("th");
+    th.className = className;
+    th.innerHTML = html;
+    return th;
+  }
+
+  function generateDemoSteps(s, t) {
+    const m = s.length;
+    const n = t.length;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    const paths = Array.from({ length: m + 1 }, () => Array.from({ length: n + 1 }, () => []));
+    const steps = [];
+
+    function makePath(indices) {
+      return {
+        indices: [...indices],
+        chars: indices.map(idx => s[idx]).join("")
+      };
+    }
+
+    function formatPath(path) {
+      if (!path.indices.length) return "空序列";
+      const picks = path.indices.map(idx => `${s[idx]}(s[${idx}])`).join(" -> ");
+      return `${path.chars} | 选中位置：${picks}`;
+    }
+
+    steps.push({
+      phase: "起点",
+      title: "先明确 dp[i][j] 的问题含义",
+      desc: "还没有开始填表。先记住：每个格子都在问“在 s 的前 i 个字符里，组成 t 的前 j 个字符，有几种选法？”",
+      formula: "目标不是拼完整字符串，而是逐步回答很多个“前缀问题”。",
+      focus: ["读懂 i 和 j 的含义", "整张表稍后再填"],
+      branchClass: "branch-match",
+      branchText: "准备进入初始化",
+      branchFormula: "代码先执行 for (let i = 0; i <= m; i++) dp[i][0] = 1;",
+      bullets: [
+        "列 j = 0 代表目标串 t 为空串。",
+        "空串只需要“一个都不选”，所以方案数固定是 1。",
+        "这一步会把整张表的第 0 列先填完。"
+      ],
+      enumerationTitle: "还没开始计算具体格子",
+      enumerationMeta: "先记住目标：后面每一步都会把当前格子对应的所有方案按位置列出来。",
+      enumerationList: [],
+      trace: "先不算具体格子，先理解整个 dp 表在统计什么。"
+    });
+
+    for (let i = 0; i <= m; i++) {
+      dp[i][0] = 1;
+      paths[i][0] = [makePath([])];
+      steps.push({
+        phase: "初始化",
+        title: `设置 dp[${i}][0] = 1`,
+        desc: `因为 t 的前 0 个字符就是空串。无论现在看 s 的前 ${i} 个字符，都有且只有 1 种方式得到空串：什么都不选。`,
+        formula: `dp[${i}][0] = 1`,
+        current: [i, 0],
+        answer: [i, 0],
+        fills: [{ i, j: 0, value: 1, cls: "init" }],
+        focus: [`当前是初始化列 j = 0`, `s 前 ${i} 个字符`],
+        branchClass: "branch-match",
+        branchText: "初始化规则生效",
+        branchFormula: "空目标串只有一种形成方式：不选任何字符。",
+        bullets: [
+          "这一步对应代码里的第一段 for 循环。",
+          "注意它和后面的双层循环无关，是提前固定好的 base case。",
+          "后续很多状态都会依赖这里的 1。"
+        ],
+        enumerationTitle: `枚举 dp[${i}][0] 的全部方案`,
+        enumerationMeta: `dp[${i}][0] = 1，因为目标前缀是空串，唯一方案永远是“不选任何字符”。`,
+        enumerationList: paths[i][0].map(formatPath),
+        trace: `初始化第 0 列：dp[${i}][0] = 1。`
+      });
+    }
+
+    steps.push({
+      phase: "初始化",
+      title: "再看第一行：dp[0][j] 默认为 0",
+      desc: "当 s 为空串时，不可能拼出非空的 t，所以第一行除了 dp[0][0] 之外都保持 0。",
+      formula: "dp[0][j] = 0 (j > 0)",
+      focus: ["空的 s 无法组成非空 t", "这行不用额外写循环"],
+      branchClass: "branch-skip",
+      branchText: "默认值继续保留",
+      branchFormula: "代码里没有单独填这一行，因为数组初始化时就已经是 0。",
+      bullets: [
+        "这一点经常被忽略，但它是转移能成立的重要前提。",
+        "如果没有字符可选，就没有办法凑出长度大于 0 的目标前缀。"
+      ],
+      enumerationTitle: "第一行为什么没有可枚举方案",
+      enumerationMeta: "对所有 j > 0，dp[0][j] = 0，因为 s 为空时，没有任何子序列可以组成非空目标。",
+      enumerationList: [],
+      trace: "确认第一行的非空列保持为 0。"
+    });
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const same = s[i - 1] === t[j - 1];
+        if (same) {
+          const useCurrent = paths[i - 1][j - 1].map(path => makePath([...path.indices, i - 1]));
+          const skipCurrent = paths[i - 1][j].map(path => makePath(path.indices));
+          paths[i][j] = [...useCurrent, ...skipCurrent];
+          dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j];
+          steps.push({
+            phase: "填表",
+            title: `计算 dp[${i}][${j}]：字符相等，可以分两条路`,
+            desc: `现在比较 s[${i - 1}]='${s[i - 1]}' 和 t[${j - 1}]='${t[j - 1]}'。它们相等，所以代码走 else 分支，把“使用当前字符”和“不使用当前字符”两种情况相加。`,
+            formula: `dp[${i}][${j}] = dp[${i - 1}][${j - 1}] + dp[${i - 1}][${j}] = ${dp[i - 1][j - 1]} + ${dp[i - 1][j]} = ${dp[i][j]}`,
+            current: [i, j],
+            deps: [[i - 1, j - 1]],
+            depsAlt: [[i - 1, j]],
+            answer: [i, j],
+            fills: [{ i, j, value: dp[i][j] }],
+            activeChars: { s: i - 1, t: j - 1 },
+            focus: [`s[${i - 1}] 和 t[${j - 1}] 相等`, "两条路都有效"],
+            branchClass: "branch-match",
+            branchText: "命中 else 分支",
+            branchFormula: "相等时：左上角代表“用当前字符”，正上方代表“不用当前字符”。",
+            bullets: [
+              `用当前字符：把 s[${i - 1}] 配给 t[${j - 1}]，前面就要完成 dp[${i - 1}][${j - 1}]。`,
+              `不用当前字符：直接忽略 s[${i - 1}]，还要在前 i-1 个字符里完成 dp[${i - 1}][${j}]。`,
+              "两种选择不会重叠，所以可以直接相加。"
+            ],
+            enumerationTitle: `枚举 dp[${i}][${j}] = ${dp[i][j]} 的全部方案`,
+            enumerationMeta: `其中“使用 s[${i - 1}]”贡献 ${useCurrent.length} 种，“跳过 s[${i - 1}]”贡献 ${skipCurrent.length} 种。页面下面列出的每一项都按 s 中位置区分。`,
+            enumerationList: paths[i][j].map(formatPath),
+            trace: `dp[${i}][${j}]：'${s[i - 1]}' 和 '${t[j - 1]}' 相等，取 ${dp[i - 1][j - 1]} + ${dp[i - 1][j]} = ${dp[i][j]}。`
+          });
+        } else {
+          paths[i][j] = paths[i - 1][j].map(path => makePath(path.indices));
+          dp[i][j] = dp[i - 1][j];
+          steps.push({
+            phase: "填表",
+            title: `计算 dp[${i}][${j}]：字符不等，只能继承上方`,
+            desc: `现在比较 s[${i - 1}]='${s[i - 1]}' 和 t[${j - 1}]='${t[j - 1]}'。它们不相等，所以 s[${i - 1}] 根本不能拿来匹配当前目标字符，只能忽略它。`,
+            formula: `dp[${i}][${j}] = dp[${i - 1}][${j}] = ${dp[i][j]}`,
+            current: [i, j],
+            deps: [[i - 1, j]],
+            answer: [i, j],
+            fills: [{ i, j, value: dp[i][j] }],
+            activeChars: { s: i - 1, t: j - 1 },
+            focus: [`s[${i - 1}] 和 t[${j - 1}] 不相等`, "当前字符只能跳过"],
+            branchClass: "branch-skip",
+            branchText: "命中 if 分支",
+            branchFormula: "不相等时：当前 s 字符没有资格参与匹配，只保留“跳过它”的方案数。",
+            bullets: [
+              `不能用 s[${i - 1}] 去匹配 t[${j - 1}]，因为字符不同。`,
+              `所以当前格直接继承 dp[${i - 1}][${j}]。`,
+              "这就是代码里 if 分支只有一项的原因。"
+            ],
+            enumerationTitle: `枚举 dp[${i}][${j}] = ${dp[i][j]} 的全部方案`,
+            enumerationMeta: `因为 '${s[i - 1]}' 无法匹配 '${t[j - 1]}'，当前格子里能组成目标前缀的方案只有下面这些；它们就是 dp[${i}][${j}] 的完整枚举结果。`,
+            enumerationList: paths[i][j].map(formatPath),
+            trace: `dp[${i}][${j}]：'${s[i - 1]}' 和 '${t[j - 1]}' 不相等，继承 dp[${i - 1}][${j}] = ${dp[i][j]}。`
+          });
+        }
+      }
+    }
+
+    steps.push({
+      phase: "收尾",
+      title: `返回答案 dp[${m}][${n}] = ${dp[m][n]}`,
+      desc: `最后一个格子回答的正是原题：在整个 s="${s}" 中，组成整个 t="${t}" 的不同子序列个数。`,
+      formula: `return dp[${m}][${n}] = ${dp[m][n]}`,
+      answer: [m, n],
+      current: [m, n],
+      focus: ["终点格就是函数返回值", "前面的每一格都在为它服务"],
+      branchClass: "branch-match",
+      branchText: "结束填表",
+      branchFormula: "最终答案不需要额外处理，直接读取右下角。",
+      bullets: [
+        "这也是动态规划最典型的节奏：定义状态 -> 初始化 -> 按顺序填表 -> 读取答案。",
+        "如果你能说清楚右下角为什么是答案，说明你已经把状态定义吃透了。"
+      ],
+      enumerationTitle: `最终答案 dp[${m}][${n}] 的全部不同子序列`,
+      enumerationMeta: `下面列出的 ${dp[m][n]} 项，就是在 s="${s}" 中组成 t="${t}" 的全部方案。即使字符一样，只要选中的位置不同，也算不同子序列。`,
+      enumerationList: paths[m][n].map(formatPath),
+      trace: `整张表填完，返回 dp[${m}][${n}] = ${dp[m][n]}。`
+    });
+
+    return steps;
+  }
+
+  function renderDemoStep(index) {
+    demoState.current = index;
+    const step = demoState.steps[index];
+    const m = demo.s.length;
+    const n = demo.t.length;
+
+    document.getElementById("stepCounter").textContent = `步骤 ${index + 1} / ${demoState.steps.length}`;
+    document.getElementById("stepTitle").textContent = step.title;
+    document.getElementById("stepDesc").textContent = step.desc;
+    document.getElementById("formulaText").innerHTML = step.formula;
+    document.getElementById("branchSummary").textContent = step.desc;
+
+    const branchState = document.getElementById("branchState");
+    branchState.className = `branch-state ${step.branchClass}`;
+    branchState.textContent = step.branchText;
+    document.getElementById("branchFormula").textContent = step.branchFormula;
+
+    const reasonList = document.getElementById("reasonList");
+    reasonList.innerHTML = "";
+    (step.bullets || []).forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = item;
+      reasonList.appendChild(li);
+    });
+
+    const focusTags = document.getElementById("focusTags");
+    focusTags.innerHTML = "";
+    (step.focus || []).forEach(item => {
+      const tag = document.createElement("div");
+      tag.className = "mini-tag";
+      tag.textContent = item;
+      focusTags.appendChild(tag);
+    });
+
+    document.getElementById("enumTitle").textContent = step.enumerationTitle || "当前格子的方案枚举";
+    document.getElementById("enumMeta").innerHTML = step.enumerationMeta || "";
+    const enumList = document.getElementById("enumList");
+    enumList.innerHTML = "";
+    if ((step.enumerationList || []).length) {
+      step.enumerationList.forEach((item, idx) => {
+        const row = document.createElement("div");
+        row.className = "enum-item";
+        row.innerHTML = `<strong>方案 ${idx + 1}</strong><br>${item}`;
+        enumList.appendChild(row);
+      });
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "enum-empty";
+      empty.textContent = "这一阶段还没有需要列出的具体方案，或者当前状态的方案数为 0。";
+      enumList.appendChild(empty);
+    }
+
+    for (let i = 0; i <= m; i++) {
+      for (let j = 0; j <= n; j++) {
+        const cell = document.getElementById(`demoTable-cell-${i}-${j}`);
+        cell.className = "dp-cell";
+        cell.innerHTML = "";
+        const note = document.createElement("span");
+        note.className = "cell-note";
+        note.textContent = `${i},${j}`;
+        cell.appendChild(note);
+      }
+    }
+
+    document.querySelectorAll("#demoSChips .chip").forEach(chip => chip.classList.remove("active-s"));
+    document.querySelectorAll("#demoTChips .chip").forEach(chip => chip.classList.remove("active-t"));
+
+    for (let k = 0; k <= index; k++) {
+      const fills = demoState.steps[k].fills || [];
+      fills.forEach(item => {
+        const cell = document.getElementById(`demoTable-cell-${item.i}-${item.j}`);
+        cell.classList.add("filled");
+        if (item.cls) cell.classList.add(item.cls);
+        const note = cell.querySelector(".cell-note");
+        cell.innerHTML = `${item.value}`;
+        if (note) cell.appendChild(note);
+      });
+    }
+
+    if (step.current) {
+      const [i, j] = step.current;
+      document.getElementById(`demoTable-cell-${i}-${j}`).classList.add("current");
+    }
+    (step.deps || []).forEach(([i, j]) => {
+      document.getElementById(`demoTable-cell-${i}-${j}`).classList.add("dep");
+    });
+    (step.depsAlt || []).forEach(([i, j]) => {
+      document.getElementById(`demoTable-cell-${i}-${j}`).classList.add("dep-alt");
+    });
+    if (step.answer) {
+      const [i, j] = step.answer;
+      document.getElementById(`demoTable-cell-${i}-${j}`).classList.add("answer");
+    }
+    if (step.activeChars) {
+      const sChip = document.getElementById(`demoSChips-${step.activeChars.s}`);
+      const tChip = document.getElementById(`demoTChips-${step.activeChars.t}`);
+      if (sChip) sChip.classList.add("active-s");
+      if (tChip) tChip.classList.add("active-t");
+    }
+
+    renderTrace(index);
+  }
+
+  function renderTrace(index) {
+    const traceList = document.getElementById("traceList");
+    traceList.innerHTML = "";
+    demoState.steps.slice(0, index + 1).slice(-8).forEach((step, idx) => {
+      const item = document.createElement("div");
+      item.className = "trace-item";
+      item.innerHTML = `<strong>${index - Math.min(7, index) + idx + 1}.</strong> ${step.trace}`;
+      traceList.appendChild(item);
+    });
+  }
+
+  function nextStep() {
+    if (demoState.current < demoState.steps.length - 1) {
+      renderDemoStep(demoState.current + 1);
+    } else {
+      stopAutoPlay();
+    }
+  }
+
+  function prevStep() {
+    if (demoState.current > 0) {
+      renderDemoStep(demoState.current - 1);
+    }
+  }
+
+  function startAutoPlay() {
+    stopAutoPlay();
+    document.getElementById("autoPlayBtn").textContent = "暂停播放";
+    demoState.timer = setInterval(() => {
+      if (demoState.current >= demoState.steps.length - 1) {
+        stopAutoPlay();
+      } else {
+        nextStep();
+      }
+    }, demoState.speed);
+  }
+
+  function stopAutoPlay() {
+    if (demoState.timer) {
+      clearInterval(demoState.timer);
+      demoState.timer = null;
+    }
+    document.getElementById("autoPlayBtn").textContent = "自动播放";
+  }
+
+  function toggleAutoPlay() {
+    if (demoState.timer) stopAutoPlay();
+    else startAutoPlay();
+  }
+
+  function renderPracticeStaticTable() {
+    const s = practice.s;
+    const t = practice.t;
+    const dp = Array.from({ length: s.length + 1 }, () => Array(t.length + 1).fill(0));
+    for (let i = 0; i <= s.length; i++) dp[i][0] = 1;
+    for (let i = 1; i <= s.length; i++) {
+      for (let j = 1; j <= t.length; j++) {
+        if (s[i - 1] !== t[j - 1]) dp[i][j] = dp[i - 1][j];
+        else dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j];
+      }
+    }
+
+    for (let i = 0; i <= s.length; i++) {
+      for (let j = 0; j <= t.length; j++) {
+        const cell = document.getElementById(`practiceTable-cell-${i}-${j}`);
+        cell.classList.add("filled");
+        cell.textContent = dp[i][j];
+      }
+    }
+
+    const highlights = [
+      { current: [2, 2], deps: [[1, 2]] },
+      { current: [3, 2], deps: [[2, 1]], depsAlt: [[2, 2]] },
+      { current: [4, 3], deps: [[3, 2], [3, 3]] }
+    ];
+
+    highlights.forEach((item, idx) => {
+      const current = document.getElementById(`practiceTable-cell-${item.current[0]}-${item.current[1]}`);
+      current.classList.add(idx === 0 ? "current" : idx === 1 ? "dep-alt" : "answer");
+      (item.deps || []).forEach(([i, j]) => document.getElementById(`practiceTable-cell-${i}-${j}`).classList.add("dep"));
+      if (item.depsAlt) {
+        item.depsAlt.forEach(([i, j]) => document.getElementById(`practiceTable-cell-${i}-${j}`).classList.add("dep-alt"));
+      }
+    });
+  }
+
+  function renderChoiceQuestion(id, choices, correctIndex, explanation) {
+    const wrapper = document.getElementById(`choices-${id}`);
+    wrapper.innerHTML = "";
+    choices.forEach((choice, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = choice;
+      btn.addEventListener("click", () => {
+        practiceSelections[id] = idx;
+        [...wrapper.children].forEach(child => child.classList.remove("selected"));
+        btn.classList.add("selected");
+        const ok = idx === correctIndex;
+        practiceAnswers[id] = ok;
+        setStatus(id, ok);
+        const feedback = document.getElementById(`feedback-${id}`);
+        feedback.className = `feedback show ${ok ? "ok" : "bad"}`;
+        feedback.innerHTML = ok ? explanation.ok : explanation.bad;
+        updateScore();
+      });
+      wrapper.appendChild(btn);
+    });
+  }
+
+  function setStatus(id, ok) {
+    const status = document.getElementById(`status-${id}`);
+    status.textContent = ok ? "回答正确" : "再想想";
+    status.className = `status ${ok ? "ok" : "bad"}`;
+  }
+
+  function checkNumericQuestion(id, validator) {
+    const input = document.getElementById(`input-${id}`);
+    const feedback = document.getElementById(`feedback-${id}`);
+    const result = validator(input.value.trim());
+    practiceAnswers[id] = result.ok;
+    setStatus(id, result.ok);
+    feedback.className = `feedback show ${result.ok ? "ok" : "bad"}`;
+    feedback.innerHTML = result.message;
+    updateScore();
+  }
+
+  function updateScore() {
+    const total = Object.keys(practiceAnswers).length;
+    const score = Object.values(practiceAnswers).filter(Boolean).length;
+    document.getElementById("scoreNumber").textContent = `${score} / ${total}`;
+
+    let text = "完成练习后，这里会告诉你更适合回看哪一种转移情况。";
+    if (score === total) {
+      text = "你已经把这段代码里最关键的过程都过了一遍：状态含义、初始化、不相等时继承、相等时相加、以及终点格的意义。";
+    } else if (!practiceAnswers.q3) {
+      text = "优先回看“字符不相等时为什么只能取 dp[i-1][j]”。这是很多初学者最容易误写成取左边的位置。";
+    } else if (!practiceAnswers.q4) {
+      text = "建议重点回看“字符相等时为什么要把两条路相加”。真正难点不在公式，而在区分‘用当前字符’和‘不用当前字符’。";
+    } else if (!practiceAnswers.q1 || !practiceAnswers.q5) {
+      text = "你对格子的数值大体没问题，但还可以再强化状态定义。只要状态定义不稳，后面的公式就会越写越混。";
+    } else {
+      text = "你已经抓住了大部分过程。剩下的题建议再手推一遍表格，把每一格的‘来源’说出口。";
+    }
+    document.getElementById("summaryNote").textContent = text;
+  }
+
+  function initPractice() {
+    renderChoiceQuestion("q1", practiceChoices.q1, 0, {
+      ok: "对。<span class='tiny-code'>dp[3][2]</span> 里的 3 和 2 都是“前几个字符”的意思，不是单个字符的位置。",
+      bad: "这里最容易把 <span class='tiny-code'>dp[i][j]</span> 误读成“第 i 个字符和第 j 个字符”。代码里的定义是“前缀 + 前缀”。"
+    });
+
+    renderChoiceQuestion("q3", practiceChoices.q3, 0, {
+      ok: "对。此时看的是 <span class='tiny-code'>s[1]='a'</span> 和 <span class='tiny-code'>t[1]='b'</span>，不相等，所以只能忽略当前 s 字符，继承上方 <span class='tiny-code'>dp[i-1][j]</span>。",
+      bad: "再对照代码的 if 分支看一次：不相等时，当前 <span class='tiny-code'>s[i-1]</span> 无法匹配 <span class='tiny-code'>t[j-1]</span>，所以不会去看左上角，也不会看左边。"
+    });
+
+    renderChoiceQuestion("q4", practiceChoices.q4, 1, {
+      ok: "对。相等时有两类方案：使用当前字符去匹配，或者放弃当前字符继续找，所以要把 <span class='tiny-code'>dp[i-1][j-1]</span> 和 <span class='tiny-code'>dp[i-1][j]</span> 相加。",
+      bad: "关键不是“字符相等就相加”，而是“相等时多出了一条可行选择”。两条路分别代表‘用它’和‘不用它’。"
+    });
+
+    document.querySelectorAll("[data-check='q2']").forEach(btn => btn.addEventListener("click", () => {
+      checkNumericQuestion("q2", value => {
+        if (value === "") return { ok: false, message: "先填一个数字。然后问自己：<span class='tiny-code'>j=0</span> 的列，目标串是不是空串？" };
+        const ok = Number(value) === 1;
+        return {
+          ok,
+          message: ok
+            ? "正确。<span class='tiny-code'>dp[4][0] = 1</span>，因为目标是空串时，唯一方案就是“一个字符都不选”。这里和 <span class='tiny-code'>s</span> 有多长无关。"
+            : "不对。第 0 列全部都是 1，不是因为“刚好算出来”，而是因为空串始终只有一种形成方式。"
+        };
+      });
+    }));
+
+    document.querySelectorAll("[data-check='q3']").forEach(btn => btn.addEventListener("click", () => {
+      checkNumericQuestion("q3", value => {
+        if (practiceSelections.q3 !== 0) {
+          return { ok: false, message: "先把上面的分支选对，再算数值。流程上必须先判断代码走哪一条路。" };
+        }
+        if (value === "") return { ok: false, message: "先填一个数字，并想一想：当前格是不是直接等于上方那一格？" };
+        const ok = Number(value) === 0;
+        return {
+          ok,
+          message: ok
+            ? "正确。<span class='tiny-code'>dp[2][2] = dp[1][2] = 0</span>。因为当前字符不相等，新的 <span class='tiny-code'>a</span> 对拼出 <span class='tiny-code'>ab</span> 没帮助。"
+            : "再看来源格。这里不是左边，也不是左上角，而是正上方 <span class='tiny-code'>dp[1][2]</span>，它的值是 0。"
+        };
+      });
+    }));
+
+    document.querySelectorAll("[data-check='q4']").forEach(btn => btn.addEventListener("click", () => {
+      checkNumericQuestion("q4", value => {
+        if (practiceSelections.q4 !== 1) {
+          return { ok: false, message: "先选出为什么要相加。只有理解了两条路，数值才不会算错。" };
+        }
+        if (value === "") return { ok: false, message: "先填一个数字。提示：看的是 <span class='tiny-code'>dp[2][1]</span> 和 <span class='tiny-code'>dp[2][2]</span>。" };
+        const ok = Number(value) === 2;
+        return {
+          ok,
+          message: ok
+            ? "正确。<span class='tiny-code'>dp[3][2] = dp[2][1] + dp[2][2] = 2 + 0 = 2</span>。两个 <span class='tiny-code'>a</span> 都能在前面组成 <span class='tiny-code'>a</span>，所以这里有 2 种接上 <span class='tiny-code'>b</span> 的方式。"
+            : "再拆成两条路试试：用当前 <span class='tiny-code'>b</span> 时看左上角 <span class='tiny-code'>dp[2][1]</span>，不用它时看上方 <span class='tiny-code'>dp[2][2]</span>。"
+        };
+      });
+    }));
+
+    document.querySelectorAll("[data-check='q5']").forEach(btn => btn.addEventListener("click", () => {
+      checkNumericQuestion("q5", value => {
+        if (value === "") return { ok: false, message: "先填一个数字。提示：最后一个字符 <span class='tiny-code'>c</span> 能和目标串最后一个字符匹配。" };
+        const ok = Number(value) === 2;
+        return {
+          ok,
+          message: ok
+            ? "正确。<span class='tiny-code'>dp[4][3] = 2</span>，表示：在整个 <span class='tiny-code'>s = \"aabc\"</span> 中，组成整个 <span class='tiny-code'>t = \"abc\"</span> 一共有 2 种不同子序列。区别来自前面选第一个 <span class='tiny-code'>a</span> 还是第二个 <span class='tiny-code'>a</span>。"
+            : "再回忆终点格的意义。右下角不是“最后一次转移的结果”这么简单，它代表题目最终要问的完整前缀对完整前缀。"
+        };
+      });
+    }));
+  }
+
+  function initPage() {
+    buildChips("demoSChips", demo.s);
+    buildChips("demoTChips", demo.t);
+    buildChips("practiceSChips", practice.s);
+    buildChips("practiceTChips", practice.t);
+
+    createDpTable("demoTable", demo.s, demo.t, { showCellNote: true });
+    createDpTable("practiceTable", practice.s, practice.t);
+
+    demoState.steps = generateDemoSteps(demo.s, demo.t);
+    renderDemoStep(0);
+
+    renderPracticeStaticTable();
+    initPractice();
+    updateScore();
+
+    document.getElementById("nextStepBtn").addEventListener("click", nextStep);
+    document.getElementById("prevStepBtn").addEventListener("click", prevStep);
+    document.getElementById("autoPlayBtn").addEventListener("click", toggleAutoPlay);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      stopAutoPlay();
+      renderDemoStep(0);
+    });
+    document.getElementById("speedRange").addEventListener("input", (e) => {
+      demoState.speed = Number(e.target.value);
+      if (demoState.timer) startAutoPlay();
+    });
+  }
+
+  initPage();
+</script>
+</body>
+</html>

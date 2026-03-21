@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>647. 回文子串 - DP可视化</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6ee7b7, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .main-layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+  }
+
+  .left-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  .card {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* 字符串展示 */
+  .string-display {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .char-box {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    border-radius: 12px;
+    background: #252547;
+    border: 2px solid #3a3a6a;
+    transition: all 0.35s ease;
+    position: relative;
+  }
+
+  .char-box.highlight-i {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+  }
+
+  .char-box.highlight-j {
+    border-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.15);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.3);
+  }
+
+  .char-box.highlight-ij {
+    border-color: #ec4899;
+    background: rgba(236, 72, 153, 0.15);
+    box-shadow: 0 0 16px rgba(236, 72, 153, 0.3);
+  }
+
+  .char-box.in-palindrome {
+    border-color: #34d399;
+    background: rgba(52, 211, 153, 0.18);
+    box-shadow: 0 0 16px rgba(52, 211, 153, 0.3);
+  }
+
+  .char-indices {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .char-idx {
+    width: 52px;
+    text-align: center;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .pointer-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+    height: 22px;
+  }
+
+  .pointer-label {
+    width: 52px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.3s;
+  }
+
+  .pointer-label.pi { color: #f59e0b; }
+  .pointer-label.pj { color: #8b5cf6; }
+  .pointer-label.pij { color: #ec4899; }
+
+  /* DP 表格 */
+  .dp-table-wrapper {
+    display: flex;
+    justify-content: center;
+  }
+
+  table.dp-table {
+    border-collapse: separate;
+    border-spacing: 4px;
+  }
+
+  .dp-table th {
+    width: 52px;
+    height: 28px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-align: center;
+  }
+
+  .dp-table th.corner { width: 52px; }
+
+  .dp-table th.col-header span {
+    display: inline-block;
+    padding: 2px 0;
+  }
+
+  .dp-table th.row-header {
+    text-align: right;
+    padding-right: 8px;
+  }
+
+  .dp-cell {
+    width: 52px;
+    height: 52px;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    background: #1e1e3a;
+    border: 2px solid transparent;
+    transition: all 0.35s ease;
+    position: relative;
+  }
+
+  .dp-cell.inactive {
+    background: #141428;
+    color: #3a3a5a;
+  }
+
+  .dp-cell.cell-true {
+    background: rgba(52, 211, 153, 0.12);
+    border-color: #34d399;
+    color: #34d399;
+  }
+
+  .dp-cell.cell-false {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .dp-cell.current {
+    border-color: #facc15 !important;
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+    animation: pulse-current 1.2s ease-in-out infinite;
+  }
+
+  .dp-cell.dependency {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+  }
+
+  @keyframes pulse-current {
+    0%, 100% { box-shadow: 0 0 16px rgba(250, 204, 21, 0.3); }
+    50% { box-shadow: 0 0 28px rgba(250, 204, 21, 0.55); }
+  }
+
+  /* 控制栏 */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:active { transform: scale(0.96); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+  }
+
+  .btn-primary:hover { filter: brightness(1.15); }
+
+  .btn-secondary {
+    background: #252547;
+    color: #e0e0e0;
+    border: 1px solid #3a3a6a;
+  }
+
+  .btn-secondary:hover { background: #2f2f5a; }
+
+  .btn-reset {
+    background: #3a1a1a;
+    color: #f87171;
+    border: 1px solid #5a2a2a;
+  }
+
+  .btn-reset:hover { background: #4a2020; }
+
+  .step-info {
+    font-size: 13px;
+    color: #9ca3af;
+    min-width: 90px;
+    text-align: center;
+  }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .speed-control input[type="range"] {
+    width: 80px;
+    accent-color: #6366f1;
+  }
+
+  /* 右侧面板 */
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  /* 状态说明 */
+  .explanation {
+    font-size: 14px;
+    line-height: 1.8;
+    min-height: 100px;
+  }
+
+  .explanation .code-like {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #252547;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 13px;
+    color: #a5b4fc;
+  }
+
+  .explanation .val-true { color: #34d399; font-weight: 700; }
+  .explanation .val-false { color: #ef4444; font-weight: 700; }
+  .explanation .highlight { color: #facc15; font-weight: 600; }
+
+  /* 计数器 */
+  .counter-display {
+    text-align: center;
+    padding: 12px;
+  }
+
+  .counter-number {
+    font-size: 56px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+
+  .counter-label {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 4px;
+  }
+
+  /* 回文列表 */
+  .palindrome-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .palindrome-list::-webkit-scrollbar { width: 4px; }
+  .palindrome-list::-webkit-scrollbar-thumb { background: #3a3a6a; border-radius: 4px; }
+
+  .palindrome-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #252547;
+    border-radius: 10px;
+    font-size: 14px;
+    animation: slide-in 0.3s ease;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .palindrome-item .pal-num {
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    color: #0f0f1a;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .palindrome-item .pal-str {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-weight: 600;
+    color: #34d399;
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  .palindrome-item .pal-range {
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: auto;
+  }
+
+  /* 图例 */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 2px solid;
+  }
+
+  .legend-dot.lg-current { border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
+  .legend-dot.lg-true { border-color: #34d399; background: rgba(52, 211, 153, 0.12); }
+  .legend-dot.lg-false { border-color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+  .legend-dot.lg-dep { border-color: #38bdf8; background: rgba(56, 189, 248, 0.12); }
+  .legend-dot.lg-unvisited { border-color: #3a3a5a; background: #141428; }
+
+  /* 依赖箭头区域 */
+  .dep-arrow-info {
+    text-align: center;
+    font-size: 13px;
+    color: #38bdf8;
+    min-height: 20px;
+    margin-top: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .main-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ===== Practice Section ===== */
+  .practice-divider {
+    max-width: 1100px;
+    margin: 60px auto 0;
+    border: none;
+    border-top: 1px solid #2a2a4a;
+  }
+
+  .practice-section {
+    max-width: 1100px;
+    margin: 40px auto 40px;
+  }
+
+  .practice-input-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .practice-input-row label {
+    font-size: 15px;
+    color: #9ca3af;
+  }
+
+  .practice-input-row input[type="text"] {
+    background: #1a1a2e;
+    border: 2px solid #3a3a6a;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #e0e0e0;
+    letter-spacing: 4px;
+    width: 200px;
+    text-align: center;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .practice-input-row input[type="text"]:focus {
+    border-color: #f59e0b;
+  }
+
+  .answer-buttons {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .btn-answer {
+    flex: 1;
+    padding: 18px 16px;
+    border: 2px solid;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: inherit;
+  }
+
+  .btn-answer:active:not(:disabled) { transform: scale(0.96); }
+
+  .btn-true {
+    background: rgba(52, 211, 153, 0.08);
+    border-color: #34d399;
+    color: #34d399;
+  }
+
+  .btn-true:hover:not(:disabled) {
+    background: rgba(52, 211, 153, 0.2);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+  }
+
+  .btn-false {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  .btn-false:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-answer:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .feedback-area {
+    min-height: 20px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    transition: all 0.3s;
+  }
+
+  .feedback-correct {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: #34d399;
+  }
+
+  .feedback-wrong {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+  }
+
+  .practice-progress {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 10px;
+    background: #252547;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f59e0b, #34d399);
+    border-radius: 5px;
+    transition: width 0.5s ease;
+  }
+
+  .score-display {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+  }
+
+  .score-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .score-num {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .score-label {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .btn-continue {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+
+  .btn-continue:hover { filter: brightness(1.15); }
+
+  .practice-complete {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .practice-complete .complete-title {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+
+  .practice-complete .complete-stats {
+    font-size: 15px;
+    color: #9ca3af;
+    line-height: 2;
+  }
+
+  .rule-list {
+    font-size: 13px;
+    line-height: 2.2;
+    color: #d1d5db;
+  }
+
+  .rule-num {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 6px;
+    background: #252547;
+    font-size: 12px;
+    font-weight: 700;
+    color: #9ca3af;
+    margin-right: 6px;
+  }
+
+  .keyboard-hint {
+    text-align: center;
+    font-size: 12px;
+    color: #4b5563;
+    margin-top: 10px;
+  }
+
+  .keyboard-hint kbd {
+    background: #252547;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', monospace;
+    font-size: 12px;
+    border: 1px solid #3a3a6a;
+    color: #9ca3af;
+  }
+
+  @keyframes shake-it {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .shake { animation: shake-it 0.4s ease; }
+
+  @keyframes pop-in {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop-in 0.4s ease; }
+</style>
+</head>
+<body>
+
+<h1>647. 回文子串 — 动态规划可视化</h1>
+<p class="subtitle">输入：s = "cbabc" &nbsp;|&nbsp; dp[i][j] 表示 s[i..j] 是否为回文串</p>
+
+<div class="main-layout">
+  <div class="left-panel">
+
+    <div class="card">
+      <div class="card-title">字符串 s</div>
+      <div class="pointer-row" id="pointerRow"></div>
+      <div class="string-display" id="stringDisplay"></div>
+      <div class="char-indices" id="charIndices"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DP 表（dp[i][j]）</div>
+      <div class="dp-table-wrapper">
+        <table class="dp-table" id="dpTable"></table>
+      </div>
+      <div class="dep-arrow-info" id="depInfo"></div>
+      <div class="legend" style="margin-top:14px;">
+        <div class="legend-item"><div class="legend-dot lg-current"></div>当前</div>
+        <div class="legend-item"><div class="legend-dot lg-true"></div>回文 (true)</div>
+        <div class="legend-item"><div class="legend-dot lg-false"></div>非回文 (false)</div>
+        <div class="legend-item"><div class="legend-dot lg-dep"></div>依赖项</div>
+        <div class="legend-item"><div class="legend-dot lg-unvisited"></div>未访问</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <button class="btn btn-reset" onclick="resetVis()">重置</button>
+        <button class="btn btn-secondary" onclick="prevStep()">◀ 上一步</button>
+        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">▶ 播放</button>
+        <button class="btn btn-secondary" onclick="nextStep()">下一步 ▶</button>
+        <span class="step-info" id="stepInfo">0 / 0</span>
+        <div class="speed-control">
+          <span>速度</span>
+          <input type="range" id="speedSlider" min="1" max="10" value="5">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+
+    <div class="card">
+      <div class="card-title">当前步骤说明</div>
+      <div class="explanation" id="explanation">
+        点击 <strong>播放</strong> 或 <strong>下一步</strong> 开始演示算法执行过程。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">回文子串计数</div>
+      <div class="counter-display">
+        <div class="counter-number" id="counterNum">0</div>
+        <div class="counter-label">个回文子串</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">已找到的回文子串</div>
+      <div class="palindrome-list" id="palindromeList">
+        <div style="color:#6b7280;font-size:13px;text-align:center;padding:20px;">尚未开始...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="practice-divider">
+<div class="practice-section">
+  <h1>动手练习</h1>
+  <p class="subtitle">轮到你了！手动填写 DP 表的每一步，强化理解 &nbsp;|&nbsp; 键盘快捷键：T = True，F = False，Enter = 继续</p>
+
+  <div class="practice-input-row">
+    <label>输入练习字符串：</label>
+    <input type="text" id="practiceInput" value="abba" maxlength="7" placeholder="2-7 个字符">
+    <button class="btn btn-primary" onclick="startPractice()">开始练习</button>
+  </div>
+
+  <div class="main-layout" id="practiceArea" style="display:none;">
+    <div class="left-panel">
+      <div class="card">
+        <div class="card-title">练习字符串</div>
+        <div class="pointer-row" id="pPointerRow"></div>
+        <div class="string-display" id="pStringDisplay"></div>
+        <div class="char-indices" id="pCharIndices"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">DP 表 — 请填写每个格子</div>
+        <div class="dp-table-wrapper">
+          <table class="dp-table" id="pDpTable"></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="practice-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <span class="step-info" id="progressText">0 / 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="card">
+        <div class="card-title">算法规则速查</div>
+        <div class="rule-list">
+          <div><span class="rule-num">1</span>若 <span class="code-like">s[i] &ne; s[j]</span> &rarr; <span style="color:#ef4444">false</span></div>
+          <div><span class="rule-num">2</span>若 <span class="code-like">s[i] = s[j]</span> 且长度 &le; 2 &rarr; <span style="color:#34d399">true</span></div>
+          <div><span class="rule-num">3</span>若 <span class="code-like">s[i] = s[j]</span> 且长度 &ge; 3 &rarr; <span class="code-like">dp[i+1][j-1]</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">当前任务</div>
+        <div class="explanation" id="pQuestion">点击「开始练习」生成题目。</div>
+      </div>
+
+      <div class="card" id="answerCard">
+        <div class="card-title">你的判断</div>
+        <div class="answer-buttons">
+          <button class="btn-answer btn-true" id="btnTrue" onclick="submitAnswer(true)" disabled>&#10003; 回文 (True)</button>
+          <button class="btn-answer btn-false" id="btnFalse" onclick="submitAnswer(false)" disabled>&#10007; 非回文 (False)</button>
+        </div>
+        <div id="pFeedback" class="feedback-area"></div>
+        <div class="keyboard-hint">键盘：<kbd>T</kbd> True &nbsp; <kbd>F</kbd> False &nbsp; <kbd>Enter</kbd> 继续</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">成绩统计</div>
+        <div class="score-display">
+          <div class="score-item">
+            <span class="score-num" id="scoreCorrect" style="color:#34d399">0</span>
+            <span class="score-label">正确</span>
+          </div>
+          <div class="score-item">
+            <span class="score-num" id="scoreWrong" style="color:#ef4444">0</span>
+            <span class="score-label">错误</span>
+          </div>
+          <div class="score-item">
+            <span class="score-num" id="scoreStreak" style="color:#facc15">0</span>
+            <span class="score-label">连对</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const S = "cbabc";
+const N = S.length;
+
+let steps = [];
+let currentStep = -1;
+let playing = false;
+let playTimer = null;
+
+function generateSteps() {
+  const dp = Array.from({ length: N }, () => Array(N).fill(null));
+  steps = [];
+  let count = 0;
+
+  steps.push({
+    type: 'init',
+    dp: deepCopy(dp),
+    i: -1, j: -1,
+    depI: -1, depJ: -1,
+    count: 0,
+    palindromes: [],
+    text: '初始化 DP 表，所有值为空（尚未计算）。<br>接下来 <span class="highlight">i 从 n-1=4 开始递减到 0</span>，j 从 i 开始递增到 n-1=4。'
+  });
+
+  const palindromes = [];
+
+  for (let i = N - 1; i >= 0; i--) {
+    for (let j = i; j < N; j++) {
+      let text = '';
+      let depI = -1, depJ = -1;
+      const sub = S.substring(i, j + 1);
+
+      if (S[i] === S[j]) {
+        if (j - i <= 1) {
+          dp[i][j] = true;
+          count++;
+          palindromes.push({ str: sub, i, j });
+          text = `比较 <span class="code-like">s[${i}]='${S[i]}'</span> 与 <span class="code-like">s[${j}]='${S[j]}'</span>：<span class="val-true">相等 ✓</span><br><br>`;
+          if (i === j) {
+            text += `子串长度 = 1（单个字符），一定是回文串。<br>`;
+          } else {
+            text += `子串长度 = 2，两端字符相同，是回文串。<br>`;
+          }
+          text += `<span class="code-like">dp[${i}][${j}]</span> = <span class="val-true">true</span><br>`;
+          text += `找到回文子串 "<span class="val-true">${sub}</span>"，count = ${count}`;
+        } else {
+          depI = i + 1;
+          depJ = j - 1;
+          dp[i][j] = dp[i + 1][j - 1];
+          if (dp[i][j]) {
+            count++;
+            palindromes.push({ str: sub, i, j });
+          }
+          text = `比较 <span class="code-like">s[${i}]='${S[i]}'</span> 与 <span class="code-like">s[${j}]='${S[j]}'</span>：<span class="val-true">相等 ✓</span><br><br>`;
+          text += `子串长度 = ${j - i + 1} ≥ 3，需要看中间部分：<br>`;
+          text += `<span class="code-like">dp[${i}][${j}]</span> = <span class="code-like">dp[${i+1}][${j-1}]</span> = <span class="${dp[i][j] ? 'val-true' : 'val-false'}">${dp[i][j]}</span><br>`;
+          if (dp[i][j]) {
+            text += `找到回文子串 "<span class="val-true">${sub}</span>"，count = ${count}`;
+          } else {
+            text += `不是回文子串，count 不变 = ${count}`;
+          }
+        }
+      } else {
+        dp[i][j] = false;
+        text = `比较 <span class="code-like">s[${i}]='${S[i]}'</span> 与 <span class="code-like">s[${j}]='${S[j]}'</span>：<span class="val-false">不相等 ✗</span><br><br>`;
+        text += `两端字符不同，一定不是回文串。<br>`;
+        text += `<span class="code-like">dp[${i}][${j}]</span> = <span class="val-false">false</span>`;
+      }
+
+      steps.push({
+        type: 'eval',
+        dp: deepCopy(dp),
+        i, j,
+        depI, depJ,
+        count,
+        palindromes: [...palindromes],
+        text
+      });
+    }
+  }
+
+  steps.push({
+    type: 'done',
+    dp: deepCopy(dp),
+    i: -1, j: -1,
+    depI: -1, depJ: -1,
+    count,
+    palindromes: [...palindromes],
+    text: `算法执行完毕！<br><br>字符串 "<span class="highlight">${S}</span>" 共有 <span class="val-true">${count}</span> 个回文子串。`
+  });
+}
+
+function deepCopy(arr) {
+  return arr.map(row => [...row]);
+}
+
+function buildUI() {
+  const sd = document.getElementById('stringDisplay');
+  const ci = document.getElementById('charIndices');
+  const pr = document.getElementById('pointerRow');
+  sd.innerHTML = '';
+  ci.innerHTML = '';
+  pr.innerHTML = '';
+
+  for (let k = 0; k < N; k++) {
+    const box = document.createElement('div');
+    box.className = 'char-box';
+    box.id = 'char-' + k;
+    box.textContent = S[k];
+    sd.appendChild(box);
+
+    const idx = document.createElement('div');
+    idx.className = 'char-idx';
+    idx.textContent = k;
+    ci.appendChild(idx);
+
+    const pl = document.createElement('div');
+    pl.className = 'pointer-label';
+    pl.id = 'ptr-' + k;
+    pr.appendChild(pl);
+  }
+
+  const table = document.getElementById('dpTable');
+  table.innerHTML = '';
+
+  const headerRow = document.createElement('tr');
+  const corner = document.createElement('th');
+  corner.className = 'corner';
+  corner.textContent = 'i \\ j';
+  headerRow.appendChild(corner);
+  for (let j = 0; j < N; j++) {
+    const th = document.createElement('th');
+    th.className = 'col-header';
+    th.innerHTML = `<span>${j}<br><small style="color:#6b7280">${S[j]}</small></span>`;
+    headerRow.appendChild(th);
+  }
+  table.appendChild(headerRow);
+
+  for (let i = 0; i < N; i++) {
+    const row = document.createElement('tr');
+    const rh = document.createElement('th');
+    rh.className = 'row-header';
+    rh.innerHTML = `${S[i]} <small style="color:#6b7280">${i}</small>`;
+    row.appendChild(rh);
+    for (let j = 0; j < N; j++) {
+      const td = document.createElement('td');
+      td.className = 'dp-cell inactive';
+      td.id = `cell-${i}-${j}`;
+      if (j < i) {
+        td.textContent = '—';
+        td.style.color = '#2a2a4a';
+      }
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+  }
+}
+
+function renderStep(idx) {
+  if (idx < 0 || idx >= steps.length) return;
+  const step = steps[idx];
+  currentStep = idx;
+
+  for (let k = 0; k < N; k++) {
+    const box = document.getElementById('char-' + k);
+    box.className = 'char-box';
+    document.getElementById('ptr-' + k).textContent = '';
+    document.getElementById('ptr-' + k).className = 'pointer-label';
+  }
+
+  if (step.i >= 0 && step.j >= 0) {
+    if (step.i === step.j) {
+      document.getElementById('char-' + step.i).classList.add('highlight-ij');
+      const ptr = document.getElementById('ptr-' + step.i);
+      ptr.textContent = 'i=j';
+      ptr.classList.add('pij');
+    } else {
+      document.getElementById('char-' + step.i).classList.add('highlight-i');
+      document.getElementById('char-' + step.j).classList.add('highlight-j');
+      const ptrI = document.getElementById('ptr-' + step.i);
+      ptrI.textContent = 'i';
+      ptrI.classList.add('pi');
+      const ptrJ = document.getElementById('ptr-' + step.j);
+      ptrJ.textContent = 'j';
+      ptrJ.classList.add('pj');
+    }
+
+    if (step.dp[step.i][step.j] === true) {
+      for (let k = step.i; k <= step.j; k++) {
+        document.getElementById('char-' + k).classList.add('in-palindrome');
+      }
+    }
+  }
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const cell = document.getElementById(`cell-${i}-${j}`);
+      if (j < i) continue;
+
+      cell.className = 'dp-cell';
+      const val = step.dp[i][j];
+
+      if (val === true) {
+        cell.classList.add('cell-true');
+        cell.textContent = 'T';
+      } else if (val === false) {
+        cell.classList.add('cell-false');
+        cell.textContent = 'F';
+      } else {
+        cell.classList.add('inactive');
+        cell.textContent = '';
+      }
+
+      if (step.i === i && step.j === j) {
+        cell.classList.add('current');
+      }
+      if (step.depI === i && step.depJ === j && step.depI >= 0) {
+        cell.classList.add('dependency');
+      }
+    }
+  }
+
+  const depInfo = document.getElementById('depInfo');
+  if (step.depI >= 0 && step.depJ >= 0) {
+    depInfo.textContent = `↖ 依赖: dp[${step.depI}][${step.depJ}] = ${step.dp[step.depI][step.depJ]}`;
+  } else {
+    depInfo.textContent = '';
+  }
+
+  document.getElementById('explanation').innerHTML = step.text;
+  document.getElementById('counterNum').textContent = step.count;
+  document.getElementById('stepInfo').textContent = `${idx} / ${steps.length - 1}`;
+
+  const listEl = document.getElementById('palindromeList');
+  if (step.palindromes.length === 0) {
+    listEl.innerHTML = '<div style="color:#6b7280;font-size:13px;text-align:center;padding:20px;">尚未找到回文子串</div>';
+  } else {
+    listEl.innerHTML = step.palindromes.map((p, idx) =>
+      `<div class="palindrome-item">
+        <div class="pal-num">${idx + 1}</div>
+        <div class="pal-str">${p.str}</div>
+        <div class="pal-range">[${p.i}, ${p.j}]</div>
+      </div>`
+    ).join('');
+    listEl.scrollTop = listEl.scrollHeight;
+  }
+}
+
+function nextStep() {
+  if (currentStep < steps.length - 1) {
+    renderStep(currentStep + 1);
+  } else if (playing) {
+    stopPlay();
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    renderStep(currentStep - 1);
+  }
+}
+
+function togglePlay() {
+  if (playing) {
+    stopPlay();
+  } else {
+    startPlay();
+  }
+}
+
+function startPlay() {
+  if (currentStep >= steps.length - 1) {
+    renderStep(0);
+  }
+  playing = true;
+  document.getElementById('playBtn').textContent = '⏸ 暂停';
+  scheduleNext();
+}
+
+function stopPlay() {
+  playing = false;
+  document.getElementById('playBtn').textContent = '▶ 播放';
+  clearTimeout(playTimer);
+}
+
+function scheduleNext() {
+  if (!playing) return;
+  const speed = document.getElementById('speedSlider').value;
+  const delay = 1800 - speed * 150;
+  playTimer = setTimeout(() => {
+    nextStep();
+    if (playing && currentStep < steps.length - 1) {
+      scheduleNext();
+    } else {
+      stopPlay();
+    }
+  }, delay);
+}
+
+function resetVis() {
+  stopPlay();
+  currentStep = -1;
+  renderStep(0);
+}
+
+generateSteps();
+buildUI();
+renderStep(0);
+</script>
+
+<script>
+const prac = {
+  str: '', n: 0, dp: [], steps: [],
+  currentIdx: 0,
+  score: { correct: 0, wrong: 0, streak: 0 },
+  waiting: false
+};
+
+function startPractice() {
+  const raw = document.getElementById('practiceInput').value.trim().toLowerCase();
+  if (!raw || raw.length < 2 || raw.length > 7) {
+    alert('请输入 2\u20137 个字符的字符串');
+    return;
+  }
+  prac.str = raw;
+  prac.n = raw.length;
+  prac.currentIdx = 0;
+  prac.score = { correct: 0, wrong: 0, streak: 0 };
+  prac.waiting = false;
+
+  const n = prac.n;
+  prac.dp = Array.from({ length: n }, () => Array(n).fill(null));
+  prac.steps = [];
+
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = i; j < n; j++) {
+      if (prac.str[i] === prac.str[j]) {
+        prac.dp[i][j] = j - i <= 1 ? true : prac.dp[i + 1][j - 1];
+      } else {
+        prac.dp[i][j] = false;
+      }
+      prac.steps.push({ i: i, j: j });
+    }
+  }
+
+  buildPracUI();
+  document.getElementById('practiceArea').style.display = '';
+  showPracStep();
+  updatePracScore();
+  document.querySelector('.practice-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function buildPracUI() {
+  var n = prac.n, s = prac.str;
+  var sd = document.getElementById('pStringDisplay');
+  var ci = document.getElementById('pCharIndices');
+  var pr = document.getElementById('pPointerRow');
+  sd.innerHTML = ''; ci.innerHTML = ''; pr.innerHTML = '';
+
+  for (var k = 0; k < n; k++) {
+    var box = document.createElement('div');
+    box.className = 'char-box';
+    box.id = 'pchar-' + k;
+    box.textContent = s[k];
+    sd.appendChild(box);
+
+    var idx = document.createElement('div');
+    idx.className = 'char-idx';
+    idx.textContent = k;
+    ci.appendChild(idx);
+
+    var pl = document.createElement('div');
+    pl.className = 'pointer-label';
+    pl.id = 'pptr-' + k;
+    pr.appendChild(pl);
+  }
+
+  var table = document.getElementById('pDpTable');
+  table.innerHTML = '';
+  var headerRow = document.createElement('tr');
+  var corner = document.createElement('th');
+  corner.className = 'corner';
+  corner.textContent = 'i \\ j';
+  headerRow.appendChild(corner);
+  for (var j = 0; j < n; j++) {
+    var th = document.createElement('th');
+    th.className = 'col-header';
+    th.innerHTML = '<span>' + j + '<br><small style="color:#6b7280">' + s[j] + '</small></span>';
+    headerRow.appendChild(th);
+  }
+  table.appendChild(headerRow);
+
+  for (var i = 0; i < n; i++) {
+    var row = document.createElement('tr');
+    var rh = document.createElement('th');
+    rh.className = 'row-header';
+    rh.innerHTML = s[i] + ' <small style="color:#6b7280">' + i + '</small>';
+    row.appendChild(rh);
+    for (var j2 = 0; j2 < n; j2++) {
+      var td = document.createElement('td');
+      td.className = 'dp-cell inactive';
+      td.id = 'pcell-' + i + '-' + j2;
+      if (j2 < i) { td.textContent = '\u2014'; td.style.color = '#2a2a4a'; }
+      row.appendChild(td);
+    }
+    table.appendChild(row);
+  }
+}
+
+function showPracStep() {
+  var idx = prac.currentIdx, n = prac.n, s = prac.str;
+  if (idx >= prac.steps.length) { showPracComplete(); return; }
+
+  var si = prac.steps[idx].i, sj = prac.steps[idx].j;
+
+  for (var k = 0; k < n; k++) {
+    document.getElementById('pchar-' + k).className = 'char-box';
+    var ptr = document.getElementById('pptr-' + k);
+    ptr.textContent = ''; ptr.className = 'pointer-label';
+  }
+  for (var r = 0; r < n; r++) {
+    for (var c = r; c < n; c++) {
+      var cl = document.getElementById('pcell-' + r + '-' + c);
+      cl.classList.remove('current', 'dependency', 'shake', 'pop');
+    }
+  }
+
+  if (si === sj) {
+    document.getElementById('pchar-' + si).classList.add('highlight-ij');
+    var p1 = document.getElementById('pptr-' + si);
+    p1.textContent = 'i=j'; p1.classList.add('pij');
+  } else {
+    document.getElementById('pchar-' + si).classList.add('highlight-i');
+    document.getElementById('pchar-' + sj).classList.add('highlight-j');
+    var pi = document.getElementById('pptr-' + si);
+    pi.textContent = 'i'; pi.classList.add('pi');
+    var pj = document.getElementById('pptr-' + sj);
+    pj.textContent = 'j'; pj.classList.add('pj');
+  }
+
+  var cell = document.getElementById('pcell-' + si + '-' + sj);
+  cell.className = 'dp-cell current';
+  cell.textContent = '?';
+
+  if (s[si] === s[sj] && sj - si > 1) {
+    document.getElementById('pcell-' + (si + 1) + '-' + (sj - 1)).classList.add('dependency');
+  }
+
+  var q = '<span class="highlight">\u7b2c ' + (idx + 1) + ' \u6b65\uff08\u5171 ' + prac.steps.length + ' \u6b65\uff09</span><br><br>';
+  q += '\u8bf7\u5224\u65ad\uff1a<span class="code-like">dp[' + si + '][' + sj + ']</span> = ?<br><br>';
+  q += '\u5b50\u4e32 = "<strong>' + s.substring(si, sj + 1) + '</strong>"\uff08\u957f\u5ea6 ' + (sj - si + 1) + '\uff09<br>';
+  q += '<span class="code-like">s[' + si + "] = '" + s[si] + "'</span> vs ";
+  q += '<span class="code-like">s[' + sj + "] = '" + s[sj] + "'</span>";
+
+  if (s[si] === s[sj] && sj - si > 1) {
+    var dv = prac.dp[si + 1][sj - 1];
+    q += '<br><br>\u5df2\u77e5\uff1a<span class="code-like">dp[' + (si + 1) + '][' + (sj - 1) + ']</span> = ';
+    q += '<span class="' + (dv ? 'val-true' : 'val-false') + '">' + dv + '</span>';
+  }
+
+  document.getElementById('pQuestion').innerHTML = q;
+  document.getElementById('btnTrue').disabled = false;
+  document.getElementById('btnFalse').disabled = false;
+  document.getElementById('pFeedback').innerHTML = '';
+  document.getElementById('pFeedback').className = 'feedback-area';
+
+  document.getElementById('progressFill').style.width = (idx / prac.steps.length * 100) + '%';
+  document.getElementById('progressText').textContent = idx + ' / ' + prac.steps.length;
+}
+
+function submitAnswer(answer) {
+  if (prac.waiting) return;
+  if (prac.currentIdx >= prac.steps.length) return;
+
+  var si = prac.steps[prac.currentIdx].i;
+  var sj = prac.steps[prac.currentIdx].j;
+  var correct = prac.dp[si][sj];
+  var s = prac.str;
+  var cell = document.getElementById('pcell-' + si + '-' + sj);
+
+  document.getElementById('btnTrue').disabled = true;
+  document.getElementById('btnFalse').disabled = true;
+
+  if (answer === correct) {
+    prac.score.correct++;
+    prac.score.streak++;
+    cell.className = 'dp-cell ' + (correct ? 'cell-true' : 'cell-false') + ' pop';
+    cell.textContent = correct ? 'T' : 'F';
+
+    var fb = document.getElementById('pFeedback');
+    fb.className = 'feedback-area feedback-correct';
+    fb.innerHTML = '<strong>\u6b63\u786e\uff01</strong> dp[' + si + '][' + sj + '] = ' + correct;
+    updatePracScore();
+
+    setTimeout(function() { prac.currentIdx++; showPracStep(); }, 700);
+  } else {
+    prac.score.wrong++;
+    prac.score.streak = 0;
+    cell.className = 'dp-cell ' + (correct ? 'cell-true' : 'cell-false') + ' shake';
+    cell.textContent = correct ? 'T' : 'F';
+
+    var expl = '<strong>\u9519\u8bef\uff01</strong> \u6b63\u786e\u7b54\u6848\u662f <span class="' + (correct ? 'val-true' : 'val-false') + '">' + correct + '</span><br><br>';
+    if (s[si] !== s[sj]) {
+      expl += "s[" + si + "]='" + s[si] + "' \u2260 s[" + sj + "]='" + s[sj] + "'\uff0c\u4e24\u7aef\u5b57\u7b26\u4e0d\u540c\uff0c\u4e0d\u53ef\u80fd\u662f\u56de\u6587\u3002";
+    } else if (sj - si <= 1) {
+      if (si === sj) {
+        expl += "\u5355\u4e2a\u5b57\u7b26 '" + s[si] + "' \u4e00\u5b9a\u662f\u56de\u6587\u3002";
+      } else {
+        expl += "s[" + si + "]='" + s[si] + "' = s[" + sj + "]='" + s[sj] + "'\uff0c\u957f\u5ea6\u4e3a 2 \u4e14\u4e24\u7aef\u76f8\u540c\uff0c\u662f\u56de\u6587\u3002";
+      }
+    } else {
+      var depV = prac.dp[si + 1][sj - 1];
+      expl += "s[" + si + "]='" + s[si] + "' = s[" + sj + "]='" + s[sj] + "'\uff0c\u9700\u8981\u770b\u5185\u90e8\u5b50\u4e32\uff1a<br>";
+      expl += "dp[" + (si + 1) + "][" + (sj - 1) + "] = " + depV + "\uff0c\u6240\u4ee5 dp[" + si + "][" + sj + "] = " + depV;
+    }
+    expl += '<br><button class="btn-continue" onclick="pracNext()">\u7ee7\u7eed\u4e0b\u4e00\u6b65 \u2192</button>';
+
+    var fb2 = document.getElementById('pFeedback');
+    fb2.className = 'feedback-area feedback-wrong';
+    fb2.innerHTML = expl;
+    prac.waiting = true;
+    updatePracScore();
+  }
+}
+
+function pracNext() {
+  prac.waiting = false;
+  prac.currentIdx++;
+  showPracStep();
+}
+
+function updatePracScore() {
+  document.getElementById('scoreCorrect').textContent = prac.score.correct;
+  document.getElementById('scoreWrong').textContent = prac.score.wrong;
+  document.getElementById('scoreStreak').textContent = prac.score.streak;
+}
+
+function showPracComplete() {
+  var total = prac.steps.length;
+  var correct = prac.score.correct;
+  var rate = Math.round(correct / total * 100);
+
+  for (var k = 0; k < prac.n; k++) {
+    document.getElementById('pchar-' + k).className = 'char-box';
+    var ptr = document.getElementById('pptr-' + k);
+    ptr.textContent = ''; ptr.className = 'pointer-label';
+  }
+
+  var palCount = 0;
+  for (var i = 0; i < prac.n; i++) {
+    for (var j = i; j < prac.n; j++) {
+      if (prac.dp[i][j]) palCount++;
+    }
+  }
+
+  var grade, gc;
+  if (rate === 100) { grade = '\u5b8c\u7f8e\uff01\u4f60\u5df2\u5b8c\u5168\u638c\u63e1\u4e86\u8fd9\u4e2a\u7b97\u6cd5\uff01'; gc = '#34d399'; }
+  else if (rate >= 80) { grade = '\u5f88\u68d2\uff01\u518d\u7ec3\u51e0\u6b21\u5c31\u80fd\u5b8c\u5168\u638c\u63e1\uff01'; gc = '#34d399'; }
+  else if (rate >= 50) { grade = '\u4e0d\u9519\uff0c\u7ee7\u7eed\u7ec3\u4e60\u52a0\u6df1\u7406\u89e3\uff01'; gc = '#f59e0b'; }
+  else { grade = '\u52a0\u6cb9\uff01\u591a\u7ec3\u51e0\u6b21\u4f1a\u8d8a\u6765\u8d8a\u719f\u7ec3\u7684\uff01'; gc = '#ef4444'; }
+
+  document.getElementById('pQuestion').innerHTML =
+    '<div class="practice-complete">' +
+    '<div class="complete-title">\u7ec3\u4e60\u5b8c\u6210\uff01</div>' +
+    '<div class="complete-stats">' +
+    '\u5b57\u7b26\u4e32 "' + prac.str + '" \u5171\u6709 <strong style="color:#34d399">' + palCount + '</strong> \u4e2a\u56de\u6587\u5b50\u4e32<br>' +
+    '\u6b63\u786e\u7387\uff1a<strong style="color:' + gc + '">' + rate + '%</strong>\uff08' + correct + ' / ' + total + '\uff09<br>' +
+    '<span style="color:' + gc + '">' + grade + '</span></div>' +
+    '<br><button class="btn btn-primary" onclick="startPractice()">\u518d\u6765\u4e00\u6b21</button>' +
+    ' <button class="btn btn-secondary" onclick="document.getElementById(\'practiceInput\').focus()">\u6362\u4e2a\u5b57\u7b26\u4e32</button>' +
+    '</div>';
+
+  document.getElementById('btnTrue').disabled = true;
+  document.getElementById('btnFalse').disabled = true;
+  document.getElementById('pFeedback').innerHTML = '';
+  document.getElementById('pFeedback').className = 'feedback-area';
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressText').textContent = total + ' / ' + total;
+}
+
+document.getElementById('practiceInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') startPractice();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT') return;
+  if (document.getElementById('practiceArea').style.display === 'none') return;
+
+  if (prac.waiting && (e.key === 'Enter' || e.key === ' ')) {
+    e.preventDefault();
+    pracNext();
+    return;
+  }
+  if (prac.currentIdx >= prac.steps.length) return;
+  if (document.getElementById('btnTrue').disabled) return;
+
+  if (e.key === 't' || e.key === 'T') submitAnswer(true);
+  else if (e.key === 'f' || e.key === 'F') submitAnswer(false);
+});
+</script>
+
+</body>
+</html>

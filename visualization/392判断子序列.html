@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>392 判断子序列 - 双模块教学方案</title>
+  <style>
+    :root {
+      --bg: #f6efe6;
+      --paper: #fffdf8;
+      --card: #fff8ef;
+      --ink: #2e241d;
+      --sub: #6f6257;
+      --line: #e3d1bf;
+      --brand: #b65c2f;
+      --brand-soft: #f3d8c8;
+      --good: #2f7d4d;
+      --good-soft: #dff3e6;
+      --warn: #b45a2a;
+      --warn-soft: #fce7d6;
+      --shadow: 0 14px 34px rgba(91, 57, 33, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #fff7ef 0, #fff7ef 18%, transparent 19%),
+        linear-gradient(180deg, #f9f1e8 0%, #f4eadf 45%, #f6efe6 100%);
+      line-height: 1.6;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #fffaf4 0%, #f9e6d7 100%);
+      border: 1px solid #ecd8c8;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -50px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(182, 92, 47, 0.08);
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 40px);
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--sub);
+      font-size: 16px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .summary-card,
+    .module {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-card {
+      padding: 16px 18px;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 14px;
+      color: var(--brand);
+      margin-bottom: 6px;
+    }
+
+    .summary-card span {
+      color: var(--sub);
+      font-size: 14px;
+    }
+
+    .module {
+      padding: 24px;
+      margin-top: 22px;
+    }
+
+    .module-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .module-desc {
+      color: var(--sub);
+      margin: 0 0 18px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid #eedbc8;
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .panel h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .prompt-box {
+      background: #fff6ec;
+      border: 1px dashed #dfbc9d;
+      border-radius: 14px;
+      padding: 14px;
+      color: #6b5444;
+      margin-bottom: 14px;
+    }
+
+    pre {
+      margin: 0;
+      background: #2c241f;
+      color: #f7efe5;
+      border-radius: 16px;
+      padding: 18px;
+      overflow: auto;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .concept-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .concept-item {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .concept-item strong {
+      color: var(--brand);
+    }
+
+    .demo-top {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--sub);
+    }
+
+    .stat-value {
+      margin-top: 5px;
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .string-board {
+      display: grid;
+      gap: 16px;
+      margin: 18px 0 16px;
+    }
+
+    .string-row {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .string-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      color: var(--sub);
+      font-size: 14px;
+    }
+
+    .char-track {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .char-box {
+      width: 54px;
+      min-height: 72px;
+      padding: 8px 6px;
+      border-radius: 14px;
+      border: 2px solid #e6d7ca;
+      background: #fffaf4;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: 0.25s ease;
+      position: relative;
+    }
+
+    .char-box .idx {
+      font-size: 12px;
+      color: var(--sub);
+    }
+
+    .char-box .ch {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .char-box.current-s {
+      border-color: var(--brand);
+      background: #fff0e3;
+      transform: translateY(-4px);
+    }
+
+    .char-box.current-t {
+      border-color: #d18934;
+      background: #fff3db;
+      transform: translateY(-4px);
+    }
+
+    .char-box.matched {
+      border-color: var(--good);
+      background: var(--good-soft);
+    }
+
+    .char-box.skipped {
+      border-color: #d3c0b1;
+      background: #f5eee7;
+      opacity: 0.75;
+    }
+
+    .char-box.done {
+      outline: 3px solid rgba(47, 125, 77, 0.15);
+    }
+
+    .pointer-tag {
+      position: absolute;
+      top: -10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .pointer-i {
+      background: var(--brand);
+      left: 4px;
+    }
+
+    .pointer-j {
+      background: #d18934;
+      right: 4px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button.primary {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    button.secondary {
+      background: #f1e2d2;
+      color: var(--ink);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .step-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .status-chip {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .status-match {
+      background: var(--good-soft);
+      color: var(--good);
+    }
+
+    .status-skip {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .status-end {
+      background: #ece8ff;
+      color: #5b4ab1;
+    }
+
+    .step-card p {
+      margin: 8px 0;
+    }
+
+    .steps-log {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+      max-height: 320px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .log-item {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 12px 14px;
+      color: #5f5147;
+    }
+
+    .practice-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .exercise-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .exercise-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .exercise-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.7fr 0.9fr;
+      gap: 10px;
+      align-items: end;
+      margin: 12px 0;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 6px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid #d8c3b1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      background: #fffaf6;
+    }
+
+    .feedback {
+      margin-top: 14px;
+      border-radius: 14px;
+      padding: 14px;
+      display: none;
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.good {
+      background: var(--good-soft);
+      color: #245f3b;
+      border: 1px solid #bfe3ca;
+    }
+
+    .feedback.bad {
+      background: #fff0ed;
+      color: #9c4737;
+      border: 1px solid #efc4bc;
+    }
+
+    .question-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .question {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fffaf4;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #fff6eb, #fffdf8);
+      border: 1px solid var(--line);
+      color: #6a584c;
+    }
+
+    @media (max-width: 900px) {
+      .two-col,
+      .practice-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .exercise-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>392. 判断子序列</h1>
+      <p>
+        这个页面不是只告诉你答案对不对，而是把这段双指针代码“拆开、放慢、可视化”。
+        你会看到每一步到底比较了什么、为什么有时只移动 <code>j</code>、为什么匹配成功时 <code>i</code> 才前进。
+      </p>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <strong>核心目标</strong>
+          <span>判断字符串 <code>s</code> 能不能按顺序出现在字符串 <code>t</code> 中。</span>
+        </div>
+        <div class="summary-card">
+          <strong>算法抓手</strong>
+          <span>两个指针同时工作：<code>i</code> 看 <code>s</code>，<code>j</code> 扫 <code>t</code>。</span>
+        </div>
+        <div class="summary-card">
+          <strong>最重要的规则</strong>
+          <span>无论匹不匹配，<code>j</code> 都继续向后；只有匹配时 <code>i</code> 才前进。</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="module">
+      <div class="module-title">
+        <span class="badge">模块一</span>
+        <h2>题目与答案代码</h2>
+      </div>
+      <p class="module-desc">
+        先把题目和答案代码读顺。重点不是背代码，而是知道每一行在“控制什么行为”。
+      </p>
+      <div class="two-col">
+        <div class="panel">
+          <h3>题目理解</h3>
+          <div class="prompt-box">
+            给定两个字符串 <code>s</code> 和 <code>t</code>，判断 <code>s</code> 是否为 <code>t</code> 的子序列。<br />
+            “子序列”强调的是：字符顺序不能乱，但中间可以跳过一些字符。
+          </div>
+          <pre><code>/**
+ * 判断字符串 s 是否为字符串 t 的子序列
+ *
+ * 双指针思路：
+ * - i 指向 s 当前想匹配的字符
+ * - j 指向 t 当前扫描到的字符
+ *
+ * 只要两个指针都还没越界，就继续比较：
+ * 1. 如果 s[i] === t[j]
+ *    说明在 t 中找到了 s 的当前字符
+ *    这时 i++，去找 s 的下一个字符
+ * 2. 不管有没有匹配成功
+ *    j 都必须继续后移，因为 t 的扫描不能停在原地
+ *
+ * 最后如果 i === s.length
+ * 说明 s 的每个字符都已经按顺序匹配完成
+ */ 
+var isSubsequence = function(s, t) {
+    // i 用来遍历字符串 s
+    let i = 0;
+
+    // j 用来遍历字符串 t
+    let j = 0;
+
+    // 只要 s 还没匹配完，并且 t 还没扫描完，就继续
+    while (i &lt; s.length &amp;&amp; j &lt; t.length) {
+        // 当前字符相同，说明找到了一个需要的字符
+        if (s[i] === t[j]) {
+            i++; // s 前进到下一个待匹配字符
+        }
+
+        // 无论匹配是否成功，t 都继续向后扫描
+        j++;
+    }
+
+    // 如果 i 走到 s 末尾，表示 s 全部匹配完成
+    return i === s.length;
+};</code></pre>
+        </div>
+
+        <div class="panel">
+          <h3>读代码时要抓住的 4 个点</h3>
+          <div class="concept-list">
+            <div class="concept-item">
+              <strong>点 1：为什么用两个指针？</strong><br />
+              因为我们想一边记住 <code>s</code> 正在等哪个字符，一边不停扫描 <code>t</code>。
+            </div>
+            <div class="concept-item">
+              <strong>点 2：为什么 <code>j</code> 总要前进？</strong><br />
+              因为 <code>t</code> 是“被搜索的长串”，每个位置最多看一次，跳过就继续往后。
+            </div>
+            <div class="concept-item">
+              <strong>点 3：为什么匹配时只让 <code>i</code> 前进一次？</strong><br />
+              因为当前这一个字符只解决了 <code>s</code> 的一个需求，不能一下跳过多个字符。
+            </div>
+            <div class="concept-item">
+              <strong>点 4：循环结束后为什么看 <code>i === s.length</code>？</strong><br />
+              这表示 <code>s</code> 里每个字符都已经按顺序找到了，算法任务真正完成。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module">
+      <div class="module-title">
+        <span class="badge">模块二</span>
+        <h2>演示可视化模块</h2>
+      </div>
+      <p class="module-desc">
+        这里使用示例 <code>s = "abc"</code>，<code>t = "ahbgdc"</code>。请一边点击下一步，一边观察：
+        哪些字符真正参与了匹配，哪些字符只是被 <code>j</code> 扫过后跳过。
+      </p>
+
+      <div class="demo-top">
+        <div class="stat">
+          <div class="stat-label">当前步骤</div>
+          <div class="stat-value" id="stepCounter">0 / 0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">指针 i</div>
+          <div class="stat-value" id="iValue">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">指针 j</div>
+          <div class="stat-value" id="jValue">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">当前判断</div>
+          <div class="stat-value" id="judgeValue" style="font-size:18px;">准备开始</div>
+        </div>
+      </div>
+
+      <div class="string-board">
+        <div class="string-row">
+          <div class="string-head">
+            <span><strong>s</strong>：目标串，必须按顺序全部匹配</span>
+            <span id="sNeedHint">当前等待：s[0]</span>
+          </div>
+          <div class="char-track" id="sTrack"></div>
+        </div>
+        <div class="string-row">
+          <div class="string-head">
+            <span><strong>t</strong>：扫描串，逐个位置向后检查</span>
+            <span id="tScanHint">当前扫描：t[0]</span>
+          </div>
+          <div class="char-track" id="tTrack"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="nextBtn">下一步</button>
+        <button class="secondary" id="prevBtn">上一步</button>
+        <button class="secondary" id="autoBtn">自动演示</button>
+        <button class="secondary" id="resetBtn">重新开始</button>
+      </div>
+
+      <div class="two-col">
+        <div class="step-card">
+          <div class="status-chip status-end" id="statusChip">等待开始</div>
+          <p id="stepExplain">点击“下一步”，从代码中的第一次 while 判断开始。</p>
+          <p id="codeExplain">此时还没有进入循环，<code>i = 0</code>，<code>j = 0</code>。</p>
+        </div>
+
+        <div class="panel">
+          <h3>过程日志</h3>
+          <div class="steps-log" id="stepsLog"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="module">
+      <div class="module-title">
+        <span class="badge">模块三</span>
+        <h2>动手练习模块</h2>
+      </div>
+      <p class="module-desc">
+        练习示例改成 <code>s = "bag"</code>，<code>t = "babgbag"</code>。
+        这个例子和演示区不同，你需要自己判断每一步指针怎么移动，重点练“过程”，不是只猜最终答案。
+      </p>
+
+      <div class="practice-layout">
+        <div class="exercise-card">
+          <h3>练习一：补全前三步</h3>
+          <div class="prompt-box">
+            初始时 <code>i = 0</code>，<code>j = 0</code>。请根据代码，填写每一步比较后发生了什么。<br />
+            这里的“下一状态”指的是这一轮执行完 <code>if</code> 和 <code>j++</code> 之后的结果。
+          </div>
+
+          <div class="exercise-row">
+            <div>
+              <label>第 1 步：比较结果</label>
+              <select id="p1Match">
+                <option value="">请选择</option>
+                <option value="match">匹配成功</option>
+                <option value="skip">不匹配，跳过 t[j]</option>
+              </select>
+            </div>
+            <div>
+              <label>第 1 步后 i</label>
+              <input id="p1I" type="text" placeholder="填写数字" />
+            </div>
+            <div>
+              <label>第 1 步后 j</label>
+              <input id="p1J" type="text" placeholder="填写数字" />
+            </div>
+          </div>
+
+          <div class="exercise-row">
+            <div>
+              <label>第 2 步：比较结果</label>
+              <select id="p2Match">
+                <option value="">请选择</option>
+                <option value="match">匹配成功</option>
+                <option value="skip">不匹配，跳过 t[j]</option>
+              </select>
+            </div>
+            <div>
+              <label>第 2 步后 i</label>
+              <input id="p2I" type="text" placeholder="填写数字" />
+            </div>
+            <div>
+              <label>第 2 步后 j</label>
+              <input id="p2J" type="text" placeholder="填写数字" />
+            </div>
+          </div>
+
+          <div class="exercise-row">
+            <div>
+              <label>第 3 步：比较结果</label>
+              <select id="p3Match">
+                <option value="">请选择</option>
+                <option value="match">匹配成功</option>
+                <option value="skip">不匹配，跳过 t[j]</option>
+              </select>
+            </div>
+            <div>
+              <label>第 3 步后 i</label>
+              <input id="p3I" type="text" placeholder="填写数字" />
+            </div>
+            <div>
+              <label>第 3 步后 j</label>
+              <input id="p3J" type="text" placeholder="填写数字" />
+            </div>
+          </div>
+
+          <button class="primary" id="checkPracticeBtn">检查我的过程</button>
+          <div class="feedback" id="practiceFeedback"></div>
+        </div>
+
+        <div class="exercise-card">
+          <h3>练习二：回答关键理解问题</h3>
+          <div class="question-list">
+            <div class="question">
+              <label>问题 1：如果某一步 <code>s[i] !== t[j]</code>，哪一个指针一定会移动？</label>
+              <select id="q1">
+                <option value="">请选择</option>
+                <option value="j">只有 j</option>
+                <option value="i">只有 i</option>
+                <option value="both">i 和 j 都移动</option>
+              </select>
+            </div>
+            <div class="question">
+              <label>问题 2：为什么最终返回值只检查 <code>i === s.length</code>？</label>
+              <select id="q2">
+                <option value="">请选择</option>
+                <option value="all">因为这表示 s 已经全部匹配完</option>
+                <option value="tend">因为这表示 t 一定也刚好用完</option>
+                <option value="same">因为两个字符串长度必须相同</option>
+              </select>
+            </div>
+            <div class="question">
+              <label>问题 3：这个算法里，<code>t</code> 中被跳过的字符说明了什么？</label>
+              <select id="q3">
+                <option value="">请选择</option>
+                <option value="extra">它们是多余字符，不影响子序列顺序</option>
+                <option value="error">它们会直接导致算法出错</option>
+                <option value="restart">遇到它们必须重新从 s[0] 开始</option>
+              </select>
+            </div>
+          </div>
+          <button class="primary" id="checkQuizBtn">检查理解题</button>
+          <div class="feedback" id="quizFeedback"></div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        学完这一页后，应该能清楚说出一句话：
+        <strong>“这段代码本质上是在用 j 扫描 t，用 i 记录 s 还剩哪个字符没找到；匹配成功才推进 i，扫描过程永远推进 j。”</strong>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const demoS = "abc";
+    const demoT = "ahbgdc";
+    const sTrack = document.getElementById("sTrack");
+    const tTrack = document.getElementById("tTrack");
+    const stepCounter = document.getElementById("stepCounter");
+    const iValue = document.getElementById("iValue");
+    const jValue = document.getElementById("jValue");
+    const judgeValue = document.getElementById("judgeValue");
+    const sNeedHint = document.getElementById("sNeedHint");
+    const tScanHint = document.getElementById("tScanHint");
+    const statusChip = document.getElementById("statusChip");
+    const stepExplain = document.getElementById("stepExplain");
+    const codeExplain = document.getElementById("codeExplain");
+    const stepsLog = document.getElementById("stepsLog");
+
+    const nextBtn = document.getElementById("nextBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const autoBtn = document.getElementById("autoBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let autoTimer = null;
+    let currentStep = 0;
+
+    function buildStates(s, t) {
+      const states = [{
+        i: 0,
+        j: 0,
+        matchedS: [],
+        passedT: [],
+        status: "end",
+        judge: "准备开始",
+        title: "准备开始",
+        explain: "此时还没有进入 while 循环，两个指针都在起点。",
+        code: "初始化完成：i = 0，j = 0，接下来要判断 while (i < s.length && j < t.length)。"
+      }];
+
+      let i = 0;
+      let j = 0;
+      const matchedS = [];
+      const passedT = [];
+
+      while (i < s.length && j < t.length) {
+        const same = s[i] === t[j];
+        const beforeI = i;
+        const beforeJ = j;
+
+        if (same) {
+          matchedS.push(i);
+          i++;
+        }
+        passedT.push({ index: j, match: same });
+        j++;
+
+        states.push({
+          i,
+          j,
+          focusS: beforeI,
+          focusT: beforeJ,
+          matchedS: [...matchedS],
+          passedT: [...passedT],
+          status: same ? "match" : "skip",
+          judge: same ? "s[i] === t[j]" : "s[i] !== t[j]",
+          title: same ? "匹配成功" : "没有匹配，继续扫描",
+          explain: same
+            ? `比较的是 s[${beforeI}]="${s[beforeI]}" 和 t[${beforeJ}]="${t[beforeJ]}"。字符相同，所以 i 前进一格；然后 j 也照常前进。`
+            : `比较的是 s[${beforeI}]="${s[beforeI]}" 和 t[${beforeJ}]="${t[beforeJ]}"。字符不同，所以 i 不动，只让 j 继续向后扫描。`,
+          code: same
+            ? `进入 if 分支，先执行 i++，再执行循环体后面的 j++。现在 i = ${i}，j = ${j}。`
+            : `没有进入 if 分支，因此 i 保持 ${i} 不变；但 j 仍然执行 j++，现在 j = ${j}。`
+        });
+      }
+
+      states.push({
+        i,
+        j,
+        matchedS: [...matchedS],
+        passedT: [...passedT],
+        status: "end",
+        judge: i === s.length ? "返回 true" : "返回 false",
+        title: i === s.length ? "循环结束，匹配完成" : "循环结束，匹配失败",
+        explain: i === s.length
+          ? `因为 i 已经走到了 ${s.length}，说明 s 的每个字符都按顺序找到了，所以返回 true。`
+          : `因为 t 已经扫描结束，但 i 还停在 ${i}，说明 s 还有字符没找到，所以返回 false。`,
+        code: `while 循环结束后，执行 return i === s.length；此时结果是 ${i === s.length}。`
+      });
+
+      return states;
+    }
+
+    const demoStates = buildStates(demoS, demoT);
+
+    function createCharBox(char, index) {
+      const box = document.createElement("div");
+      box.className = "char-box";
+      box.dataset.index = index;
+      box.innerHTML = `<div class="idx">${index}</div><div class="ch">${char}</div>`;
+      return box;
+    }
+
+    function renderTracks() {
+      sTrack.innerHTML = "";
+      tTrack.innerHTML = "";
+      [...demoS].forEach((ch, idx) => sTrack.appendChild(createCharBox(ch, idx)));
+      [...demoT].forEach((ch, idx) => tTrack.appendChild(createCharBox(ch, idx)));
+    }
+
+    function paintState(stepIndex) {
+      const state = demoStates[stepIndex];
+      const sBoxes = [...sTrack.children];
+      const tBoxes = [...tTrack.children];
+
+      sBoxes.forEach((box, idx) => {
+        box.className = "char-box";
+        box.querySelectorAll(".pointer-tag").forEach(node => node.remove());
+        if (state.matchedS.includes(idx)) {
+          box.classList.add("matched", "done");
+        }
+        if (state.i === idx && stepIndex < demoStates.length - 1) {
+          box.classList.add("current-s");
+          const tag = document.createElement("span");
+          tag.className = "pointer-tag pointer-i";
+          tag.textContent = "i";
+          box.appendChild(tag);
+        }
+      });
+
+      tBoxes.forEach((box, idx) => {
+        box.className = "char-box";
+        box.querySelectorAll(".pointer-tag").forEach(node => node.remove());
+        const passed = state.passedT.find(item => item.index === idx);
+        if (passed) {
+          box.classList.add(passed.match ? "matched" : "skipped");
+        }
+        if (state.j === idx && stepIndex < demoStates.length - 1) {
+          box.classList.add("current-t");
+          const tag = document.createElement("span");
+          tag.className = "pointer-tag pointer-j";
+          tag.textContent = "j";
+          box.appendChild(tag);
+        }
+      });
+
+      stepCounter.textContent = `${stepIndex} / ${demoStates.length - 1}`;
+      iValue.textContent = state.i;
+      jValue.textContent = state.j;
+      judgeValue.textContent = state.judge;
+      sNeedHint.textContent = state.i < demoS.length
+        ? `当前等待：s[${state.i}] = "${demoS[state.i]}"`
+        : "当前等待：s 已全部匹配";
+      tScanHint.textContent = state.j < demoT.length
+        ? `当前扫描：t[${state.j}] = "${demoT[state.j]}"`
+        : "当前扫描：t 已扫描完成";
+
+      statusChip.textContent = state.title;
+      statusChip.className = "status-chip " + (
+        state.status === "match" ? "status-match" :
+        state.status === "skip" ? "status-skip" :
+        "status-end"
+      );
+
+      stepExplain.textContent = state.explain;
+      codeExplain.innerHTML = state.code;
+
+      renderLog(stepIndex);
+    }
+
+    function renderLog(stepIndex) {
+      stepsLog.innerHTML = "";
+      demoStates.slice(1, stepIndex + 1).forEach((state, idx) => {
+        const div = document.createElement("div");
+        div.className = "log-item";
+        div.innerHTML = `<strong>第 ${idx + 1} 步</strong>：${state.title}<br />${state.explain}`;
+        stepsLog.appendChild(div);
+      });
+
+      if (stepIndex === 0) {
+        const div = document.createElement("div");
+        div.className = "log-item";
+        div.textContent = "日志区会按顺序记录每次比较后的变化。";
+        stepsLog.appendChild(div);
+      }
+    }
+
+    function stopAuto() {
+      if (autoTimer) {
+        clearInterval(autoTimer);
+        autoTimer = null;
+        autoBtn.textContent = "自动演示";
+      }
+    }
+
+    nextBtn.addEventListener("click", () => {
+      if (currentStep < demoStates.length - 1) {
+        currentStep++;
+        paintState(currentStep);
+      } else {
+        stopAuto();
+      }
+    });
+
+    prevBtn.addEventListener("click", () => {
+      stopAuto();
+      if (currentStep > 0) {
+        currentStep--;
+        paintState(currentStep);
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      stopAuto();
+      currentStep = 0;
+      paintState(currentStep);
+    });
+
+    autoBtn.addEventListener("click", () => {
+      if (autoTimer) {
+        stopAuto();
+        return;
+      }
+
+      autoBtn.textContent = "暂停演示";
+      autoTimer = setInterval(() => {
+        if (currentStep < demoStates.length - 1) {
+          currentStep++;
+          paintState(currentStep);
+        } else {
+          stopAuto();
+        }
+      }, 1200);
+    });
+
+    document.getElementById("checkPracticeBtn").addEventListener("click", () => {
+      const answers = [
+        {
+          match: document.getElementById("p1Match").value,
+          i: document.getElementById("p1I").value.trim(),
+          j: document.getElementById("p1J").value.trim(),
+          ok: { match: "match", i: "1", j: "1" },
+          note: "第 1 步比较的是 s[0]='b' 和 t[0]='b'，匹配成功，所以 i 变 1，j 变 1。"
+        },
+        {
+          match: document.getElementById("p2Match").value,
+          i: document.getElementById("p2I").value.trim(),
+          j: document.getElementById("p2J").value.trim(),
+          ok: { match: "match", i: "2", j: "2" },
+          note: "第 2 步前 i=1、j=1，比较 s[1]='a' 和 t[1]='a'，依然匹配成功，所以 i 变 2，j 变 2。"
+        },
+        {
+          match: document.getElementById("p3Match").value,
+          i: document.getElementById("p3I").value.trim(),
+          j: document.getElementById("p3J").value.trim(),
+          ok: { match: "skip", i: "2", j: "3" },
+          note: "第 3 步前 i=2、j=2，比较 s[2]='g' 和 t[2]='b'，不匹配，所以 i 不动，j 变 3。"
+        }
+      ];
+
+      const wrongNotes = [];
+      let correctCount = 0;
+
+      answers.forEach((item, idx) => {
+        const ok = item.match === item.ok.match && item.i === item.ok.i && item.j === item.ok.j;
+        if (ok) {
+          correctCount++;
+        } else {
+          wrongNotes.push(`第 ${idx + 1} 步：${item.note}`);
+        }
+      });
+
+      const feedback = document.getElementById("practiceFeedback");
+      feedback.classList.add("show");
+
+      if (correctCount === answers.length) {
+        feedback.className = "feedback good show";
+        feedback.innerHTML = "你把前三步的过程都判断对了。说明你已经抓住了这个算法最关键的节奏：匹配时 i、j 一起形成“前进结果”，不匹配时只有 j 继续扫描。";
+      } else {
+        feedback.className = "feedback bad show";
+        feedback.innerHTML = `你目前答对了 ${correctCount} / ${answers.length} 步。<br />${wrongNotes.join("<br />")}<br />建议按“比较前的 i、j 是多少 -> 是否进入 if -> j 是否照常加一”这个顺序重新想一遍。`;
+      }
+    });
+
+    document.getElementById("checkQuizBtn").addEventListener("click", () => {
+      const q1 = document.getElementById("q1").value;
+      const q2 = document.getElementById("q2").value;
+      const q3 = document.getElementById("q3").value;
+      const feedback = document.getElementById("quizFeedback");
+
+      const wrong = [];
+      if (q1 !== "j") wrong.push("问题 1：不匹配时只有 j 一定移动，i 会停在原地等待下一次匹配。");
+      if (q2 !== "all") wrong.push("问题 2：返回值看 i 是否到达 s.length，本质是在检查 s 是否全部匹配完成。");
+      if (q3 !== "extra") wrong.push("问题 3：被跳过的字符只是 t 中的额外字符，不会破坏子序列顺序。");
+
+      feedback.classList.add("show");
+
+      if (wrong.length === 0) {
+        feedback.className = "feedback good show";
+        feedback.innerHTML = "理解题全部正确。你已经不只是会看结果，而是知道这段代码为什么这样移动指针了。";
+      } else {
+        feedback.className = "feedback bad show";
+        feedback.innerHTML = wrong.join("<br />");
+      }
+    });
+
+    renderTracks();
+    paintState(0);
+  </script>
+</body>
+</html>

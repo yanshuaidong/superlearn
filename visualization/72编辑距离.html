@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>72. 编辑距离 - DP可视化</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6ee7b7, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .main-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+  }
+
+  .left-panel { display: flex; flex-direction: column; gap: 20px; }
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  .card {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .phase-badge {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .phase-init { background: rgba(99,102,241,0.2); color: #818cf8; }
+  .phase-fill { background: rgba(250,204,21,0.15); color: #facc15; }
+  .phase-trace { background: rgba(52,211,153,0.15); color: #34d399; }
+  .phase-done { background: rgba(59,130,246,0.15); color: #60a5fa; }
+
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .word-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .word-chars { display: flex; gap: 3px; }
+
+  .wchar {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 8px;
+    background: #252547;
+    border: 2px solid #3a3a6a;
+    transition: all 0.3s ease;
+  }
+
+  .wchar.active-match {
+    border-color: #34d399;
+    background: rgba(52, 211, 153, 0.18);
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+  }
+
+  .wchar.active-diff-1 {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+  }
+
+  .wchar.active-diff-2 {
+    border-color: #a78bfa;
+    background: rgba(167, 139, 250, 0.15);
+    box-shadow: 0 0 12px rgba(167, 139, 250, 0.25);
+  }
+
+  .idx-row {
+    display: flex;
+    gap: 3px;
+    margin-left: 58px;
+    margin-bottom: 8px;
+  }
+
+  .idx-item {
+    width: 34px;
+    text-align: center;
+    font-size: 10px;
+    color: #4b5563;
+  }
+
+  .dp-table-wrapper {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  table.dp-table {
+    border-collapse: separate;
+    border-spacing: 3px;
+  }
+
+  .dp-table th {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-align: center;
+    padding: 2px;
+  }
+
+  .dp-table th.corner {
+    width: 44px;
+    color: #6b7280;
+    font-size: 10px;
+  }
+
+  .dp-table th.col-hdr {
+    width: 40px;
+  }
+
+  .dp-table th.col-hdr small { color: #6b7280; }
+
+  .dp-table th.row-hdr {
+    text-align: right;
+    padding-right: 6px;
+    width: 44px;
+  }
+
+  .dp-table th.row-hdr small { color: #6b7280; }
+
+  .dp-cell {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    background: #141428;
+    border: 2px solid transparent;
+    color: #3a3a5a;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .dp-cell.filled {
+    background: #1e1e3a;
+    border-color: #2a2a4a;
+  }
+
+  .dp-cell.init-hl {
+    border-color: #6366f1 !important;
+    background: rgba(99, 102, 241, 0.12);
+  }
+
+  .dp-cell.current {
+    border-color: #facc15 !important;
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.45);
+    animation: pulse-cur 1.2s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  @keyframes pulse-cur {
+    0%, 100% { box-shadow: 0 0 14px rgba(250, 204, 21, 0.3); }
+    50% { box-shadow: 0 0 26px rgba(250, 204, 21, 0.6); }
+  }
+
+  .dp-cell.dep-match {
+    border-color: #34d399 !important;
+    box-shadow: 0 0 14px rgba(52, 211, 153, 0.4);
+  }
+
+  .dp-cell.dep-insert {
+    border-color: #a78bfa !important;
+    box-shadow: 0 0 12px rgba(167, 139, 250, 0.3);
+  }
+
+  .dp-cell.dep-delete {
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+  }
+
+  .dp-cell.dep-replace {
+    border-color: #f472b6 !important;
+    box-shadow: 0 0 12px rgba(244, 114, 182, 0.3);
+  }
+
+  .dp-cell.dep-dim { opacity: 0.5; }
+
+  .dp-cell.dep-winner {
+    opacity: 1 !important;
+    filter: brightness(1.15);
+  }
+
+  .dp-cell.on-path {
+    border-color: #34d399 !important;
+    background: rgba(52, 211, 153, 0.12) !important;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.2);
+  }
+
+  .dp-cell.path-current {
+    border-color: #facc15 !important;
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.5);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.15); }
+  .btn-secondary { background: #252547; color: #e0e0e0; border: 1px solid #3a3a6a; }
+  .btn-secondary:hover { background: #2f2f5a; }
+  .btn-reset { background: #3a1a1a; color: #f87171; border: 1px solid #5a2a2a; }
+  .btn-reset:hover { background: #4a2020; }
+
+  .step-info {
+    font-size: 13px;
+    color: #9ca3af;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .speed-control input[type="range"] { width: 80px; accent-color: #6366f1; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 2px solid;
+  }
+
+  .lg-cur { border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
+  .lg-match { border-color: #34d399; background: rgba(52, 211, 153, 0.12); }
+  .lg-ins { border-color: #a78bfa; background: rgba(167, 139, 250, 0.12); }
+  .lg-del { border-color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
+  .lg-rep { border-color: #f472b6; background: rgba(244, 114, 182, 0.12); }
+  .lg-un { border-color: #3a3a5a; background: #141428; }
+
+  .explanation {
+    font-size: 14px;
+    line-height: 1.8;
+    min-height: 130px;
+  }
+
+  .explanation .cl {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: #252547;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 13px;
+    color: #a5b4fc;
+  }
+
+  .explanation .vm { color: #34d399; font-weight: 700; }
+  .explanation .vd { color: #ef4444; font-weight: 700; }
+  .explanation .hl { color: #facc15; font-weight: 600; }
+  .explanation .oi { color: #a78bfa; font-weight: 600; }
+  .explanation .od { color: #fbbf24; font-weight: 600; }
+  .explanation .or { color: #f472b6; font-weight: 600; }
+
+  .op-list { margin: 6px 0; padding-left: 4px; }
+
+  .op-item {
+    padding: 4px 10px;
+    margin: 3px 0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    border-left: 3px solid #3a3a6a;
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .op-item.win {
+    background: rgba(250, 204, 21, 0.08);
+    border-left-color: #facc15;
+    font-weight: 700;
+  }
+
+  .op-item.t-ins { border-left-color: #a78bfa; }
+  .op-item.t-del { border-left-color: #fbbf24; }
+  .op-item.t-rep { border-left-color: #f472b6; }
+
+  .counter-display { text-align: center; padding: 8px; }
+
+  .counter-number {
+    font-size: 52px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #34d399, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+
+  .counter-label { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+
+  .trace-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .trace-list::-webkit-scrollbar { width: 4px; }
+  .trace-list::-webkit-scrollbar-thumb { background: #3a3a6a; border-radius: 4px; }
+
+  .trace-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #252547;
+    border-radius: 8px;
+    font-size: 13px;
+    animation: slide-in 0.3s ease;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .trace-item .tn {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #0f0f1a;
+  }
+
+  .tn.c-m { background: #34d399; }
+  .tn.c-r { background: #f472b6; }
+  .tn.c-i { background: #a78bfa; }
+  .tn.c-d { background: #fbbf24; }
+
+  .trace-item .tt {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    flex: 1;
+  }
+
+  .trace-item .to {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .to.o-m { background: rgba(52,211,153,0.15); color: #34d399; }
+  .to.o-r { background: rgba(244,114,182,0.15); color: #f472b6; }
+  .to.o-i { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .to.o-d { background: rgba(251,191,36,0.15); color: #fbbf24; }
+
+  .align-box {
+    margin-top: 12px;
+    padding: 12px;
+    background: #141428;
+    border-radius: 10px;
+    overflow-x: auto;
+  }
+
+  .align-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+
+  .align-label {
+    width: 46px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-align: right;
+    padding-right: 6px;
+    flex-shrink: 0;
+  }
+
+  .align-ch {
+    width: 28px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 4px;
+  }
+
+  .align-ch.a-match { color: #34d399; background: rgba(52,211,153,0.1); }
+  .align-ch.a-replace { color: #f472b6; background: rgba(244,114,182,0.1); }
+  .align-ch.a-insert { color: #a78bfa; background: rgba(167,139,250,0.1); }
+  .align-ch.a-delete { color: #fbbf24; background: rgba(251,191,36,0.1); }
+
+  .align-op {
+    width: 28px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .align-op.a-match { color: #34d399; }
+  .align-op.a-replace { color: #f472b6; }
+  .align-op.a-insert { color: #a78bfa; }
+  .align-op.a-delete { color: #fbbf24; }
+
+  .empty-hint {
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  @media (max-width: 960px) {
+    .main-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>72. 编辑距离 — 动态规划可视化</h1>
+<p class="subtitle">word1 = "intention" → word2 = "execution" &nbsp;|&nbsp; dp[i][j] = word1 前 i 个字符转换成 word2 前 j 个字符的最少操作数</p>
+
+<div class="main-layout">
+  <div class="left-panel">
+
+    <div class="card">
+      <div class="card-title">字符比较 <span class="phase-badge" id="phaseBadge">初始化</span></div>
+      <div class="word-row">
+        <div class="word-label">word1</div>
+        <div class="word-chars" id="w1d"></div>
+      </div>
+      <div class="idx-row" id="w1i"></div>
+      <div class="word-row">
+        <div class="word-label">word2</div>
+        <div class="word-chars" id="w2d"></div>
+      </div>
+      <div class="idx-row" id="w2i"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DP 表（dp[i][j]）</div>
+      <div class="dp-table-wrapper">
+        <table class="dp-table" id="dpTable"></table>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot lg-cur"></div>当前</div>
+        <div class="legend-item"><div class="legend-dot lg-match"></div>匹配/对角</div>
+        <div class="legend-item"><div class="legend-dot lg-ins"></div>插入(←)</div>
+        <div class="legend-item"><div class="legend-dot lg-del"></div>删除(↑)</div>
+        <div class="legend-item"><div class="legend-dot lg-rep"></div>替换(↖)</div>
+        <div class="legend-item"><div class="legend-dot lg-un"></div>未访问</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <button class="btn btn-reset" onclick="resetVis()">重置</button>
+        <button class="btn btn-secondary" onclick="prevStep()">◀ 上一步</button>
+        <button class="btn btn-primary" id="playBtn" onclick="togglePlay()">▶ 播放</button>
+        <button class="btn btn-secondary" onclick="nextStep()">下一步 ▶</button>
+        <span class="step-info" id="stepInfo">0 / 0</span>
+        <div class="speed-control">
+          <span>速度</span>
+          <input type="range" id="speedSlider" min="1" max="10" value="5">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+
+    <div class="card">
+      <div class="card-title">当前步骤说明</div>
+      <div class="explanation" id="explanation">
+        点击 <strong>播放</strong> 或 <strong>下一步</strong> 开始演示算法执行过程。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">编辑距离</div>
+      <div class="counter-display">
+        <div class="counter-number" id="resultNum">?</div>
+        <div class="counter-label">最少操作数</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">最优转换路径</div>
+      <div class="trace-list" id="traceList">
+        <div class="empty-hint">DP 填表完成后显示回溯路径</div>
+      </div>
+      <div id="alignBox"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const W1 = "intention";
+const W2 = "execution";
+const M = W1.length;
+const N = W2.length;
+
+let steps = [];
+let curIdx = -1;
+let playing = false;
+let timer = null;
+
+function dc(a) { return a.map(r => [...r]); }
+
+function valHue(v) {
+  return Math.round(140 * (1 - v / Math.max(M, N)));
+}
+
+function generateSteps() {
+  const dp = Array.from({ length: M + 1 }, () => Array(N + 1).fill(null));
+  steps = [];
+
+  steps.push({
+    t: 'init', dp: dc(dp), ci: -1, cj: -1, deps: [], hl: [],
+    path: null, tops: null,
+    txt: `初始化 DP 表，大小 ${M+1} × ${N+1}。<br><br>` +
+      `<span class="cl">dp[i][j]</span> 表示将 word1 前 i 个字符转换为 word2 前 j 个字符的<span class="hl">最少操作数</span>。<br><br>` +
+      `接下来先初始化边界条件（第一列和第一行）。`
+  });
+
+  for (let i = 0; i <= M; i++) dp[i][0] = i;
+  steps.push({
+    t: 'init-col', dp: dc(dp), ci: -1, cj: -1, deps: [],
+    hl: Array.from({ length: M + 1 }, (_, i) => [i, 0]),
+    path: null, tops: null,
+    txt: `<span class="hl">初始化第一列</span>：<span class="cl">dp[i][0] = i</span><br><br>` +
+      `将 word1 前 i 个字符变成<b>空串</b>，只能<span class="od">删除</span> i 次。<br>` +
+      `如 <span class="cl">dp[3][0]=3</span>："int" → "" 需删除 3 次。`
+  });
+
+  for (let j = 0; j <= N; j++) dp[0][j] = j;
+  steps.push({
+    t: 'init-row', dp: dc(dp), ci: -1, cj: -1, deps: [],
+    hl: Array.from({ length: N + 1 }, (_, j) => [0, j]),
+    path: null, tops: null,
+    txt: `<span class="hl">初始化第一行</span>：<span class="cl">dp[0][j] = j</span><br><br>` +
+      `将<b>空串</b>变成 word2 前 j 个字符，只能<span class="oi">插入</span> j 次。<br>` +
+      `如 <span class="cl">dp[0][4]=4</span>："" → "exec" 需插入 4 次。`
+  });
+
+  for (let i = 1; i <= M; i++) {
+    for (let j = 1; j <= N; j++) {
+      const c1 = W1[i - 1], c2 = W2[j - 1];
+      let txt = `计算 <span class="cl">dp[${i}][${j}]</span>："${W1.slice(0,i)}" → "${W2.slice(0,j)}"<br>`;
+      txt += `比较 <span class="cl">word1[${i-1}]='${c1}'</span> 与 <span class="cl">word2[${j-1}]='${c2}'</span>：`;
+      let deps = [];
+
+      if (c1 === c2) {
+        dp[i][j] = dp[i - 1][j - 1];
+        deps = [{ r: i-1, c: j-1, type: 'match', w: true }];
+        txt += `<span class="vm">相同 ✓</span><br><br>`;
+        txt += `字符相同，无需额外操作，直接继承左上角：<br>`;
+        txt += `<span class="cl">dp[${i}][${j}]</span> = <span class="cl">dp[${i-1}][${j-1}]</span> = <span class="hl">${dp[i][j]}</span>`;
+      } else {
+        const vi = dp[i][j - 1] + 1;
+        const vd = dp[i - 1][j] + 1;
+        const vr = dp[i - 1][j - 1] + 1;
+        dp[i][j] = Math.min(vi, vd, vr);
+        const win = dp[i][j] === vr ? 'replace' : dp[i][j] === vd ? 'delete' : 'insert';
+
+        deps = [
+          { r: i, c: j-1, type: 'insert', w: win === 'insert', v: vi },
+          { r: i-1, c: j, type: 'delete', w: win === 'delete', v: vd },
+          { r: i-1, c: j-1, type: 'replace', w: win === 'replace', v: vr }
+        ];
+
+        txt += `<span class="vd">不同 ✗</span><br><br>`;
+        txt += `三种操作取最小值：`;
+        txt += `<div class="op-list">`;
+        txt += `<div class="op-item t-ins ${win==='insert'?'win':''}"><span class="oi">插入</span>：dp[${i}][${j-1}] + 1 = ${dp[i][j-1]} + 1 = <b>${vi}</b></div>`;
+        txt += `<div class="op-item t-del ${win==='delete'?'win':''}"><span class="od">删除</span>：dp[${i-1}][${j}] + 1 = ${dp[i-1][j]} + 1 = <b>${vd}</b></div>`;
+        txt += `<div class="op-item t-rep ${win==='replace'?'win':''}"><span class="or">替换</span>：dp[${i-1}][${j-1}] + 1 = ${dp[i-1][j-1]} + 1 = <b>${vr}</b></div>`;
+        txt += `</div>`;
+        const opName = { insert: '<span class="oi">插入</span>', delete: '<span class="od">删除</span>', replace: '<span class="or">替换</span>' }[win];
+        txt += `<span class="cl">dp[${i}][${j}]</span> = min(${vi}, ${vd}, ${vr}) = <span class="hl">${dp[i][j]}</span>（${opName}）`;
+      }
+
+      steps.push({
+        t: 'fill', dp: dc(dp), ci: i, cj: j, deps, hl: [],
+        path: null, tops: null, txt
+      });
+    }
+  }
+
+  const trace = [];
+  {
+    let i = M, j = N;
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && W1[i-1] === W2[j-1]) {
+        trace.unshift({ i, j, op: 'match', pi: i-1, pj: j-1 });
+        i--; j--;
+      } else if (i > 0 && j > 0 && dp[i][j] === dp[i-1][j-1] + 1) {
+        trace.unshift({ i, j, op: 'replace', pi: i-1, pj: j-1, f: W1[i-1], to: W2[j-1] });
+        i--; j--;
+      } else if (j > 0 && dp[i][j] === dp[i][j-1] + 1) {
+        trace.unshift({ i, j, op: 'insert', pi: i, pj: j-1, ch: W2[j-1] });
+        j--;
+      } else {
+        trace.unshift({ i, j, op: 'delete', pi: i-1, pj: j, ch: W1[i-1] });
+        i--;
+      }
+    }
+  }
+
+  const fullPath = [[0, 0], ...trace.map(t => [t.i, t.j])];
+
+  const align1 = [], align2 = [], aops = [];
+  for (const t of trace) {
+    switch (t.op) {
+      case 'match':
+        align1.push(W1[t.i-1]); align2.push(W2[t.j-1]); aops.push('match'); break;
+      case 'replace':
+        align1.push(W1[t.i-1]); align2.push(W2[t.j-1]); aops.push('replace'); break;
+      case 'insert':
+        align1.push('—'); align2.push(W2[t.j-1]); aops.push('insert'); break;
+      case 'delete':
+        align1.push(W1[t.i-1]); align2.push('—'); aops.push('delete'); break;
+    }
+  }
+  const alignment = { a1: align1, a2: align2, ops: aops };
+
+  steps.push({
+    t: 'done', dp: dc(dp), ci: -1, cj: -1, deps: [], hl: [],
+    path: null, tops: null,
+    txt: `DP 填表完成！<br><br>` +
+      `<span class="cl">dp[${M}][${N}]</span> = <span class="hl">${dp[M][N]}</span><br><br>` +
+      `将 "<span class="hl">${W1}</span>" 转换为 "<span class="hl">${W2}</span>" 最少需要 <span class="hl">${dp[M][N]}</span> 次操作。<br><br>` +
+      `接下来<span class="vm">回溯</span> DP 表，找出最优转换路径…`
+  });
+
+  const traceOps = [];
+  for (let k = 0; k < trace.length; k++) {
+    const t = trace[k];
+    const pathSoFar = [[0, 0], ...trace.slice(0, k + 1).map(p => [p.i, p.j])];
+    let txt = '';
+
+    if (t.op === 'match') {
+      txt = `<span class="vm">回溯</span>：<span class="cl">dp[${t.i}][${t.j}]</span> ← <span class="cl">dp[${t.pi}][${t.pj}]</span>（↖ 对角线）<br><br>`;
+      txt += `<span class="cl">word1[${t.i-1}]='${W1[t.i-1]}'</span> == <span class="cl">word2[${t.j-1}]='${W2[t.j-1]}'</span><br>`;
+      txt += `字符<span class="vm">相同</span>，无需操作，直接沿对角线回溯。`;
+      traceOps.push({ op: 'match', txt: `${W1[t.i-1]} = ${W2[t.j-1]}`, cell: [t.i, t.j] });
+    } else if (t.op === 'replace') {
+      txt = `<span class="or">回溯</span>：<span class="cl">dp[${t.i}][${t.j}]</span> ← <span class="cl">dp[${t.pi}][${t.pj}]</span>（↖ 对角线）<br><br>`;
+      txt += `<span class="cl">word1[${t.i-1}]='${t.f}'</span> ≠ <span class="cl">word2[${t.j-1}]='${t.to}'</span><br>`;
+      txt += `执行<span class="or">替换</span>操作：将 '${t.f}' 替换为 '${t.to}'，操作数 +1。`;
+      traceOps.push({ op: 'replace', txt: `${t.f} → ${t.to}`, cell: [t.i, t.j] });
+    } else if (t.op === 'insert') {
+      txt = `<span class="oi">回溯</span>：<span class="cl">dp[${t.i}][${t.j}]</span> ← <span class="cl">dp[${t.pi}][${t.pj}]</span>（← 左移）<br><br>`;
+      txt += `执行<span class="oi">插入</span>操作：插入字符 '${t.ch}'，操作数 +1。`;
+      traceOps.push({ op: 'insert', txt: `插入 '${t.ch}'`, cell: [t.i, t.j] });
+    } else if (t.op === 'delete') {
+      txt = `<span class="od">回溯</span>：<span class="cl">dp[${t.i}][${t.j}]</span> ← <span class="cl">dp[${t.pi}][${t.pj}]</span>（↑ 上移）<br><br>`;
+      txt += `执行<span class="od">删除</span>操作：删除字符 '${t.ch}'，操作数 +1。`;
+      traceOps.push({ op: 'delete', txt: `删除 '${t.ch}'`, cell: [t.i, t.j] });
+    }
+
+    steps.push({
+      t: 'trace', dp: dc(dp), ci: t.i, cj: t.j, deps: [], hl: [],
+      path: pathSoFar, tops: [...traceOps], alignment: null,
+      txt
+    });
+  }
+
+  const opOnly = traceOps.filter(o => o.op !== 'match');
+  let finalTxt = `回溯完成！最优路径共 <span class="hl">${opOnly.length}</span> 次操作：<br><br>`;
+  finalTxt += opOnly.map((o, i) => {
+    const nm = { replace: '替换', insert: '插入', delete: '删除' }[o.op];
+    const cls = { replace: 'or', insert: 'oi', delete: 'od' }[o.op];
+    return `${i + 1}. <span class="${cls}">${nm}</span>：${o.txt}`;
+  }).join('<br>');
+  finalTxt += `<br><br>"<span class="hl">${W1}</span>" → "<span class="hl">${W2}</span>"<br>最少操作数 = <span class="hl">${dp[M][N]}</span>`;
+
+  steps.push({
+    t: 'final', dp: dc(dp), ci: -1, cj: -1, deps: [], hl: [],
+    path: fullPath, tops: [...traceOps], alignment,
+    txt: finalTxt
+  });
+}
+
+function buildUI() {
+  const w1d = document.getElementById('w1d');
+  const w1i = document.getElementById('w1i');
+  const w2d = document.getElementById('w2d');
+  const w2i = document.getElementById('w2i');
+  w1d.innerHTML = ''; w1i.innerHTML = '';
+  w2d.innerHTML = ''; w2i.innerHTML = '';
+
+  for (let k = 0; k < M; k++) {
+    const d = document.createElement('div');
+    d.className = 'wchar'; d.id = 'w1-' + k; d.textContent = W1[k];
+    w1d.appendChild(d);
+    const idx = document.createElement('div');
+    idx.className = 'idx-item'; idx.textContent = k;
+    w1i.appendChild(idx);
+  }
+  for (let k = 0; k < N; k++) {
+    const d = document.createElement('div');
+    d.className = 'wchar'; d.id = 'w2-' + k; d.textContent = W2[k];
+    w2d.appendChild(d);
+    const idx = document.createElement('div');
+    idx.className = 'idx-item'; idx.textContent = k;
+    w2i.appendChild(idx);
+  }
+
+  const tbl = document.getElementById('dpTable');
+  tbl.innerHTML = '';
+  const hr = document.createElement('tr');
+  const corner = document.createElement('th');
+  corner.className = 'corner'; corner.textContent = 'i \\ j';
+  hr.appendChild(corner);
+  for (let j = 0; j <= N; j++) {
+    const th = document.createElement('th');
+    th.className = 'col-hdr';
+    th.innerHTML = j === 0 ? `<small>""</small><br>${j}` : `${W2[j-1]}<br><small>${j}</small>`;
+    hr.appendChild(th);
+  }
+  tbl.appendChild(hr);
+
+  for (let i = 0; i <= M; i++) {
+    const row = document.createElement('tr');
+    const rh = document.createElement('th');
+    rh.className = 'row-hdr';
+    rh.innerHTML = i === 0 ? `<small>""</small> ${i}` : `${W1[i-1]} <small>${i}</small>`;
+    row.appendChild(rh);
+    for (let j = 0; j <= N; j++) {
+      const td = document.createElement('td');
+      td.className = 'dp-cell';
+      td.id = `c-${i}-${j}`;
+      row.appendChild(td);
+    }
+    tbl.appendChild(row);
+  }
+}
+
+function renderStep(idx) {
+  if (idx < 0 || idx >= steps.length) return;
+  const s = steps[idx];
+  curIdx = idx;
+
+  for (let k = 0; k < M; k++) {
+    document.getElementById('w1-' + k).className = 'wchar';
+  }
+  for (let k = 0; k < N; k++) {
+    document.getElementById('w2-' + k).className = 'wchar';
+  }
+
+  if (s.t === 'fill' && s.ci > 0 && s.cj > 0) {
+    const c1 = W1[s.ci - 1], c2 = W2[s.cj - 1];
+    const el1 = document.getElementById('w1-' + (s.ci - 1));
+    const el2 = document.getElementById('w2-' + (s.cj - 1));
+    if (c1 === c2) {
+      el1.classList.add('active-match');
+      el2.classList.add('active-match');
+    } else {
+      el1.classList.add('active-diff-1');
+      el2.classList.add('active-diff-2');
+    }
+  }
+
+  if (s.t === 'trace' && s.ci > 0 && s.cj > 0) {
+    const el1 = document.getElementById('w1-' + (s.ci - 1));
+    const el2 = document.getElementById('w2-' + (s.cj - 1));
+    if (W1[s.ci - 1] === W2[s.cj - 1]) {
+      el1.classList.add('active-match');
+      el2.classList.add('active-match');
+    } else {
+      el1.classList.add('active-diff-1');
+      el2.classList.add('active-diff-2');
+    }
+  }
+
+  const hlSet = new Set(s.hl.map(p => p[0] + ',' + p[1]));
+  const depMap = {};
+  for (const d of s.deps) depMap[d.r + ',' + d.c] = d;
+  const pathSet = s.path ? new Set(s.path.map(p => p[0] + ',' + p[1])) : null;
+
+  for (let i = 0; i <= M; i++) {
+    for (let j = 0; j <= N; j++) {
+      const cell = document.getElementById(`c-${i}-${j}`);
+      const key = i + ',' + j;
+      const val = s.dp[i][j];
+
+      cell.className = 'dp-cell';
+      cell.style.color = '';
+
+      if (val !== null) {
+        cell.classList.add('filled');
+        cell.textContent = val;
+        const hue = valHue(val);
+        cell.style.color = `hsl(${hue}, 70%, 65%)`;
+      } else {
+        cell.textContent = '';
+      }
+
+      if (hlSet.has(key)) cell.classList.add('init-hl');
+
+      if (s.ci === i && s.cj === j && s.t === 'fill') {
+        cell.classList.add('current');
+      }
+
+      const dep = depMap[key];
+      if (dep) {
+        cell.classList.add('dep-' + dep.type);
+        cell.classList.add(dep.w ? 'dep-winner' : 'dep-dim');
+      }
+
+      if (pathSet && pathSet.has(key)) {
+        cell.classList.add('on-path');
+        if (s.ci === i && s.cj === j && s.t === 'trace') {
+          cell.classList.add('path-current');
+        }
+      }
+    }
+  }
+
+  const phases = {
+    'init': ['初始化', 'phase-init'],
+    'init-col': ['初始化', 'phase-init'],
+    'init-row': ['初始化', 'phase-init'],
+    'fill': ['填表', 'phase-fill'],
+    'done': ['完成', 'phase-done'],
+    'trace': ['回溯', 'phase-trace'],
+    'final': ['完成', 'phase-done']
+  };
+  const [pTxt, pCls] = phases[s.t] || ['', ''];
+  const badge = document.getElementById('phaseBadge');
+  badge.textContent = pTxt;
+  badge.className = 'phase-badge ' + pCls;
+
+  document.getElementById('explanation').innerHTML = s.txt;
+  document.getElementById('stepInfo').textContent = `${idx} / ${steps.length - 1}`;
+
+  const isDone = s.t === 'done' || s.t === 'trace' || s.t === 'final';
+  document.getElementById('resultNum').textContent = isDone ? s.dp[M][N] : '?';
+
+  const tl = document.getElementById('traceList');
+  const ab = document.getElementById('alignBox');
+
+  if (s.tops && s.tops.length > 0) {
+    let opNum = 0;
+    tl.innerHTML = s.tops.map(o => {
+      const labels = { match: '匹配', replace: '替换', insert: '插入', delete: '删除' };
+      const cls = { match: 'c-m', replace: 'c-r', insert: 'c-i', delete: 'c-d' };
+      const ocls = { match: 'o-m', replace: 'o-r', insert: 'o-i', delete: 'o-d' };
+      const isOp = o.op !== 'match';
+      if (isOp) opNum++;
+      return `<div class="trace-item">
+        <div class="tn ${cls[o.op]}">${isOp ? opNum : '✓'}</div>
+        <div class="tt">${o.txt}</div>
+        <div class="to ${ocls[o.op]}">${labels[o.op]}</div>
+      </div>`;
+    }).join('');
+    tl.scrollTop = tl.scrollHeight;
+  } else if (s.t === 'done') {
+    tl.innerHTML = '<div class="empty-hint">继续下一步查看回溯过程…</div>';
+  } else if (!isDone) {
+    tl.innerHTML = '<div class="empty-hint">DP 填表完成后显示回溯路径</div>';
+  }
+
+  if (s.alignment) {
+    const { a1, a2, ops } = s.alignment;
+    let html = '<div class="align-box">';
+    html += '<div class="align-row"><div class="align-label">word1</div>';
+    for (let k = 0; k < a1.length; k++) {
+      html += `<div class="align-ch a-${ops[k]}">${a1[k]}</div>`;
+    }
+    html += '</div>';
+    html += '<div class="align-row"><div class="align-label"></div>';
+    for (let k = 0; k < ops.length; k++) {
+      const sym = { match: '‖', replace: '↕', insert: '↓', delete: '↑' }[ops[k]];
+      html += `<div class="align-op a-${ops[k]}">${sym}</div>`;
+    }
+    html += '</div>';
+    html += '<div class="align-row"><div class="align-label">word2</div>';
+    for (let k = 0; k < a2.length; k++) {
+      html += `<div class="align-ch a-${ops[k]}">${a2[k]}</div>`;
+    }
+    html += '</div>';
+    const opLabels = { match: '匹', replace: '替', insert: '插', delete: '删' };
+    html += '<div class="align-row" style="margin-top:2px"><div class="align-label">操作</div>';
+    for (let k = 0; k < ops.length; k++) {
+      html += `<div class="align-op a-${ops[k]}" style="font-size:10px">${opLabels[ops[k]]}</div>`;
+    }
+    html += '</div></div>';
+    ab.innerHTML = html;
+  } else {
+    ab.innerHTML = '';
+  }
+}
+
+function nextStep() {
+  if (curIdx < steps.length - 1) renderStep(curIdx + 1);
+  else if (playing) stopPlay();
+}
+
+function prevStep() {
+  if (curIdx > 0) renderStep(curIdx - 1);
+}
+
+function togglePlay() {
+  playing ? stopPlay() : startPlay();
+}
+
+function startPlay() {
+  if (curIdx >= steps.length - 1) renderStep(0);
+  playing = true;
+  document.getElementById('playBtn').textContent = '⏸ 暂停';
+  schedNext();
+}
+
+function stopPlay() {
+  playing = false;
+  document.getElementById('playBtn').textContent = '▶ 播放';
+  clearTimeout(timer);
+}
+
+function schedNext() {
+  if (!playing) return;
+  const sp = document.getElementById('speedSlider').value;
+  const delay = 1600 - sp * 140;
+  timer = setTimeout(() => {
+    nextStep();
+    if (playing && curIdx < steps.length - 1) schedNext();
+    else stopPlay();
+  }, delay);
+}
+
+function resetVis() {
+  stopPlay();
+  curIdx = -1;
+  renderStep(0);
+}
+
+generateSteps();
+buildUI();
+renderStep(0);
+</script>
+
+</body>
+</html>

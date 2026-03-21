@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>718. 最长重复子数组 - 算法教学可视化</title>
+<style>
+  :root {
+    --bg: #f4f7fb;
+    --panel: #ffffff;
+    --panel-soft: #eef4ff;
+    --text: #203040;
+    --subtext: #5b6b7c;
+    --line: #d8e1ec;
+    --brand: #1768ac;
+    --brand-deep: #0f4c81;
+    --accent: #f08c00;
+    --good: #2b9348;
+    --bad: #d62828;
+    --soft-good: #dff3e4;
+    --soft-bad: #fde2e1;
+    --soft-warn: #fff0d9;
+    --code-bg: #16212f;
+    --code-text: #e8eef7;
+    --shadow: 0 10px 28px rgba(31, 54, 82, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(23,104,172,0.12), transparent 26%),
+      radial-gradient(circle at top right, rgba(240,140,0,0.09), transparent 24%),
+      var(--bg);
+    line-height: 1.7;
+  }
+
+  .hero {
+    padding: 40px 20px 28px;
+    text-align: center;
+    background: linear-gradient(140deg, #0f4c81, #1768ac 52%, #3b8ed0);
+    color: #fff;
+  }
+
+  .hero h1 {
+    margin: 0 0 10px;
+    font-size: clamp(28px, 4vw, 42px);
+  }
+
+  .hero p {
+    margin: 0 auto;
+    max-width: 900px;
+    color: rgba(255,255,255,0.92);
+  }
+
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    backdrop-filter: blur(10px);
+    background: rgba(244,247,251,0.88);
+    border-bottom: 1px solid rgba(216,225,236,0.95);
+  }
+
+  .tab-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    background: #fff;
+    color: var(--subtext);
+    cursor: pointer;
+    transition: 0.2s ease;
+    box-shadow: 0 3px 10px rgba(31, 54, 82, 0.08);
+  }
+
+  .tab-btn.active,
+  .tab-btn:hover {
+    background: var(--brand);
+    color: #fff;
+  }
+
+  .module {
+    display: none;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 18px 56px;
+  }
+
+  .module.active { display: block; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 22px;
+  }
+
+  h2, h3 {
+    margin-top: 0;
+    margin-bottom: 14px;
+  }
+
+  h2 { font-size: 24px; }
+  h3 { font-size: 19px; }
+
+  p { margin: 10px 0; }
+
+  .lead {
+    color: var(--subtext);
+    font-size: 16px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .pill {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: var(--panel-soft);
+    color: var(--brand-deep);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .example {
+    background: #f8fbff;
+    border: 1px solid #d9e8fb;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-top: 12px;
+  }
+
+  .example code,
+  .inline-code {
+    font-family: "SFMono-Regular", Consolas, monospace;
+    background: #eef3f8;
+    padding: 1px 6px;
+    border-radius: 6px;
+  }
+
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .code-box {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 18px;
+    padding: 20px;
+    overflow: auto;
+    font-size: 14px;
+    line-height: 1.85;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .insight-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .insight-list li {
+    margin: 8px 0;
+    color: var(--text);
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  button {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.18s ease;
+  }
+
+  button.primary {
+    background: var(--brand);
+    color: #fff;
+  }
+
+  button.primary:hover { background: var(--brand-deep); }
+
+  button.secondary {
+    background: #edf3fa;
+    color: var(--brand-deep);
+  }
+
+  button.secondary:hover { background: #e2edf8; }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .status-board {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .status-box {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    background: #fbfdff;
+  }
+
+  .status-box strong {
+    color: var(--brand-deep);
+  }
+
+  .step-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #d9ebff;
+    color: var(--brand-deep);
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .array-panel {
+    display: grid;
+    gap: 12px;
+  }
+
+  .array-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .array-label {
+    min-width: 78px;
+    font-weight: 800;
+    color: var(--brand-deep);
+  }
+
+  .arr-cell {
+    width: 52px;
+    text-align: center;
+    padding: 10px 0 6px;
+    border-radius: 14px;
+    border: 2px solid var(--line);
+    background: #fff;
+    position: relative;
+    transition: 0.22s ease;
+  }
+
+  .arr-cell small {
+    display: block;
+    color: var(--subtext);
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  .arr-cell.current-a,
+  .arr-cell.current-b {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(23,104,172,0.14);
+  }
+
+  .arr-cell.current-a {
+    border-color: var(--brand);
+    background: #e5f1ff;
+  }
+
+  .arr-cell.current-b {
+    border-color: var(--accent);
+    background: #fff2e0;
+  }
+
+  .arr-cell.path {
+    border-color: var(--good);
+    background: var(--soft-good);
+  }
+
+  .arr-cell.fail {
+    border-color: var(--bad);
+    background: var(--soft-bad);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  table.dp {
+    border-collapse: separate;
+    border-spacing: 4px;
+    margin: 0 auto;
+  }
+
+  .dp th,
+  .dp td {
+    min-width: 58px;
+    height: 52px;
+    text-align: center;
+    border-radius: 12px;
+    border: 2px solid var(--line);
+    background: #fff;
+    font-weight: 800;
+    position: relative;
+    transition: 0.2s ease;
+  }
+
+  .dp th {
+    color: var(--subtext);
+    background: #f5f9fe;
+    font-size: 13px;
+  }
+
+  .dp .head-char {
+    color: var(--brand-deep);
+    font-size: 18px;
+  }
+
+  .dp td.empty {
+    color: #a8b6c3;
+    background: #f8fbff;
+  }
+
+  .dp td.done {
+    background: #f8fbff;
+  }
+
+  .dp td.current {
+    background: #e8f2ff;
+    border-color: var(--brand);
+    transform: scale(1.04);
+    box-shadow: 0 6px 16px rgba(23,104,172,0.18);
+  }
+
+  .dp td.diag {
+    background: #fff1d8;
+    border-color: var(--accent);
+  }
+
+  .dp td.match {
+    background: var(--soft-good);
+    border-color: var(--good);
+  }
+
+  .dp td.zeroed {
+    background: #fff0ef;
+    border-color: #f19b95;
+  }
+
+  .dp td.best {
+    box-shadow: inset 0 0 0 3px rgba(43,147,72,0.28);
+  }
+
+  .cell-tag {
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    font-size: 10px;
+    color: #7f8b96;
+    font-weight: 600;
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 18px;
+  }
+
+  .enum-box {
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #fbfdff, #f7fbff);
+  }
+
+  .enum-item {
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #e2e9f3;
+    background: #fff;
+  }
+
+  .enum-item.valid {
+    border-color: #9dd8ad;
+    background: #f3fbf5;
+  }
+
+  .enum-item.invalid {
+    border-color: #f1b0ab;
+    background: #fff7f6;
+  }
+
+  .formula {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #0f2237;
+    color: #eff6ff;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 15px;
+    overflow-x: auto;
+  }
+
+  .callout {
+    border-left: 5px solid var(--accent);
+    padding: 12px 14px;
+    background: #fff8ea;
+    border-radius: 0 12px 12px 0;
+  }
+
+  .qa {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #fff;
+  }
+
+  .qa.correct {
+    border-color: #94d3a2;
+    background: #f5fcf7;
+  }
+
+  .qa.incorrect {
+    border-color: #efb1ac;
+    background: #fff7f6;
+  }
+
+  .option-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .option {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 12px;
+    cursor: pointer;
+    transition: 0.18s ease;
+    background: #fcfdff;
+  }
+
+  .option:hover {
+    border-color: var(--brand);
+    background: #f4f9ff;
+  }
+
+  .option.selected {
+    border-color: var(--brand);
+    background: #e8f2ff;
+  }
+
+  .feedback {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    display: none;
+  }
+
+  .feedback.show { display: block; }
+  .feedback.good {
+    background: var(--soft-good);
+    color: #184d28;
+    border: 1px solid #9dd8ad;
+  }
+  .feedback.bad {
+    background: var(--soft-bad);
+    color: #7d1f1f;
+    border: 1px solid #f1b0ab;
+  }
+
+  .mini-input {
+    width: 120px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 15px;
+  }
+
+  .muted {
+    color: var(--subtext);
+    font-size: 14px;
+  }
+
+  @media (max-width: 940px) {
+    .grid-2,
+    .status-board,
+    .split {
+      grid-template-columns: 1fr;
+    }
+
+    .tabs {
+      justify-content: flex-start;
+      overflow-x: auto;
+    }
+  }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <h1>718. 最长重复子数组</h1>
+    <p>这不是只看结论的题解页，而是一份“跟着代码跑一遍”的教学页面。重点是看懂：为什么状态要定义成“以这两个位置结尾”、公式背后到底替代了哪些暴力枚举，以及代码里的每一步是怎样推动答案变大的。</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="overview">模块一：题目与代码</button>
+    <button class="tab-btn" data-tab="visual">模块二：演示可视化</button>
+    <button class="tab-btn" data-tab="practice">模块三：动手练习</button>
+  </nav>
+
+  <main>
+    <section id="overview" class="module active">
+      <div class="card">
+        <h2>题目内容</h2>
+        <p class="lead">给两个整数数组 <span class="inline-code">nums1</span> 和 <span class="inline-code">nums2</span>，请找出它们共同拥有的、长度最长的“连续子数组”，并返回这个长度。</p>
+        <div class="example">
+          <p><strong>你要特别注意两个词：</strong></p>
+          <p>1. <strong>共同拥有</strong>：说明要同时出现在两个数组里。</p>
+          <p>2. <strong>连续子数组</strong>：说明不能跳着选，一旦中间断掉，这一段就结束了。</p>
+          <p>例如：<code>[3,2,1]</code> 是 <code>[1,2,3,2,1]</code> 和 <code>[3,2,1,4,7]</code> 的共同连续子数组，长度是 <code>3</code>。</p>
+        </div>
+        <div class="pill-row">
+          <div class="pill">关键词：连续</div>
+          <div class="pill">关键词：两个数组同时出现</div>
+          <div class="pill">目标：最长长度</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>答案代码</h2>
+          <div class="code-box"><pre>/**
+ * 718. 最长重复子数组
+ * 动态规划解法
+ *
+ * @param {number[]} nums1
+ * @param {number[]} nums2
+ * @return {number}
+ */
+var findLength = function(nums1, nums2) {
+    // 先拿到两个数组的长度，后面循环和建表都要用
+    const m = nums1.length;
+    const n = nums2.length;
+
+    /**
+     * dp[i][j] 表示：
+     * 当我们强行要求公共子数组必须“刚好结尾”在
+     * nums1[i - 1] 和 nums2[j - 1] 这两个位置时，
+     * 这时能得到的最长公共连续子数组长度。
+     *
+     * 这样定义的关键好处：
+     * 只有当前位置两个数相等时，前面的连续段才有资格继续往后接，
+     * 所以它只会从左上角 dp[i - 1][j - 1] 延长过来。
+     *
+     * 多开一行一列空边界：
+     * dp[0][*] 和 dp[*][0] 都表示“有一边是空数组”，结果自然是 0，
+     * 这样写转移时就不用反复讨论 i = 0、j = 0 的特殊情况。
+     */
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+    // 全局答案不一定落在最后一个格子，所以要边算边维护最大值
+    let maxLen = 0;
+
+    // 从 1 开始，是因为第 0 行和第 0 列专门留给“空边界”
+    for (let i = 1; i &lt;= m; i++) {
+        for (let j = 1; j &lt;= n; j++) {
+            // 现在尝试把 nums1[i - 1] 和 nums2[j - 1] 对齐来看
+            if (nums1[i - 1] === nums2[j - 1]) {
+                // 这两个位置相等，说明：
+                // 1. 至少能形成长度为 1 的公共连续段
+                // 2. 如果左上角本来就有一段连续公共后缀，
+                //    那么当前这两个相等元素可以把那一段整体再往后延长 1 位
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+
+                // 当前格子可能刷新全局最优
+                maxLen = Math.max(maxLen, dp[i][j]);
+            } else {
+                // 一旦这两个位置不相等，
+                // 以它们作为共同结尾的连续子数组就不可能存在，
+                // 因为“连续”被当前这一步直接打断了
+                dp[i][j] = 0;
+            }
+        }
+    }
+
+    return maxLen;
+};</pre></div>
+        </div>
+
+        <div class="card">
+          <h2>看代码时先建立的整体印象</h2>
+          <ul class="insight-list">
+            <li><strong>这张 DP 表不是在存“前 i 个、前 j 个的答案”</strong>，而是在存“如果结尾固定在这两个位置，连续公共段能有多长”。</li>
+            <li><strong>为什么必须强调“结尾”</strong>：因为连续子数组只能整段接在前一对位置后面，所以来源只可能是左上角，而不是左边或上边。</li>
+            <li><strong>相等时加 1</strong> 的含义不是凭空背公式，而是“左上角已经枚举好的所有连续后缀，都可以整体加上当前这一位”。</li>
+            <li><strong>不相等时直接归 0</strong>，不是因为“不想继承”，而是因为“连续”这个条件让所有以当前这两个位置结尾的候选都失效了。</li>
+            <li><strong>maxLen 单独维护</strong>，因为最长重复子数组可能出现在表中的任何一个格子，不一定在最后。</li>
+          </ul>
+          <div class="callout">
+            <strong>这一题最容易混淆的点：</strong> 它和最长公共子序列不一样。子序列可以跳着选，所以会看左、上、左上；这题要求连续，所以只看“左上角能不能接上当前这一位”。这一点会在下面的动画里被完整展开。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="visual" class="module">
+      <div class="card">
+        <h2>演示可视化</h2>
+        <p class="lead">演示示例使用：<span class="inline-code">nums1 = [1, 2, 3, 2, 1]</span>，<span class="inline-code">nums2 = [3, 2, 1, 4, 7]</span>。这里会按代码中的双层循环顺序，一个格子一个格子地算，并把公式背后的暴力枚举来源展开给你看。</p>
+        <div class="controls">
+          <button class="secondary" id="prevStep">上一步</button>
+          <button class="primary" id="nextStep">下一步</button>
+          <button class="secondary" id="autoPlay">自动播放</button>
+          <button class="secondary" id="resetDemo">重置</button>
+          <span class="pill">当前步数：<span id="stepCount">0</span> / <span id="stepTotal">0</span></span>
+          <span class="pill">当前 maxLen：<span id="maxLenText">0</span></span>
+        </div>
+
+        <div class="status-board">
+          <div class="status-box">
+            <div class="step-badge" id="stepBadge">初始化</div>
+            <p id="loopText">还没有进入双层循环。</p>
+            <p id="compareText">等待开始比较。</p>
+            <p id="updateText">等待开始更新 dp 表。</p>
+          </div>
+          <div class="status-box">
+            <p><strong>读代码时要对上号：</strong></p>
+            <p>外层循环控制 <span class="inline-code">i</span>，内层循环控制 <span class="inline-code">j</span>。当前动画展示的就是这一次来到 <span class="inline-code">if (nums1[i - 1] === nums2[j - 1])</span> 时，代码会看到什么、会更新什么。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>当前对齐位置</h3>
+        <div class="array-panel" id="arrayPanel"></div>
+      </div>
+
+      <div class="card">
+        <h3>DP 表执行现场</h3>
+        <div class="table-wrap" id="dpTableWrap"></div>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h3>把公式恢复成“真实枚举”</h3>
+          <p class="lead">这里不是只说“来自左上角”，而是把“以当前两个位置结尾”时，暴力方法本来会枚举哪些长度，一条条列出来。</p>
+          <div class="enum-box" id="enumBox"></div>
+        </div>
+
+        <div class="card">
+          <h3>公式与代码对应</h3>
+          <div class="formula" id="formulaText">dp[i][j] = ?</div>
+          <div class="example" id="bridgeText"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="practice" class="module">
+      <div class="card">
+        <h2>动手练习</h2>
+        <p class="lead">练习示例换成：<span class="inline-code">nums1 = [1, 2, 1, 2]</span>，<span class="inline-code">nums2 = [2, 1, 2, 3]</span>。你要练习的是“代码中间过程”，不是只猜最终答案。</p>
+        <div class="callout">
+          提示：请始终用题目代码里的状态定义来思考，也就是 <span class="inline-code">dp[i][j]</span> 表示“以 <span class="inline-code">nums1[i - 1]</span> 和 <span class="inline-code">nums2[j - 1]</span> 为结尾”时的最长公共连续子数组长度。
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>练习用数组</h3>
+        <div class="array-panel" id="practiceArrays"></div>
+      </div>
+
+      <div class="card">
+        <div class="qa" data-question="q1">
+          <h3>练习 1：填写某一步的状态值</h3>
+          <p>当代码运行到 <span class="inline-code">i = 3, j = 2</span> 时，正在比较的是 <span class="inline-code">nums1[2]</span> 和 <span class="inline-code">nums2[1]</span>。这时 <span class="inline-code">dp[3][2]</span> 应该是多少？</p>
+          <input id="q1Input" class="mini-input" type="text" placeholder="输入数字">
+          <button class="primary" id="q1Check">检查</button>
+          <div class="feedback" id="q1Feedback"></div>
+        </div>
+
+        <div class="qa" data-question="q2">
+          <h3>练习 2：判断这个状态来自哪些真实情况</h3>
+          <p>还是看 <span class="inline-code">i = 3, j = 2</span>。如果这一步相等，那么下面哪句话最准确地描述了 <span class="inline-code">dp[3][2] = dp[2][1] + 1</span> 背后的真实含义？</p>
+          <div class="option-list" id="q2Options"></div>
+          <button class="primary" id="q2Check">检查</button>
+          <div class="feedback" id="q2Feedback"></div>
+        </div>
+
+        <div class="qa" data-question="q3">
+          <h3>练习 3：预测下一轮更新</h3>
+          <p>当代码来到 <span class="inline-code">i = 4, j = 4</span> 时，比较的是 <span class="inline-code">nums1[3] = 2</span> 和 <span class="inline-code">nums2[3] = 3</span>。这一步执行后，下面哪个结论正确？</p>
+          <div class="option-list" id="q3Options"></div>
+          <button class="primary" id="q3Check">检查</button>
+          <div class="feedback" id="q3Feedback"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const demoNums1 = [1, 2, 3, 2, 1];
+  const demoNums2 = [3, 2, 1, 4, 7];
+  const practiceNums1 = [1, 2, 1, 2];
+  const practiceNums2 = [2, 1, 2, 3];
+
+  const tabs = document.querySelectorAll(".tab-btn");
+  const modules = document.querySelectorAll(".module");
+
+  tabs.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabs.forEach(item => item.classList.remove("active"));
+      modules.forEach(item => item.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  function buildSteps(nums1, nums2) {
+    const m = nums1.length;
+    const n = nums2.length;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    const steps = [];
+    let maxLen = 0;
+
+    steps.push({
+      type: "init",
+      i: 0,
+      j: 0,
+      dp: dp.map(row => [...row]),
+      maxLen,
+      nums1,
+      nums2
+    });
+
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const equal = nums1[i - 1] === nums2[j - 1];
+        const before = dp[i][j];
+        if (equal) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+          maxLen = Math.max(maxLen, dp[i][j]);
+        } else {
+          dp[i][j] = 0;
+        }
+
+        const bruteForce = [];
+        const limit = Math.min(i, j);
+        for (let len = 1; len <= limit; len++) {
+          const slice1 = nums1.slice(i - len, i);
+          const slice2 = nums2.slice(j - len, j);
+          const ok = slice1.every((v, idx) => v === slice2[idx]);
+          bruteForce.push({ len, slice1, slice2, ok });
+        }
+
+        steps.push({
+          type: "cell",
+          i,
+          j,
+          equal,
+          before,
+          after: dp[i][j],
+          diag: dp[i - 1][j - 1],
+          maxLen,
+          dp: dp.map(row => [...row]),
+          nums1,
+          nums2,
+          bruteForce
+        });
+      }
+    }
+
+    return steps;
+  }
+
+  const steps = buildSteps(demoNums1, demoNums2);
+  let currentStep = 0;
+  let timer = null;
+
+  const stepCountEl = document.getElementById("stepCount");
+  const stepTotalEl = document.getElementById("stepTotal");
+  const maxLenText = document.getElementById("maxLenText");
+  const stepBadge = document.getElementById("stepBadge");
+  const loopText = document.getElementById("loopText");
+  const compareText = document.getElementById("compareText");
+  const updateText = document.getElementById("updateText");
+  const arrayPanel = document.getElementById("arrayPanel");
+  const dpTableWrap = document.getElementById("dpTableWrap");
+  const enumBox = document.getElementById("enumBox");
+  const formulaText = document.getElementById("formulaText");
+  const bridgeText = document.getElementById("bridgeText");
+
+  stepTotalEl.textContent = steps.length - 1;
+
+  function renderArrayRow(label, arr, currentIndex, matchedRange, compareFailed) {
+    const row = document.createElement("div");
+    row.className = "array-row";
+
+    const title = document.createElement("div");
+    title.className = "array-label";
+    title.textContent = label;
+    row.appendChild(title);
+
+    arr.forEach((value, idx) => {
+      const cell = document.createElement("div");
+      cell.className = "arr-cell";
+      cell.innerHTML = `${value}<small>idx ${idx}</small>`;
+      if (idx === currentIndex) {
+        cell.classList.add(label === "nums1" ? "current-a" : "current-b");
+      }
+      if (matchedRange && idx >= matchedRange.start && idx <= matchedRange.end) {
+        cell.classList.add("path");
+      }
+      if (compareFailed && idx === currentIndex) {
+        cell.classList.add("fail");
+      }
+      row.appendChild(cell);
+    });
+
+    return row;
+  }
+
+  function renderArrays(step) {
+    arrayPanel.innerHTML = "";
+    if (step.type === "init") {
+      arrayPanel.appendChild(renderArrayRow("nums1", demoNums1, -1));
+      arrayPanel.appendChild(renderArrayRow("nums2", demoNums2, -1));
+      return;
+    }
+
+    const pathLen = step.after;
+    const range1 = pathLen > 0 ? { start: step.i - pathLen, end: step.i - 1 } : null;
+    const range2 = pathLen > 0 ? { start: step.j - pathLen, end: step.j - 1 } : null;
+
+    arrayPanel.appendChild(renderArrayRow("nums1", demoNums1, step.i - 1, range1, !step.equal));
+    arrayPanel.appendChild(renderArrayRow("nums2", demoNums2, step.j - 1, range2, !step.equal));
+  }
+
+  function renderTable(step) {
+    const table = document.createElement("table");
+    table.className = "dp";
+
+    const head = document.createElement("tr");
+    head.innerHTML = `<th></th><th></th>` + demoNums2.map((v, idx) => `<th><div class="head-char">${v}</div>j=${idx + 1}</th>`).join("");
+    table.appendChild(head);
+
+    for (let i = 0; i <= demoNums1.length; i++) {
+      const tr = document.createElement("tr");
+      const rowLabel = i === 0 ? `<th>i=0</th><th>空</th>` : `<th>i=${i}</th><th><div class="head-char">${demoNums1[i - 1]}</div></th>`;
+      tr.innerHTML = rowLabel;
+
+      for (let j = 0; j <= demoNums2.length; j++) {
+        const td = document.createElement("td");
+        const value = step.dp[i][j];
+        td.innerHTML = `${value}<span class="cell-tag">[${i},${j}]</span>`;
+
+        if (i === 0 || j === 0) {
+          td.classList.add("empty");
+        } else {
+          td.classList.add("done");
+          if (step.type === "cell" && i === step.i && j === step.j) {
+            td.classList.add("current");
+            td.classList.add(step.equal ? "match" : "zeroed");
+          }
+          if (step.type === "cell" && i === step.i - 1 && j === step.j - 1) {
+            td.classList.add("diag");
+          }
+          if (value === step.maxLen && value > 0) {
+            td.classList.add("best");
+          }
+        }
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+
+    dpTableWrap.innerHTML = "";
+    dpTableWrap.appendChild(table);
+  }
+
+  function renderEnum(step) {
+    if (step.type === "init") {
+      enumBox.innerHTML = `<div class="enum-item">初始化时，整张表都是 0。因为我们还没有开始对齐任何一对位置，也就还没有“以某两个位置结尾”的公共连续子数组可以讨论。</div>`;
+      return;
+    }
+
+    const items = step.bruteForce.map(item => {
+      const cls = item.ok ? "enum-item valid" : "enum-item invalid";
+      const title = item.ok ? "这是一种有效的连续公共后缀" : "这一段不成立";
+      return `<div class="${cls}">
+        <strong>长度 ${item.len}</strong>：
+        nums1 后缀 = [${item.slice1.join(", ")}]，
+        nums2 后缀 = [${item.slice2.join(", ")}]
+        <br>${title}
+      </div>`;
+    }).reverse().join("");
+
+    const extra = step.equal
+      ? `<div class="enum-item valid"><strong>把它和代码对应起来：</strong> 左上角 dp[${step.i - 1}][${step.j - 1}] = ${step.diag}，说明“前一对位置结尾”的最长公共连续后缀长度是 ${step.diag}。这些长度为 1 到 ${step.diag} 的真实情况，来到当前这两个相等元素后，都会整体再延长 1 位；同时还会新增一个只包含当前元素的长度 1 情况。所以结果就是 ${step.diag} + 1 = ${step.after}。</div>`
+      : `<div class="enum-item invalid"><strong>把它和代码对应起来：</strong> 当前两个位置不相等，所有“必须以当前两个位置结尾”的候选都会在最后一位断掉，所以一个也留不住，dp[${step.i}][${step.j}] 只能是 0。</div>`;
+
+    enumBox.innerHTML = items + extra;
+  }
+
+  function renderNarration(step) {
+    stepCountEl.textContent = currentStep;
+    maxLenText.textContent = step.maxLen;
+
+    if (step.type === "init") {
+      stepBadge.textContent = "初始化";
+      loopText.textContent = "代码刚创建好 dp 数组，第 0 行和第 0 列都是边界，表示有一边是空数组。";
+      compareText.textContent = "因为还没进入双层循环，所以还没有开始比较 nums1[i - 1] 和 nums2[j - 1]。";
+      updateText.textContent = "此时 maxLen = 0，所有格子默认是 0。";
+      formulaText.textContent = "边界：dp[0][*] = 0，dp[*][0] = 0";
+      bridgeText.innerHTML = `<p><strong>为什么能这样初始化？</strong> 因为一旦有一边是空数组，就不可能存在非空的共同连续子数组。这也是代码里把数组开成 <span class="inline-code">(m + 1) × (n + 1)</span> 的原因。</p>`;
+      return;
+    }
+
+    const a = step.nums1[step.i - 1];
+    const b = step.nums2[step.j - 1];
+
+    stepBadge.textContent = `第 ${currentStep} 步：处理 dp[${step.i}][${step.j}]`;
+    loopText.textContent = `当前来到外层 i = ${step.i}、内层 j = ${step.j}，也就是代码中的这一轮双层循环。`;
+    compareText.textContent = `此时比较 nums1[${step.i - 1}] = ${a} 和 nums2[${step.j - 1}] = ${b}，比较结果：${step.equal ? "相等" : "不相等"}。`;
+
+    if (step.equal) {
+      updateText.textContent = `因为相等，所以执行 dp[${step.i}][${step.j}] = dp[${step.i - 1}][${step.j - 1}] + 1 = ${step.diag} + 1 = ${step.after}，然后把 maxLen 更新到 ${step.maxLen}。`;
+      formulaText.textContent = `nums1[i - 1] === nums2[j - 1] 时：dp[${step.i}][${step.j}] = dp[${step.i - 1}][${step.j - 1}] + 1 = ${step.after}`;
+      bridgeText.innerHTML = `<p><strong>这不是死记硬背的“左上角 + 1”。</strong> 真正的意思是：左上角已经存好了“前一对位置结尾”的最长连续公共后缀长度 ${step.diag}，现在当前两个元素又相等，于是这些旧情况全部都能延长 1 位。</p><p>同时，还会多出一个新增情况：只看当前这一位本身，也能形成长度 1 的公共连续子数组。</p>`;
+    } else {
+      updateText.textContent = `因为不相等，所以执行 dp[${step.i}][${step.j}] = 0。注意这里不是“忘记继承”，而是“所有以当前两个位置结尾的连续段都被打断了”。maxLen 保持 ${step.maxLen}。`;
+      formulaText.textContent = `nums1[i - 1] !== nums2[j - 1] 时：dp[${step.i}][${step.j}] = 0`;
+      bridgeText.innerHTML = `<p><strong>为什么不能看左边或上边？</strong> 因为这题要求的是“以当前这两个位置作为共同结尾”的连续子数组。既然最后一位都不一样，那么任何候选段都会在末尾断开，所以答案只能清零。</p>`;
+    }
+  }
+
+  function renderStep() {
+    const step = steps[currentStep];
+    renderNarration(step);
+    renderArrays(step);
+    renderTable(step);
+    renderEnum(step);
+    document.getElementById("prevStep").disabled = currentStep === 0;
+    document.getElementById("nextStep").disabled = currentStep === steps.length - 1;
+  }
+
+  function nextStep() {
+    if (currentStep < steps.length - 1) {
+      currentStep += 1;
+      renderStep();
+    } else {
+      stopAuto();
+    }
+  }
+
+  function prevStep() {
+    if (currentStep > 0) {
+      currentStep -= 1;
+      renderStep();
+    }
+  }
+
+  function stopAuto() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+      document.getElementById("autoPlay").textContent = "自动播放";
+    }
+  }
+
+  function toggleAuto() {
+    if (timer) {
+      stopAuto();
+      return;
+    }
+    document.getElementById("autoPlay").textContent = "暂停播放";
+    timer = setInterval(() => {
+      if (currentStep >= steps.length - 1) {
+        stopAuto();
+      } else {
+        nextStep();
+      }
+    }, 1500);
+  }
+
+  document.getElementById("nextStep").addEventListener("click", nextStep);
+  document.getElementById("prevStep").addEventListener("click", prevStep);
+  document.getElementById("autoPlay").addEventListener("click", toggleAuto);
+  document.getElementById("resetDemo").addEventListener("click", () => {
+    stopAuto();
+    currentStep = 0;
+    renderStep();
+  });
+
+  function renderPracticeArrays() {
+    const box = document.getElementById("practiceArrays");
+    box.appendChild(renderArrayRow("nums1", practiceNums1, -1));
+    box.appendChild(renderArrayRow("nums2", practiceNums2, -1));
+  }
+
+  function setChoiceQuestion(containerId, options, answerIndex) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+    let selected = -1;
+
+    options.forEach((text, index) => {
+      const div = document.createElement("div");
+      div.className = "option";
+      div.textContent = text;
+      div.addEventListener("click", () => {
+        selected = index;
+        Array.from(container.children).forEach(item => item.classList.remove("selected"));
+        div.classList.add("selected");
+        container.dataset.selected = String(selected);
+      });
+      container.appendChild(div);
+    });
+
+    container.dataset.answer = String(answerIndex);
+  }
+
+  setChoiceQuestion("q2Options", [
+    "左上角代表的那一整批连续后缀情况都能延长 1 位，并且还新增了一个只包含当前元素的长度 1 情况。",
+    "因为当前位置相等，所以直接把左边 dp[i][j - 1] 原样搬过来再加 1。",
+    "因为当前位置相等，所以前面所有已经算过的格子都可以拿来比较，选最大的再加 1。"
+  ], 0);
+
+  setChoiceQuestion("q3Options", [
+    "dp[4][4] 会等于 dp[3][3] + 1，因为左上角一定能继承。",
+    "dp[4][4] 会变成 0，因为当前这两个位置不相等，所有以它们为共同结尾的连续候选都会断掉。",
+    "dp[4][4] 会取左边和上边的较大值，因为最长答案可以从其他方向转移过来。"
+  ], 1);
+
+  function showFeedback(id, ok, text) {
+    const box = document.getElementById(id);
+    box.className = `feedback show ${ok ? "good" : "bad"}`;
+    box.innerHTML = text;
+  }
+
+  document.getElementById("q1Check").addEventListener("click", () => {
+    const value = document.getElementById("q1Input").value.trim();
+    const ok = value === "2";
+    showFeedback(
+      "q1Feedback",
+      ok,
+      ok
+        ? "回答正确。因为 nums1[2] = 1，nums2[1] = 1，相等；再看左上角 dp[2][1]，它表示以 nums1[1] = 2 和 nums2[0] = 2 结尾时的最长公共连续后缀长度，是 1，所以当前可以接成长度 2。"
+        : "这一步应该是 2。先比较当前元素：nums1[2] = 1，nums2[1] = 1，相等；所以不是清零，而是看左上角 dp[2][1]。左上角的 1 对应公共后缀 [2]，现在再接上当前这两个 1，就得到公共连续子数组 [2, 1]，长度变成 2。"
+    );
+  });
+
+  document.getElementById("q2Check").addEventListener("click", () => {
+    const selected = document.getElementById("q2Options").dataset.selected;
+    const ok = selected === document.getElementById("q2Options").dataset.answer;
+    showFeedback(
+      "q2Feedback",
+      ok,
+      ok
+        ? "回答正确。这里最关键的是“左上角那一批真实情况”这个视角。dp[2][1] 不是一个孤零零的数字，它概括了“以前一对位置结尾”的所有连续公共后缀情况；当前两位又相等，所以这些情况都能整体延长 1 位。"
+        : "更准确的说法是：左上角已经概括了以前一对位置结尾的连续公共后缀情况，当前相等后，这些情况统一延长 1 位，并额外出现一个只含当前元素的长度 1 情况。不是看左边，也不是从所有格子里随便挑最大。"
+    );
+  });
+
+  document.getElementById("q3Check").addEventListener("click", () => {
+    const selected = document.getElementById("q3Options").dataset.selected;
+    const ok = selected === document.getElementById("q3Options").dataset.answer;
+    showFeedback(
+      "q3Feedback",
+      ok,
+      ok
+        ? "回答正确。当前最后一位不相等，说明任何“必须以这两个位置作为共同结尾”的连续子数组都会在这里断掉，所以 dp[4][4] 只能是 0。全局答案如果更大，会靠 maxLen 保留下来，而不是靠这个格子继承。"
+        : "这一步不能从左边、上边或左上角继承。因为题目里的状态定义是“以当前这两个位置为结尾”，既然末尾的 2 和 3 不相等，那么这一类候选全部失效，只能清零。"
+    );
+  });
+
+  renderPracticeArrays();
+  renderStep();
+</script>
+</body>
+</html>

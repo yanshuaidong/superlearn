@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1143. 最长公共子序列 — 算法教学可视化</title>
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-light: #a5b4fc;
+    --primary-dark: #4338ca;
+    --success: #22c55e;
+    --success-light: #bbf7d0;
+    --danger: #ef4444;
+    --danger-light: #fecaca;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --info: #3b82f6;
+    --info-light: #dbeafe;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --code-bg: #1e1e2e;
+    --code-text: #cdd6f4;
+    --match-color: #8b5cf6;
+    --match-bg: #ede9fe;
+    --diag-color: #f59e0b;
+    --diag-bg: #fef3c7;
+    --up-color: #3b82f6;
+    --up-bg: #dbeafe;
+    --left-color: #10b981;
+    --left-bg: #d1fae5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .header h1 { font-size: 2rem; margin-bottom: 8px; }
+  .header p { opacity: 0.85; font-size: 1.05rem; }
+
+  .tab-bar {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    background: var(--card);
+    border-bottom: 2px solid var(--border);
+    padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .tab-btn {
+    padding: 14px 28px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+  }
+  .tab-btn:hover { color: var(--primary); }
+  .tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .module { display: none; max-width: 1020px; margin: 0 auto; padding: 30px 20px 60px; }
+  .module.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .problem-desc { color: var(--text-secondary); margin-bottom: 12px; }
+  .example-box {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-family: 'Menlo', 'Consolas', monospace;
+    font-size: 0.9rem;
+  }
+
+  pre.code-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 10px;
+    padding: 22px 24px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    font-family: 'Menlo', 'Consolas', 'Courier New', monospace;
+  }
+  .code-comment { color: #6c7086; }
+  .code-keyword { color: #cba6f7; }
+  .code-func { color: #89b4fa; }
+  .code-number { color: #fab387; }
+  .code-string { color: #a6e3a1; }
+  .code-var { color: #f9e2af; }
+  .code-op { color: #89dceb; }
+
+  /* ===== 可视化模块 ===== */
+  .viz-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: #c7d2fe; cursor: not-allowed; }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+  }
+  .btn-outline:hover { background: #eef2ff; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #16a34a; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+
+  .speed-control { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--text-secondary); font-size: 0.85rem; }
+  .speed-control input { width: 80px; }
+
+  /* DP 表格样式 */
+  .dp-table-wrapper {
+    overflow-x: auto;
+    margin: 16px 0;
+    padding: 10px 0;
+  }
+  .dp-table {
+    border-collapse: separate;
+    border-spacing: 3px;
+    margin: 0 auto;
+  }
+  .dp-table td, .dp-table th {
+    width: 52px;
+    height: 48px;
+    text-align: center;
+    font-family: 'Menlo', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all .35s ease;
+    position: relative;
+  }
+  .dp-table th {
+    background: #f1f5f9;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+  .dp-table th.char-header {
+    color: var(--primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .dp-table td {
+    background: white;
+    border: 2px solid var(--border);
+  }
+  .dp-table td.computed {
+    border-color: var(--success);
+    background: var(--success-light);
+    color: var(--text);
+  }
+  .dp-table td.current {
+    border-color: var(--primary);
+    background: #eef2ff;
+    transform: scale(1.12);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+    z-index: 5;
+  }
+  .dp-table td.ref-diag {
+    border-color: var(--diag-color);
+    background: var(--diag-bg);
+    box-shadow: 0 0 0 2px rgba(245,158,11,0.2);
+  }
+  .dp-table td.ref-up {
+    border-color: var(--up-color);
+    background: var(--up-bg);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+  }
+  .dp-table td.ref-left {
+    border-color: var(--left-color);
+    background: var(--left-bg);
+    box-shadow: 0 0 0 2px rgba(16,185,129,0.2);
+  }
+  .dp-table td.path-cell {
+    border-color: var(--warning);
+    background: var(--warning-light);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+  }
+  .dp-table td.empty-cell {
+    color: #cbd5e1;
+    border-style: dashed;
+  }
+  .dp-table td .cell-idx {
+    position: absolute;
+    top: -1px;
+    right: 2px;
+    font-size: 0.55rem;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
+  .char-highlight-1 {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #ede9fe;
+    color: #7c3aed;
+    font-weight: 700;
+    font-family: 'Menlo', monospace;
+  }
+  .char-highlight-2 {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #fce7f3;
+    color: #db2777;
+    font-weight: 700;
+    font-family: 'Menlo', monospace;
+  }
+
+  .strings-display {
+    display: flex;
+    gap: 30px;
+    margin: 12px 0 20px;
+    flex-wrap: wrap;
+  }
+  .string-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .string-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    min-width: 52px;
+  }
+  .string-char {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    border: 2px solid var(--border);
+    background: white;
+    font-family: 'Menlo', monospace;
+    transition: all .3s;
+  }
+  .string-char.active-1 {
+    border-color: #7c3aed;
+    background: #ede9fe;
+    color: #7c3aed;
+  }
+  .string-char.active-2 {
+    border-color: #db2777;
+    background: #fce7f3;
+    color: #db2777;
+  }
+  .string-char.matched {
+    border-color: var(--success);
+    background: var(--success-light);
+    color: #166534;
+  }
+
+  .decision-box {
+    background: #f8fafc;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    min-height: 80px;
+    transition: all .3s;
+  }
+  .decision-box.highlight {
+    border-color: var(--primary-light);
+    background: #eef2ff;
+  }
+  .decision-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--primary);
+    font-size: 0.95rem;
+  }
+  .option-row {
+    display: flex;
+    gap: 16px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+  }
+  .option-card {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: white;
+    transition: all .3s;
+  }
+  .option-card.winner {
+    border-color: var(--success);
+    background: var(--success-light);
+  }
+  .option-card.loser {
+    border-color: var(--danger-light);
+    background: #fff5f5;
+    opacity: 0.7;
+  }
+  .option-card .label { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; }
+  .option-card .value { font-size: 1.3rem; font-weight: 800; font-family: 'Menlo', monospace; }
+  .option-card .formula { font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; font-family: 'Menlo', monospace; }
+
+  .narration {
+    padding: 14px 18px;
+    background: #fffbeb;
+    border-left: 4px solid var(--warning);
+    border-radius: 0 8px 8px 0;
+    margin: 14px 0;
+    font-size: 0.92rem;
+    color: #92400e;
+    line-height: 1.7;
+  }
+
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    border-radius: 10px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+  .status-item { text-align: center; }
+  .status-item .label { font-size: 0.78rem; color: var(--text-secondary); }
+  .status-item .value { font-size: 1.4rem; font-weight: 800; color: var(--primary); font-family: 'Menlo', monospace; }
+
+  /* 展开枚举区域 */
+  .expand-section {
+    margin: 14px 0;
+    border: 2px dashed var(--primary-light);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all .3s;
+  }
+  .expand-toggle {
+    width: 100%;
+    padding: 12px 18px;
+    background: #eef2ff;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-align: left;
+    transition: background .2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .expand-toggle:hover { background: #e0e7ff; }
+  .expand-toggle .arrow { transition: transform .3s; display: inline-block; }
+  .expand-toggle.open .arrow { transform: rotate(90deg); }
+  .expand-content {
+    display: none;
+    padding: 18px;
+    background: white;
+  }
+  .expand-content.open { display: block; }
+
+  .enum-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .enum-item {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-family: 'Menlo', monospace;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+  }
+  .enum-item.longest {
+    border-color: var(--success);
+    background: var(--success-light);
+    font-weight: 700;
+  }
+  .enum-item.empty-str {
+    color: #94a3b8;
+    font-style: italic;
+  }
+  .enum-arrow {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin: 8px 0;
+  }
+
+  .ref-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+    font-size: 0.82rem;
+  }
+  .ref-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ref-legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 2px solid;
+  }
+
+  /* ===== 练习模块 ===== */
+  .practice-table td {
+    position: relative;
+  }
+  .practice-table input {
+    width: 42px;
+    height: 36px;
+    text-align: center;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Menlo', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: white;
+    outline: none;
+    transition: all .2s;
+  }
+  .practice-table input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  }
+  .practice-table input.correct {
+    border-color: var(--success);
+    background: var(--success-light);
+    color: #166534;
+  }
+  .practice-table input.wrong {
+    border-color: var(--danger);
+    background: var(--danger-light);
+    color: #991b1b;
+  }
+
+  .quiz-section { margin-top: 20px; }
+  .quiz-q {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+  .quiz-q h4 { margin-bottom: 10px; font-size: 0.95rem; }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-opt {
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 0.9rem;
+    background: white;
+  }
+  .quiz-opt:hover { border-color: var(--primary-light); background: #f5f3ff; }
+  .quiz-opt.selected { border-color: var(--primary); background: #eef2ff; }
+  .quiz-opt.correct-answer { border-color: var(--success); background: var(--success-light); }
+  .quiz-opt.wrong-answer { border-color: var(--danger); background: var(--danger-light); }
+  .quiz-feedback {
+    margin-top: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    display: none;
+  }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.correct { background: var(--success-light); color: #166534; }
+  .quiz-feedback.wrong { background: var(--danger-light); color: #991b1b; }
+
+  .result-banner {
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-align: center;
+    margin: 16px 0;
+    display: none;
+  }
+  .result-banner.show { display: block; }
+  .result-banner.success { background: var(--success-light); color: #166534; border: 2px solid var(--success); }
+  .result-banner.partial { background: var(--warning-light); color: #92400e; border: 2px solid var(--warning); }
+
+  .step-counter {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .compare-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+    margin: 16px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .compare-char {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-family: 'Menlo', monospace;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+  .compare-char.c1 { background: #ede9fe; color: #7c3aed; border: 2px solid #7c3aed; }
+  .compare-char.c2 { background: #fce7f3; color: #db2777; border: 2px solid #db2777; }
+  .compare-eq { color: var(--success); font-size: 1.5rem; }
+  .compare-neq { color: var(--danger); font-size: 1.5rem; }
+
+  @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.2);color:var(--warning)} 100%{transform:scale(1)} }
+  .status-item .value.updated { animation: pulse 0.5s ease; }
+
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+  .tag-match { background: var(--success-light); color: #166534; }
+  .tag-nomatch { background: var(--danger-light); color: #991b1b; }
+
+  .trace-hint { font-size: 0.88rem; color: var(--text-secondary); margin: 8px 0; padding: 10px 14px; background: #f1f5f9; border-radius: 8px; }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 1.4rem; }
+    .tab-btn { padding: 10px 14px; font-size: 0.85rem; }
+    .card { padding: 18px; }
+    .dp-table td, .dp-table th { width: 40px; height: 38px; font-size: 0.8rem; }
+    .option-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>1143. 最长公共子序列</h1>
+  <p>Longest Common Subsequence — 动态规划经典二维 DP</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab(0)">📖 题目与代码</button>
+  <button class="tab-btn" onclick="switchTab(1)">▶️ 演示可视化</button>
+  <button class="tab-btn" onclick="switchTab(2)">✏️ 动手练习</button>
+</div>
+
+<!-- ==================== 模块一：题目与代码 ==================== -->
+<div class="module active" id="mod0">
+  <div class="card">
+    <h2><span class="icon" style="background:var(--primary)">📋</span>题目描述</h2>
+    <p class="problem-desc">
+      给定两个字符串 <code>text1</code> 和 <code>text2</code>，返回这两个字符串的<strong>最长公共子序列</strong>的长度。如果不存在公共子序列，返回 0。
+    </p>
+    <p class="problem-desc">
+      <strong>子序列</strong>是指从原字符串中删除一些字符（也可以不删除）后，剩余字符保持原有顺序组成的新字符串。
+      例如，<code>"ace"</code> 是 <code>"abcde"</code> 的子序列，而 <code>"aec"</code> 不是。
+    </p>
+    <div class="example-box">
+      <div><strong>示例 1：</strong></div>
+      <div>输入：text1 = "abcde", text2 = "ace"</div>
+      <div>输出：3</div>
+      <div>解释：最长公共子序列是 "ace"，长度为 3</div>
+    </div>
+    <div class="example-box">
+      <div><strong>示例 2：</strong></div>
+      <div>输入：text1 = "abc", text2 = "def"</div>
+      <div>输出：0</div>
+      <div>解释：两个字符串没有公共子序列</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon" style="background:#8b5cf6">🧠</span>核心思路</h2>
+    <p class="problem-desc">
+      用 <code>dp[i][j]</code> 表示 <code>text1</code> 的前 <code>i</code> 个字符与 <code>text2</code> 的前 <code>j</code> 个字符的最长公共子序列长度。
+    </p>
+    <div style="padding:14px 18px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;margin:10px 0">
+      <p><strong>状态转移方程：</strong></p>
+      <p style="margin:8px 0;font-family:Menlo,monospace;font-size:0.9rem">
+        ① 若 text1[i-1] == text2[j-1]：<br>
+        &nbsp;&nbsp;&nbsp;dp[i][j] = dp[i-1][j-1] + 1 <span style="color:#64748b">（两字符相同，接到已有的 LCS 后面）</span>
+      </p>
+      <p style="margin:8px 0;font-family:Menlo,monospace;font-size:0.9rem">
+        ② 若 text1[i-1] != text2[j-1]：<br>
+        &nbsp;&nbsp;&nbsp;dp[i][j] = max(dp[i-1][j], dp[i][j-1]) <span style="color:#64748b">（舍弃某一个字符，取更优结果）</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon" style="background:#059669">💻</span>答案代码（带注释）</h2>
+    <pre class="code-block"><span class="code-comment">/**
+ * 1143. 最长公共子序列
+ * @param {string} text1
+ * @param {string} text2
+ * @return {number}
+ */</span>
+<span class="code-keyword">var</span> <span class="code-func">longestCommonSubsequence</span> = <span class="code-keyword">function</span>(text1, text2) {
+    <span class="code-comment">// text1 的长度 m，text2 的长度 n</span>
+    <span class="code-keyword">const</span> <span class="code-var">m</span> = text1.length;
+    <span class="code-keyword">const</span> <span class="code-var">n</span> = text2.length;
+
+    <span class="code-comment">// 创建 (m+1) × (n+1) 的二维数组，全部初始化为 0</span>
+    <span class="code-comment">// 多一行一列是为了处理"某个字符串为空"的边界</span>
+    <span class="code-keyword">const</span> <span class="code-var">dp</span> = Array.from({ length: m + <span class="code-number">1</span> },
+                        () <span class="code-op">=></span> Array(n + <span class="code-number">1</span>).fill(<span class="code-number">0</span>));
+
+    <span class="code-comment">// 从 i=1, j=1 开始填表</span>
+    <span class="code-keyword">for</span> (<span class="code-keyword">let</span> i = <span class="code-number">1</span>; i <span class="code-op">&lt;=</span> m; i++) {
+        <span class="code-keyword">for</span> (<span class="code-keyword">let</span> j = <span class="code-number">1</span>; j <span class="code-op">&lt;=</span> n; j++) {
+
+            <span class="code-keyword">if</span> (text1[i - <span class="code-number">1</span>] <span class="code-op">===</span> text2[j - <span class="code-number">1</span>]) {
+                <span class="code-comment">// 字符相同 → 在"左上角"基础上 +1</span>
+                dp[i][j] = dp[i - <span class="code-number">1</span>][j - <span class="code-number">1</span>] + <span class="code-number">1</span>;
+            } <span class="code-keyword">else</span> {
+                <span class="code-comment">// 字符不同 → 舍弃其中一个字符，取较大值</span>
+                dp[i][j] = Math.max(dp[i - <span class="code-number">1</span>][j], dp[i][j - <span class="code-number">1</span>]);
+            }
+        }
+    }
+
+    <span class="code-comment">// dp[m][n] 就是两个完整字符串的最长公共子序列长度</span>
+    <span class="code-keyword">return</span> dp[m][n];
+};</pre>
+  </div>
+</div>
+
+<!-- ==================== 模块二：演示可视化 ==================== -->
+<div class="module" id="mod1">
+  <div class="card">
+    <h2><span class="icon" style="background:var(--primary)">▶️</span>演示示例</h2>
+    <p class="problem-desc">text1 = <strong>"abcde"</strong>，text2 = <strong>"ace"</strong>，最长公共子序列为 <strong>"ace"</strong>，长度 = 3</p>
+
+    <div class="strings-display" id="stringsDisplay"></div>
+
+    <div class="viz-controls">
+      <button class="btn btn-outline" id="btnReset" onclick="vizReset()">⟲ 重置</button>
+      <button class="btn btn-primary" id="btnPrev" onclick="vizPrev()">◀ 上一步</button>
+      <button class="btn btn-primary" id="btnNext" onclick="vizNext()">下一步 ▶</button>
+      <button class="btn btn-success" id="btnPlay" onclick="vizTogglePlay()">▶ 自动播放</button>
+      <span class="step-counter" id="stepCounter">0 / 0</span>
+      <div class="speed-control">
+        <label>速度</label>
+        <input type="range" min="200" max="2000" value="800" step="100" id="speedSlider">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon" style="background:#8b5cf6">📊</span>DP 表格</h2>
+    <div class="ref-legend">
+      <div class="ref-legend-item"><div class="ref-legend-dot" style="border-color:var(--primary);background:#eef2ff"></div> 当前计算</div>
+      <div class="ref-legend-item"><div class="ref-legend-dot" style="border-color:var(--diag-color);background:var(--diag-bg)"></div> 左上角 dp[i-1][j-1]</div>
+      <div class="ref-legend-item"><div class="ref-legend-dot" style="border-color:var(--up-color);background:var(--up-bg)"></div> 上方 dp[i-1][j]</div>
+      <div class="ref-legend-item"><div class="ref-legend-dot" style="border-color:var(--left-color);background:var(--left-bg)"></div> 左侧 dp[i][j-1]</div>
+      <div class="ref-legend-item"><div class="ref-legend-dot" style="border-color:var(--success);background:var(--success-light)"></div> 已计算</div>
+    </div>
+    <div class="dp-table-wrapper" id="dpTableWrapper"></div>
+  </div>
+
+  <div class="card" id="decisionCard" style="display:none">
+    <h2><span class="icon" style="background:var(--warning)">⚖️</span>决策过程</h2>
+    <div id="compareDisplay"></div>
+    <div id="decisionContent"></div>
+  </div>
+
+  <div class="card" id="expandCard" style="display:none">
+    <h2><span class="icon" style="background:#ec4899">🔍</span>展开压缩：dp 值背后的枚举</h2>
+    <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:12px">
+      每个 dp 值都是对大量子序列枚举后筛选出的"最优摘要"。下面展开它背后的暴力枚举过程，帮你理解 DP 把什么信息压缩了。
+    </p>
+    <div id="expandContent"></div>
+  </div>
+
+  <div class="card" id="narrationCard">
+    <h2><span class="icon" style="background:var(--info)">💬</span>步骤说明</h2>
+    <div class="narration" id="narration">点击"下一步"开始逐步演示算法执行过程。</div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <h2><span class="icon" style="background:var(--success)">🏆</span>最终结果</h2>
+    <div id="resultContent"></div>
+  </div>
+</div>
+
+<!-- ==================== 模块三：动手练习 ==================== -->
+<div class="module" id="mod2">
+  <div class="card">
+    <h2><span class="icon" style="background:var(--warning)">✏️</span>练习说明</h2>
+    <p class="problem-desc">
+      请用另一组例子来巩固理解：<strong>text1 = "sea"</strong>，<strong>text2 = "eat"</strong>。
+      <br>请按照算法的状态转移方程，手动填写 DP 表中的每个值。
+    </p>
+    <div class="trace-hint">
+      <strong>提示：</strong>先判断 text1[i-1] 和 text2[j-1] 是否相等，相等则取左上角+1，不等则取 max(上方, 左侧)。边界（第一行和第一列）已经帮你填好了，全是 0。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon" style="background:#8b5cf6">📝</span>手动填表</h2>
+    <div class="dp-table-wrapper" id="practiceTableWrapper"></div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="checkPractice()">✓ 检查答案</button>
+      <button class="btn btn-outline" onclick="resetPractice()">⟲ 重置</button>
+      <button class="btn btn-danger" onclick="showPracticeAnswer()">👁 显示答案</button>
+    </div>
+    <div class="result-banner" id="practiceResult"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon" style="background:var(--info)">❓</span>理解检测</h2>
+    <div class="quiz-section" id="quizSection"></div>
+    <button class="btn btn-success" onclick="checkQuiz()" style="margin-top:14px">✓ 提交全部答案</button>
+    <div class="result-banner" id="quizResult"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon" style="background:#059669">🔙</span>路径回溯练习</h2>
+    <p class="problem-desc">完成填表后，请回答：从 dp[3][3] 出发，沿着哪条路径可以还原出最长公共子序列？</p>
+    <div id="traceSection"></div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   通用工具
+   ================================================================ */
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  document.querySelectorAll('.module').forEach((m,i) => m.classList.toggle('active', i===idx));
+}
+
+/* ================================================================
+   DP 核心计算
+   ================================================================ */
+function computeDP(t1, t2) {
+  const m = t1.length, n = t2.length;
+  const dp = Array.from({length:m+1}, ()=>Array(n+1).fill(0));
+  const lcs = Array.from({length:m+1}, ()=>Array(n+1).fill(''));
+  for (let i=1;i<=m;i++) {
+    for (let j=1;j<=n;j++) {
+      if (t1[i-1]===t2[j-1]) {
+        dp[i][j]=dp[i-1][j-1]+1;
+        lcs[i][j]=lcs[i-1][j-1]+t1[i-1];
+      } else {
+        if (dp[i-1][j]>=dp[i][j-1]) {
+          dp[i][j]=dp[i-1][j];
+          lcs[i][j]=lcs[i-1][j];
+        } else {
+          dp[i][j]=dp[i][j-1];
+          lcs[i][j]=lcs[i][j-1];
+        }
+      }
+    }
+  }
+  return {dp,lcs};
+}
+
+function allCommonSubseqs(s1, s2) {
+  if (s1.length > 8 || s2.length > 8) return null;
+  function getSubs(s) {
+    if (s.length===0) return new Set(['']);
+    const rest = getSubs(s.slice(1));
+    const res = new Set(rest);
+    for (const sub of rest) res.add(s[0]+sub);
+    return res;
+  }
+  function isSub(sub, str) {
+    let j=0;
+    for (let i=0;i<str.length&&j<sub.length;i++) {
+      if (str[i]===sub[j]) j++;
+    }
+    return j===sub.length;
+  }
+  const subs = getSubs(s1);
+  const common = [];
+  for (const sub of subs) {
+    if (isSub(sub, s2)) common.push(sub);
+  }
+  common.sort((a,b)=>b.length-a.length || a.localeCompare(b));
+  return common;
+}
+
+/* ================================================================
+   演示可视化 (模块二)
+   ================================================================ */
+const DEMO_T1 = 'abcde';
+const DEMO_T2 = 'ace';
+let demoData, demoSteps, currentStep, playing, playTimer;
+
+function initViz() {
+  demoData = computeDP(DEMO_T1, DEMO_T2);
+  demoSteps = generateSteps(DEMO_T1, DEMO_T2, demoData);
+  currentStep = -1;
+  playing = false;
+  renderStrings();
+  renderDPTable();
+  updateVizUI();
+}
+
+function generateSteps(t1, t2, data) {
+  const {dp, lcs} = data;
+  const steps = [];
+  steps.push({
+    type:'init',i:0,j:0,
+    narration:'初始化 DP 表格。第一行和第一列全部为 0，因为空字符串与任何字符串的最长公共子序列长度都是 0。'
+  });
+  for (let i=1;i<=t1.length;i++) {
+    for (let j=1;j<=t2.length;j++) {
+      const isMatch = t1[i-1]===t2[j-1];
+      steps.push({
+        type: isMatch?'match':'nomatch',
+        i, j,
+        char1: t1[i-1], char2: t2[j-1],
+        sub1: t1.substring(0,i), sub2: t2.substring(0,j),
+        value: dp[i][j],
+        lcsStr: lcs[i][j],
+        diagVal: dp[i-1][j-1], diagLcs: lcs[i-1][j-1],
+        diagSub1: t1.substring(0,i-1), diagSub2: t2.substring(0,j-1),
+        upVal: dp[i-1][j], upLcs: lcs[i-1][j],
+        upSub1: t1.substring(0,i-1), upSub2: t2.substring(0,j),
+        leftVal: dp[i][j-1], leftLcs: lcs[i][j-1],
+        leftSub1: t1.substring(0,i), leftSub2: t2.substring(0,j-1),
+      });
+    }
+  }
+  steps.push({
+    type:'done',i:t1.length,j:t2.length,
+    narration:`填表完成！dp[${t1.length}][${t2.length}] = ${dp[t1.length][t2.length]}，最长公共子序列为 "${lcs[t1.length][t2.length]}"，长度为 ${dp[t1.length][t2.length]}。`
+  });
+  return steps;
+}
+
+function renderStrings() {
+  let html = '<div class="string-row"><span class="string-label">text1:</span>';
+  for (let i=0;i<DEMO_T1.length;i++) {
+    html += `<div class="string-char" id="sc1_${i}">${DEMO_T1[i]}</div>`;
+  }
+  html += '</div><div class="string-row"><span class="string-label">text2:</span>';
+  for (let i=0;i<DEMO_T2.length;i++) {
+    html += `<div class="string-char" id="sc2_${i}">${DEMO_T2[i]}</div>`;
+  }
+  html += '</div>';
+  document.getElementById('stringsDisplay').innerHTML = html;
+}
+
+function renderDPTable() {
+  const m=DEMO_T1.length, n=DEMO_T2.length;
+  let html = '<table class="dp-table"><tr><th></th><th></th>';
+  for (let j=0;j<n;j++) html += `<th class="char-header">${DEMO_T2[j]}</th>`;
+  html += '</tr><tr><th></th>';
+  for (let j=0;j<=n;j++) html += `<td id="cell_0_${j}" class="empty-cell"><span class="cell-idx">0,${j}</span>-</td>`;
+  html += '</tr>';
+  for (let i=1;i<=m;i++) {
+    html += `<tr><th class="char-header">${DEMO_T1[i-1]}</th>`;
+    for (let j=0;j<=n;j++) {
+      html += `<td id="cell_${i}_${j}" class="empty-cell"><span class="cell-idx">${i},${j}</span>-</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table>';
+  document.getElementById('dpTableWrapper').innerHTML = html;
+}
+
+function updateVizUI() {
+  const step = currentStep >= 0 ? demoSteps[currentStep] : null;
+  const total = demoSteps.length;
+  document.getElementById('stepCounter').textContent = `${currentStep+1} / ${total}`;
+  document.getElementById('btnPrev').disabled = currentStep <= 0;
+  document.getElementById('btnNext').disabled = currentStep >= total - 1;
+
+  const m=DEMO_T1.length, n=DEMO_T2.length;
+
+  // 清除所有高亮
+  for (let i=0;i<=m;i++) for (let j=0;j<=n;j++) {
+    const td = document.getElementById(`cell_${i}_${j}`);
+    td.className = '';
+    if (i===0||j===0) {
+      td.className = 'computed';
+      td.innerHTML = `<span class="cell-idx">${i},${j}</span>0`;
+    } else {
+      td.className = 'empty-cell';
+      td.innerHTML = `<span class="cell-idx">${i},${j}</span>-`;
+    }
+  }
+
+  // 填入已计算的值
+  if (step) {
+    const computedCells = [];
+    for (let s=0;s<=currentStep;s++) {
+      const st = demoSteps[s];
+      if (st.type==='match'||st.type==='nomatch') {
+        computedCells.push({i:st.i,j:st.j,v:st.value});
+      }
+    }
+    for (const c of computedCells) {
+      const td = document.getElementById(`cell_${c.i}_${c.j}`);
+      td.className = 'computed';
+      td.innerHTML = `<span class="cell-idx">${c.i},${c.j}</span>${c.v}`;
+    }
+
+    // 高亮引用的格子和当前格子
+    if (step.type==='match'||step.type==='nomatch') {
+      // 引用格子
+      const diagTd = document.getElementById(`cell_${step.i-1}_${step.j-1}`);
+      diagTd.classList.add('ref-diag');
+      if (step.type==='nomatch') {
+        const upTd = document.getElementById(`cell_${step.i-1}_${step.j}`);
+        upTd.classList.add('ref-up');
+        const leftTd = document.getElementById(`cell_${step.i}_${step.j-1}`);
+        leftTd.classList.add('ref-left');
+      }
+      // 当前格子
+      const curTd = document.getElementById(`cell_${step.i}_${step.j}`);
+      curTd.className = 'current';
+      curTd.innerHTML = `<span class="cell-idx">${step.i},${step.j}</span>${step.value}`;
+    }
+
+    // 完成时高亮回溯路径
+    if (step.type==='done') {
+      highlightTracePath(DEMO_T1, DEMO_T2, demoData.dp, demoData.lcs);
+    }
+  }
+
+  // 高亮字符串中的字符
+  for (let i=0;i<DEMO_T1.length;i++) {
+    const el = document.getElementById(`sc1_${i}`);
+    el.className = 'string-char';
+  }
+  for (let i=0;i<DEMO_T2.length;i++) {
+    const el = document.getElementById(`sc2_${i}`);
+    el.className = 'string-char';
+  }
+  if (step && (step.type==='match'||step.type==='nomatch')) {
+    document.getElementById(`sc1_${step.i-1}`).classList.add('active-1');
+    document.getElementById(`sc2_${step.j-1}`).classList.add('active-2');
+    if (step.type==='match') {
+      document.getElementById(`sc1_${step.i-1}`).classList.add('matched');
+      document.getElementById(`sc2_${step.j-1}`).classList.add('matched');
+    }
+  }
+
+  // 决策面板
+  renderDecision(step);
+  // 展开枚举面板
+  renderExpand(step);
+  // 叙述面板
+  renderNarration(step);
+  // 结果面板
+  renderResult(step);
+}
+
+function highlightTracePath(t1, t2, dp, lcs) {
+  let i=t1.length, j=t2.length;
+  while (i>0 && j>0) {
+    const td = document.getElementById(`cell_${i}_${j}`);
+    td.classList.add('path-cell');
+    if (t1[i-1]===t2[j-1]) {
+      i--; j--;
+    } else if (dp[i-1][j]>=dp[i][j-1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+}
+
+function renderDecision(step) {
+  const card = document.getElementById('decisionCard');
+  if (!step || step.type==='init' || step.type==='done') {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const cmpDiv = document.getElementById('compareDisplay');
+  const eqSign = step.type==='match'
+    ? '<span class="compare-eq">＝</span>'
+    : '<span class="compare-neq">≠</span>';
+  cmpDiv.innerHTML = `
+    <div class="compare-display">
+      <span style="font-size:0.85rem;color:var(--text-secondary)">text1[${step.i-1}]</span>
+      <div class="compare-char c1">${step.char1}</div>
+      ${eqSign}
+      <div class="compare-char c2">${step.char2}</div>
+      <span style="font-size:0.85rem;color:var(--text-secondary)">text2[${step.j-1}]</span>
+      <span class="tag ${step.type==='match'?'tag-match':'tag-nomatch'}">${step.type==='match'?'字符相同':'字符不同'}</span>
+    </div>`;
+
+  const decDiv = document.getElementById('decisionContent');
+  if (step.type === 'match') {
+    decDiv.innerHTML = `
+      <div class="decision-box highlight">
+        <div class="decision-title">✅ 字符匹配！使用左上角值 + 1</div>
+        <div class="option-row">
+          <div class="option-card winner">
+            <div class="label">dp[${step.i-1}][${step.j-1}] + 1</div>
+            <div class="value">${step.diagVal} + 1 = ${step.value}</div>
+            <div class="formula">把 '${step.char1}' 接到已有 LCS "${step.diagLcs||'(空)'}" 后面 → "${step.lcsStr}"</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:0.88rem;color:var(--text-secondary)">
+          因为 text1[${step.i-1}] = text2[${step.j-1}] = '${step.char1}'，这个字符可以成为公共子序列的一部分。
+          <br>在 "${step.diagSub1||'∅'}" 和 "${step.diagSub2||'∅'}" 的最优结果（dp[${step.i-1}][${step.j-1}]=${step.diagVal}）基础上 + 1。
+        </div>
+      </div>`;
+  } else {
+    const upWin = step.upVal >= step.leftVal;
+    const leftWin = step.leftVal >= step.upVal;
+    decDiv.innerHTML = `
+      <div class="decision-box highlight">
+        <div class="decision-title">❌ 字符不匹配！比较"舍弃谁"更优</div>
+        <div class="option-row">
+          <div class="option-card ${upWin?'winner':'loser'}">
+            <div class="label">舍弃 text1[${step.i-1}] = '${step.char1}'（看上方）</div>
+            <div class="value">dp[${step.i-1}][${step.j}] = ${step.upVal}</div>
+            <div class="formula">"${step.upSub1||'∅'}" 与 "${step.upSub2}" 的 LCS = "${step.upLcs||'(空)'}"</div>
+          </div>
+          <div class="option-card ${leftWin?'winner':'loser'}">
+            <div class="label">舍弃 text2[${step.j-1}] = '${step.char2}'（看左侧）</div>
+            <div class="value">dp[${step.i}][${step.j-1}] = ${step.leftVal}</div>
+            <div class="formula">"${step.leftSub1}" 与 "${step.leftSub2||'∅'}" 的 LCS = "${step.leftLcs||'(空)'}"</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:0.88rem;color:var(--text-secondary)">
+          max(${step.upVal}, ${step.leftVal}) = <strong>${step.value}</strong>
+          → dp[${step.i}][${step.j}] = ${step.value}，对应公共子序列 "${step.lcsStr||'(空)'}"
+        </div>
+      </div>`;
+  }
+}
+
+function renderExpand(step) {
+  const card = document.getElementById('expandCard');
+  if (!step || step.type==='init' || step.type==='done') {
+    card.style.display='none';
+    return;
+  }
+  card.style.display='block';
+  const div = document.getElementById('expandContent');
+  let html = '';
+
+  if (step.type === 'match') {
+    html += buildExpandBlock(
+      `dp[${step.i-1}][${step.j-1}] = ${step.diagVal}`,
+      step.diagSub1, step.diagSub2, step.diagVal, step.diagLcs,
+      `这个值压缩了 "${step.diagSub1||'∅'}" 和 "${step.diagSub2||'∅'}" 的所有公共子序列枚举，最终筛选出最长的那个。`,
+      'diag'
+    );
+    html += `<div class="enum-arrow" style="text-align:center;margin:12px 0">⬇️ 因为 '${step.char1}' == '${step.char2}'，在最长结果 "${step.diagLcs||''}" 后面接上 '${step.char1}' → <strong>"${step.lcsStr}"</strong>（长度 ${step.diagVal}+1 = ${step.value}）</div>`;
+  } else {
+    html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+    html += '<div style="flex:1;min-width:280px">';
+    html += buildExpandBlock(
+      `dp[${step.i-1}][${step.j}] = ${step.upVal}（舍弃 text1 的 '${step.char1}'）`,
+      step.upSub1, step.upSub2, step.upVal, step.upLcs,
+      `如果不用 text1 的 '${step.char1}'，只看 "${step.upSub1||'∅'}" 和 "${step.upSub2}" 的最优结果。`,
+      'up'
+    );
+    html += '</div><div style="flex:1;min-width:280px">';
+    html += buildExpandBlock(
+      `dp[${step.i}][${step.j-1}] = ${step.leftVal}（舍弃 text2 的 '${step.char2}'）`,
+      step.leftSub1, step.leftSub2, step.leftVal, step.leftLcs,
+      `如果不用 text2 的 '${step.char2}'，只看 "${step.leftSub1}" 和 "${step.leftSub2||'∅'}" 的最优结果。`,
+      'left'
+    );
+    html += '</div></div>';
+    html += `<div class="enum-arrow" style="text-align:center;margin:12px 0">⬇️ 取较大值 max(${step.upVal}, ${step.leftVal}) = <strong>${step.value}</strong></div>`;
+  }
+  div.innerHTML = html;
+}
+
+function buildExpandBlock(title, s1, s2, dpVal, lcsStr, desc, colorKey) {
+  const colorMap = {diag:'var(--diag-color)',up:'var(--up-color)',left:'var(--left-color)'};
+  const bgMap = {diag:'var(--diag-bg)',up:'var(--up-bg)',left:'var(--left-bg)'};
+  const color = colorMap[colorKey] || 'var(--primary)';
+  const bg = bgMap[colorKey] || '#eef2ff';
+
+  const enumId = 'enum_' + Math.random().toString(36).substr(2,8);
+  const common = allCommonSubseqs(s1||'', s2||'');
+
+  let enumHtml = '';
+  if (common !== null) {
+    enumHtml = `
+      <div class="expand-section">
+        <button class="expand-toggle" onclick="toggleExpand(this)">
+          <span class="arrow">▶</span> 展开暴力枚举："${s1||'∅'}" 和 "${s2||'∅'}" 的所有公共子序列（共 ${common.length} 个）
+        </button>
+        <div class="expand-content" id="${enumId}">
+          <div class="enum-list">`;
+    const maxLen = common.length>0 ? common[0].length : 0;
+    for (const seq of common) {
+      const isL = seq.length === maxLen && maxLen > 0;
+      const isEmpty = seq === '';
+      enumHtml += `<span class="enum-item${isL?' longest':''}${isEmpty?' empty-str':''}">${isEmpty?'""（空串）': '"'+seq+'"'}${isL?' ← 最长!':''}</span>`;
+    }
+    enumHtml += `</div>
+          <div style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary)">
+            DP 把以上 ${common.length} 个候选结果浓缩为一个数字 <strong>${dpVal}</strong>（最长公共子序列 "${lcsStr||'(空)'}",长度 ${dpVal}）。
+            <br>凡是长度更短的子序列，都在这一步被"淘汰"了——这就是 DP 的压缩本质。
+          </div>
+        </div>
+      </div>`;
+  } else {
+    enumHtml = `<div style="font-size:0.85rem;color:#94a3b8;margin-top:8px">（子串较长，枚举省略。dp[...] = ${dpVal} 代表最长公共子序列 "${lcsStr||'(空)'}"，长度为 ${dpVal}）</div>`;
+  }
+
+  return `
+    <div style="border-left:4px solid ${color};background:${bg};border-radius:0 8px 8px 0;padding:14px 16px;margin:10px 0">
+      <div style="font-weight:700;font-size:0.92rem;margin-bottom:6px;color:${color}">${title}</div>
+      <div style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:8px">${desc}</div>
+      ${enumHtml}
+    </div>`;
+}
+
+function toggleExpand(btn) {
+  btn.classList.toggle('open');
+  const content = btn.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+function renderNarration(step) {
+  const div = document.getElementById('narration');
+  if (!step) {
+    div.textContent = '点击"下一步"开始逐步演示算法执行过程。';
+    return;
+  }
+  if (step.narration) {
+    div.textContent = step.narration;
+    return;
+  }
+  if (step.type==='match') {
+    div.innerHTML = `<strong>第 ${currentStep} 步：</strong>比较 text1[${step.i-1}]='${step.char1}' 和 text2[${step.j-1}]='${step.char2}'，<span style="color:#166534;font-weight:700">字符相同</span>！<br>dp[${step.i}][${step.j}] = dp[${step.i-1}][${step.j-1}] + 1 = ${step.diagVal} + 1 = <strong>${step.value}</strong>（公共子序列 "${step.lcsStr}" 末尾新增了 '${step.char1}'）`;
+  } else {
+    div.innerHTML = `<strong>第 ${currentStep} 步：</strong>比较 text1[${step.i-1}]='${step.char1}' 和 text2[${step.j-1}]='${step.char2}'，<span style="color:#991b1b;font-weight:700">字符不同</span>。<br>dp[${step.i}][${step.j}] = max(dp[${step.i-1}][${step.j}], dp[${step.i}][${step.j-1}]) = max(${step.upVal}, ${step.leftVal}) = <strong>${step.value}</strong>`;
+  }
+}
+
+function renderResult(step) {
+  const card = document.getElementById('resultCard');
+  if (!step || step.type !== 'done') { card.style.display='none'; return; }
+  card.style.display = 'block';
+  const {dp,lcs} = demoData;
+  const m=DEMO_T1.length, n=DEMO_T2.length;
+  document.getElementById('resultContent').innerHTML = `
+    <div class="status-bar">
+      <div class="status-item"><div class="label">最长公共子序列</div><div class="value">"${lcs[m][n]}"</div></div>
+      <div class="status-item"><div class="label">长度</div><div class="value">${dp[m][n]}</div></div>
+      <div class="status-item"><div class="label">DP 表格大小</div><div class="value">${m+1} × ${n+1}</div></div>
+    </div>
+    <div class="narration" style="margin-top:14px">
+      🎯 高亮的路径显示了从 dp[${m}][${n}] 回溯到 dp[0][0] 的过程。每个"向左上角走"的步骤对应一个匹配字符，这些字符合起来就是最长公共子序列 "<strong>${lcs[m][n]}</strong>"。
+    </div>`;
+}
+
+function vizNext() {
+  if (currentStep < demoSteps.length-1) {
+    currentStep++;
+    updateVizUI();
+  }
+}
+function vizPrev() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateVizUI();
+  }
+}
+function vizReset() {
+  vizStopPlay();
+  currentStep = -1;
+  updateVizUI();
+}
+function vizTogglePlay() {
+  if (playing) { vizStopPlay(); }
+  else { vizStartPlay(); }
+}
+function vizStartPlay() {
+  playing = true;
+  document.getElementById('btnPlay').textContent = '⏸ 暂停';
+  document.getElementById('btnPlay').classList.remove('btn-success');
+  document.getElementById('btnPlay').classList.add('btn-danger');
+  playTick();
+}
+function vizStopPlay() {
+  playing = false;
+  clearTimeout(playTimer);
+  document.getElementById('btnPlay').textContent = '▶ 自动播放';
+  document.getElementById('btnPlay').classList.remove('btn-danger');
+  document.getElementById('btnPlay').classList.add('btn-success');
+}
+function playTick() {
+  if (!playing) return;
+  if (currentStep < demoSteps.length-1) {
+    currentStep++;
+    updateVizUI();
+    const speed = parseInt(document.getElementById('speedSlider').value);
+    playTimer = setTimeout(playTick, speed);
+  } else {
+    vizStopPlay();
+  }
+}
+
+/* ================================================================
+   练习模块 (模块三)
+   ================================================================ */
+const PRAC_T1 = 'sea';
+const PRAC_T2 = 'eat';
+let pracData;
+
+function initPractice() {
+  pracData = computeDP(PRAC_T1, PRAC_T2);
+  renderPracticeTable();
+  renderQuiz();
+  renderTraceExercise();
+}
+
+function renderPracticeTable() {
+  const m=PRAC_T1.length, n=PRAC_T2.length;
+  let html = '<table class="dp-table practice-table"><tr><th></th><th>""</th>';
+  for (let j=0;j<n;j++) html += `<th class="char-header">${PRAC_T2[j]}</th>`;
+  html += '</tr>';
+  for (let i=0;i<=m;i++) {
+    html += '<tr>';
+    html += `<th class="char-header">${i===0?'""':PRAC_T1[i-1]}</th>`;
+    for (let j=0;j<=n;j++) {
+      if (i===0||j===0) {
+        html += `<td class="computed">0</td>`;
+      } else {
+        html += `<td><input type="text" maxlength="1" id="pinput_${i}_${j}" autocomplete="off"></td>`;
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</table>';
+  document.getElementById('practiceTableWrapper').innerHTML = html;
+}
+
+function checkPractice() {
+  const m=PRAC_T1.length, n=PRAC_T2.length;
+  let correct=0, total=0;
+  for (let i=1;i<=m;i++) {
+    for (let j=1;j<=n;j++) {
+      total++;
+      const inp = document.getElementById(`pinput_${i}_${j}`);
+      const val = parseInt(inp.value);
+      if (val === pracData.dp[i][j]) {
+        inp.className = 'correct';
+        correct++;
+      } else {
+        inp.className = 'wrong';
+      }
+    }
+  }
+  const banner = document.getElementById('practiceResult');
+  banner.classList.add('show');
+  if (correct===total) {
+    banner.className = 'result-banner show success';
+    banner.textContent = `🎉 全部正确！${correct}/${total} 个格子都填对了！`;
+  } else {
+    banner.className = 'result-banner show partial';
+    banner.textContent = `填对了 ${correct}/${total} 个格子，红色标记的请再想想。`;
+  }
+}
+
+function resetPractice() {
+  const m=PRAC_T1.length, n=PRAC_T2.length;
+  for (let i=1;i<=m;i++) {
+    for (let j=1;j<=n;j++) {
+      const inp = document.getElementById(`pinput_${i}_${j}`);
+      inp.value='';
+      inp.className='';
+    }
+  }
+  document.getElementById('practiceResult').classList.remove('show');
+}
+
+function showPracticeAnswer() {
+  const m=PRAC_T1.length, n=PRAC_T2.length;
+  for (let i=1;i<=m;i++) {
+    for (let j=1;j<=n;j++) {
+      const inp = document.getElementById(`pinput_${i}_${j}`);
+      inp.value = pracData.dp[i][j];
+      inp.className = 'correct';
+    }
+  }
+}
+
+/* ===== 理解检测题 ===== */
+const quizData = [
+  {
+    q: '在计算 dp[2][1]（text1="se", text2="e"）时，text1[1]="e" 和 text2[0]="e" 相等。此时应该用哪个公式？',
+    opts: [
+      'dp[2][1] = dp[1][0] + 1',
+      'dp[2][1] = max(dp[1][1], dp[2][0])',
+      'dp[2][1] = dp[2][0] + 1',
+      'dp[2][1] = dp[1][1] + dp[0][0]'
+    ],
+    ans: 0,
+    explain: '字符相等时使用"左上角 + 1"的公式：dp[i][j] = dp[i-1][j-1] + 1。即 dp[2][1] = dp[1][0] + 1 = 0 + 1 = 1。'
+  },
+  {
+    q: 'dp[1][1] 表示 text1 的前 1 个字符 "s" 和 text2 的前 1 个字符 "e" 的 LCS 长度。这个值是多少？为什么？',
+    opts: [
+      '0，因为 "s" ≠ "e"，max(dp[0][1], dp[1][0]) = max(0, 0) = 0',
+      '1，因为 "s" 和 "e" 都是单个字符',
+      '1，因为 dp[0][0] + 1 = 1',
+      '0，因为两个字符串完全不同'
+    ],
+    ans: 0,
+    explain: '因为 "s" ≠ "e"，字符不匹配，走 max 分支：dp[1][1] = max(dp[0][1], dp[1][0]) = max(0, 0) = 0。注意选项 D 的理由虽然结果对，但推理不严谨——应该看状态转移方程。'
+  },
+  {
+    q: '为什么 dp 表的维度是 (m+1) × (n+1) 而不是 m × n？',
+    opts: [
+      '为了让代码运行得更快',
+      '为了方便处理"空字符串"的边界情况，dp[0][*] 和 dp[*][0] 表示其中一个字符串为空',
+      '因为数组下标从 1 开始',
+      '为了存储最终答案'
+    ],
+    ans: 1,
+    explain: '多出的一行一列对应"空字符串"的边界。当 i=0 或 j=0 时，意味着有一个字符串为空，LCS 长度自然是 0。这样就不需要额外处理 i=1 或 j=1 时的越界问题。'
+  },
+  {
+    q: '在 "sea" 和 "eat" 中，最终的最长公共子序列是什么？',
+    opts: [
+      '"e"，长度为 1',
+      '"ea"，长度为 2',
+      '"a"，长度为 1',
+      '"eat"，长度为 3'
+    ],
+    ans: 1,
+    explain: '通过填完 DP 表可知 dp[3][3] = 2，最长公共子序列是 "ea"。"s-e-a" 中的 "ea" 和 "e-a-t" 中的 "ea" 都保持原有顺序，是合法的公共子序列。'
+  },
+  {
+    q: '当 text1[i-1] ≠ text2[j-1] 时，dp[i][j] = max(dp[i-1][j], dp[i][j-1])。这个 max 操作的本质是什么？',
+    opts: [
+      '随机选一个更大的值',
+      '在"舍弃 text1 当前字符"和"舍弃 text2 当前字符"两种策略中，选择能保留更长公共子序列的那个',
+      '比较两个字符串的长度',
+      '计算两个字符串的编辑距离'
+    ],
+    ans: 1,
+    explain: '当两个字符不匹配时，它们不可能同时出现在 LCS 的末尾。我们必须放弃其中一个，看哪种选择能保留更长的公共子序列。dp[i-1][j] 代表"放弃 text1 当前字符后的最优结果"，dp[i][j-1] 代表"放弃 text2 当前字符后的最优结果"。'
+  }
+];
+
+function renderQuiz() {
+  let html = '';
+  quizData.forEach((q, qi) => {
+    html += `<div class="quiz-q" id="quiz_${qi}">
+      <h4>第 ${qi+1} 题：${q.q}</h4>
+      <div class="quiz-options">`;
+    q.opts.forEach((opt, oi) => {
+      html += `<div class="quiz-opt" id="qopt_${qi}_${oi}" onclick="selectQuizOpt(${qi},${oi})">${String.fromCharCode(65+oi)}. ${opt}</div>`;
+    });
+    html += `</div><div class="quiz-feedback" id="qfb_${qi}"></div></div>`;
+  });
+  document.getElementById('quizSection').innerHTML = html;
+}
+
+const userAnswers = {};
+function selectQuizOpt(qi, oi) {
+  const q = quizData[qi];
+  q.opts.forEach((_,j) => {
+    document.getElementById(`qopt_${qi}_${j}`).className = 'quiz-opt';
+  });
+  document.getElementById(`qopt_${qi}_${oi}`).classList.add('selected');
+  userAnswers[qi] = oi;
+}
+
+function checkQuiz() {
+  let correct = 0;
+  quizData.forEach((q,qi) => {
+    const fb = document.getElementById(`qfb_${qi}`);
+    if (userAnswers[qi] === undefined) {
+      fb.className = 'quiz-feedback show wrong';
+      fb.textContent = '请先选择一个答案。';
+      return;
+    }
+    q.opts.forEach((_,j) => {
+      const el = document.getElementById(`qopt_${qi}_${j}`);
+      el.className = 'quiz-opt';
+      if (j === q.ans) el.classList.add('correct-answer');
+      if (j === userAnswers[qi] && j !== q.ans) el.classList.add('wrong-answer');
+    });
+    if (userAnswers[qi] === q.ans) {
+      correct++;
+      fb.className = 'quiz-feedback show correct';
+      fb.textContent = '✓ 正确！' + q.explain;
+    } else {
+      fb.className = 'quiz-feedback show wrong';
+      fb.textContent = '✗ 不正确。' + q.explain;
+    }
+  });
+  const banner = document.getElementById('quizResult');
+  banner.classList.add('show');
+  if (correct === quizData.length) {
+    banner.className = 'result-banner show success';
+    banner.textContent = `🎉 全部正确！${correct}/${quizData.length} 题！你已经掌握了 LCS 的核心思路。`;
+  } else {
+    banner.className = 'result-banner show partial';
+    banner.textContent = `答对了 ${correct}/${quizData.length} 题，请看解析仔细理解。`;
+  }
+}
+
+/* ===== 路径回溯练习 ===== */
+function renderTraceExercise() {
+  const m=PRAC_T1.length, n=PRAC_T2.length;
+  const {dp,lcs} = pracData;
+  let html = `
+    <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:12px">
+      回溯规则：从 dp[m][n] 出发，如果 text1[i-1]==text2[j-1] 则走左上角（该字符属于 LCS），否则走 dp[i-1][j] 和 dp[i][j-1] 中较大的那个方向。
+    </p>
+    <div class="dp-table-wrapper">
+      <table class="dp-table"><tr><th></th><th>""</th>`;
+  for (let j=0;j<n;j++) html += `<th class="char-header">${PRAC_T2[j]}</th>`;
+  html += '</tr>';
+  for (let i=0;i<=m;i++) {
+    html += `<tr><th class="char-header">${i===0?'""':PRAC_T1[i-1]}</th>`;
+    for (let j=0;j<=n;j++) {
+      html += `<td class="computed" id="trace_${i}_${j}">${dp[i][j]}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table></div>';
+
+  html += '<div style="margin-top:14px"><button class="btn btn-primary" onclick="showTracePath()">显示回溯路径</button></div>';
+  html += '<div id="traceResult" style="margin-top:12px"></div>';
+
+  document.getElementById('traceSection').innerHTML = html;
+}
+
+function showTracePath() {
+  const {dp,lcs} = pracData;
+  const m=PRAC_T1.length, n=PRAC_T2.length;
+  let i=m, j=n;
+  const path = [];
+  const lcsChars = [];
+  while (i>0 && j>0) {
+    path.push({i,j});
+    const td = document.getElementById(`trace_${i}_${j}`);
+    td.classList.add('path-cell');
+    if (PRAC_T1[i-1]===PRAC_T2[j-1]) {
+      lcsChars.unshift(PRAC_T1[i-1]);
+      i--; j--;
+    } else if (dp[i-1][j]>=dp[i][j-1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+  path.push({i,j});
+  const td = document.getElementById(`trace_${i}_${j}`);
+  td.classList.add('path-cell');
+
+  let desc = '<div class="narration" style="margin-top:14px">';
+  desc += '<strong>回溯路径：</strong><br>';
+  for (let k=0;k<path.length-1;k++) {
+    const cur = path[k], nxt = path[k+1];
+    if (cur.i-1===nxt.i && cur.j-1===nxt.j) {
+      desc += `dp[${cur.i}][${cur.j}] → dp[${nxt.i}][${nxt.j}]（↖ 左上角，字符 '${PRAC_T1[nxt.i]}' 匹配，加入 LCS）<br>`;
+    } else if (cur.i-1===nxt.i) {
+      desc += `dp[${cur.i}][${cur.j}] → dp[${nxt.i}][${nxt.j}]（↑ 上方，舍弃 text1 的 '${PRAC_T1[nxt.i]}'）<br>`;
+    } else {
+      desc += `dp[${cur.i}][${cur.j}] → dp[${nxt.i}][${nxt.j}]（← 左侧，舍弃 text2 的 '${PRAC_T2[nxt.j]}'）<br>`;
+    }
+  }
+  desc += `<br>🎯 最长公共子序列为 "<strong>${lcsChars.join('')}</strong>"，长度 = ${lcsChars.length}`;
+  desc += '</div>';
+  document.getElementById('traceResult').innerHTML = desc;
+}
+
+/* ================================================================
+   初始化
+   ================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  initViz();
+  initPractice();
+});
+</script>
+</body>
+</html>

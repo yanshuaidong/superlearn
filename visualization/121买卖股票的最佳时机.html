@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>121. 买卖股票的最佳时机 - 算法教学可视化</title>
+<style>
+:root {
+  --primary: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-bg: #eef2ff;
+  --success: #059669;
+  --success-bg: #d1fae5;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+  --warning: #d97706;
+  --warning-bg: #fef3c7;
+  --info: #0284c7;
+  --info-bg: #e0f2fe;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; background: var(--gray-50); color: var(--gray-800); line-height: 1.6; }
+
+.header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff; padding: 32px 0; text-align: center;
+}
+.header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.header p { font-size: 15px; opacity: .85; }
+
+.nav-tabs {
+  display: flex; justify-content: center; gap: 4px;
+  background: #fff; padding: 8px 16px; border-bottom: 1px solid var(--gray-200);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+}
+.nav-tab {
+  padding: 10px 28px; border-radius: 8px; cursor: pointer;
+  font-size: 15px; font-weight: 500; border: none; background: transparent;
+  color: var(--gray-500); transition: all .2s;
+}
+.nav-tab:hover { background: var(--gray-100); color: var(--gray-700); }
+.nav-tab.active { background: var(--primary); color: #fff; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.module { display: none; }
+.module.active { display: block; }
+
+.card {
+  background: #fff; border-radius: var(--radius); padding: 24px;
+  box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 20px; font-weight: 700; margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--primary-bg);
+  color: var(--gray-900);
+}
+.card h3 { font-size: 17px; font-weight: 600; margin: 16px 0 10px; color: var(--gray-800); }
+
+pre.code-block {
+  background: var(--gray-900); color: #e5e7eb; padding: 20px;
+  border-radius: 10px; overflow-x: auto; font-size: 13.5px;
+  line-height: 1.7; font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  margin: 12px 0;
+}
+pre.code-block .comment { color: #6ee7b7; }
+pre.code-block .keyword { color: #c4b5fd; }
+pre.code-block .func { color: #93c5fd; }
+pre.code-block .num { color: #fcd34d; }
+pre.code-block .str { color: #fca5a5; }
+
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; margin-right: 6px;
+}
+.tag-blue { background: var(--info-bg); color: var(--info); }
+.tag-green { background: var(--success-bg); color: var(--success); }
+.tag-orange { background: var(--warning-bg); color: var(--warning); }
+.tag-red { background: var(--danger-bg); color: var(--danger); }
+.tag-purple { background: var(--primary-bg); color: var(--primary); }
+
+.note-box {
+  padding: 16px 20px; border-radius: 10px; margin: 14px 0;
+  font-size: 14px; line-height: 1.8;
+}
+.note-blue { background: var(--info-bg); border-left: 4px solid var(--info); }
+.note-green { background: var(--success-bg); border-left: 4px solid var(--success); }
+.note-orange { background: var(--warning-bg); border-left: 4px solid var(--warning); }
+.note-red { background: var(--danger-bg); border-left: 4px solid var(--danger); }
+.note-purple { background: var(--primary-bg); border-left: 4px solid var(--primary); }
+
+/* ===== 可视化模块 ===== */
+.viz-controls {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; margin: 16px 0;
+}
+.btn {
+  padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 14px; font-weight: 600; transition: all .2s;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: #4338ca; }
+.btn-primary:disabled { background: var(--gray-300); cursor: not-allowed; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #047857; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-outline {
+  background: #fff; color: var(--primary); border: 2px solid var(--primary);
+}
+.btn-outline:hover { background: var(--primary-bg); }
+
+.speed-control { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.speed-control label { font-size: 13px; color: var(--gray-500); }
+.speed-control select {
+  padding: 6px 10px; border-radius: 6px; border: 1px solid var(--gray-300);
+  font-size: 13px;
+}
+
+.price-chart {
+  position: relative; width: 100%; height: 200px;
+  margin: 20px 0; border-radius: 10px; overflow: hidden;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  border: 1px solid var(--gray-200);
+}
+.price-bar-container {
+  display: flex; align-items: flex-end; justify-content: center;
+  height: 100%; padding: 10px 20px 30px; gap: 0;
+}
+.price-bar-wrapper {
+  display: flex; flex-direction: column; align-items: center;
+  flex: 1; max-width: 80px; position: relative;
+}
+.price-bar {
+  width: 70%; border-radius: 6px 6px 0 0;
+  transition: all .4s ease; position: relative;
+  background: var(--gray-300);
+}
+.price-bar.active { background: var(--primary); }
+.price-bar.buy { background: var(--danger); }
+.price-bar.sell { background: var(--success); }
+.price-bar.past { background: var(--gray-200); }
+.price-label {
+  font-size: 12px; font-weight: 600; margin-top: 6px;
+  color: var(--gray-600);
+}
+.price-value {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.day-indicator {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--primary); font-weight: 700;
+  background: rgba(255,255,255,.9); padding: 1px 6px; border-radius: 4px;
+}
+
+.dp-table-wrapper { overflow-x: auto; margin: 16px 0; }
+.dp-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-size: 14px; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--gray-200);
+}
+.dp-table th, .dp-table td {
+  padding: 10px 14px; text-align: center; border-bottom: 1px solid var(--gray-100);
+}
+.dp-table th {
+  background: var(--gray-800); color: #fff; font-weight: 600;
+  font-size: 13px; white-space: nowrap;
+}
+.dp-table td { background: #fff; transition: all .3s; }
+.dp-table tr:last-child td { border-bottom: none; }
+.dp-table td.highlight { background: #fef3c7; font-weight: 700; }
+.dp-table td.current { background: var(--primary-bg); font-weight: 700; border: 2px solid var(--primary); }
+.dp-table td.computed { background: var(--success-bg); }
+.dp-table td.label-col {
+  background: var(--gray-100); font-weight: 600;
+  color: var(--gray-700); text-align: left;
+}
+
+.step-explain {
+  background: var(--gray-50); border: 1px solid var(--gray-200);
+  border-radius: 10px; padding: 20px; margin: 16px 0;
+  min-height: 120px;
+}
+.step-explain h4 {
+  font-size: 15px; font-weight: 700; color: var(--primary);
+  margin-bottom: 10px;
+}
+.step-explain p { font-size: 14px; line-height: 1.8; margin-bottom: 8px; }
+.step-explain .formula {
+  background: var(--gray-900); color: #e5e7eb; padding: 10px 16px;
+  border-radius: 8px; font-family: "SF Mono", monospace;
+  font-size: 13px; margin: 8px 0; line-height: 1.6;
+}
+.step-explain .enum-box {
+  background: #fff; border: 1px solid var(--gray-200);
+  border-radius: 8px; padding: 14px 18px; margin: 10px 0;
+}
+.step-explain .enum-box h5 {
+  font-size: 14px; font-weight: 700; margin-bottom: 8px;
+  color: var(--warning);
+}
+.step-explain .enum-item {
+  font-size: 13px; padding: 4px 0; line-height: 1.7;
+  border-bottom: 1px dashed var(--gray-100);
+}
+.step-explain .enum-item:last-child { border-bottom: none; }
+.step-explain .result-line {
+  font-size: 14px; font-weight: 700; color: var(--success);
+  margin-top: 10px;
+}
+
+.progress-bar {
+  width: 100%; height: 6px; background: var(--gray-200);
+  border-radius: 3px; margin: 12px 0;
+}
+.progress-bar .fill {
+  height: 100%; background: var(--primary);
+  border-radius: 3px; transition: width .3s;
+}
+
+/* ===== 练习模块 ===== */
+.quiz-question {
+  background: #fff; border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow); margin-bottom: 16px;
+  border-left: 4px solid var(--primary);
+}
+.quiz-question h4 {
+  font-size: 15px; font-weight: 700; margin-bottom: 12px;
+  color: var(--gray-800);
+}
+.quiz-question p { font-size: 14px; margin-bottom: 10px; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.quiz-option {
+  padding: 10px 16px; border-radius: 8px; border: 2px solid var(--gray-200);
+  cursor: pointer; font-size: 14px; transition: all .2s;
+  background: #fff;
+}
+.quiz-option:hover { border-color: var(--primary-light); background: var(--primary-bg); }
+.quiz-option.selected { border-color: var(--primary); background: var(--primary-bg); }
+.quiz-option.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-option.wrong { border-color: var(--danger); background: var(--danger-bg); }
+
+.quiz-input-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.quiz-input {
+  width: 80px; padding: 8px 12px; border-radius: 8px;
+  border: 2px solid var(--gray-200); font-size: 14px;
+  text-align: center; font-weight: 600;
+  transition: border-color .2s;
+}
+.quiz-input:focus { outline: none; border-color: var(--primary); }
+.quiz-input.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-input.wrong { border-color: var(--danger); background: var(--danger-bg); }
+
+.feedback {
+  margin-top: 12px; padding: 14px 18px; border-radius: 8px;
+  font-size: 13px; line-height: 1.7; display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { background: var(--success-bg); color: #065f46; }
+.feedback.wrong { background: var(--danger-bg); color: #991b1b; }
+
+.score-board {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #fff; border-radius: var(--radius); padding: 24px;
+  text-align: center; margin-bottom: 20px;
+}
+.score-board .score { font-size: 48px; font-weight: 800; }
+.score-board .score-label { font-size: 14px; opacity: .8; }
+
+.decision-tree {
+  display: flex; flex-direction: column; gap: 4px;
+  margin: 10px 0;
+}
+.decision-node {
+  padding: 8px 14px; border-radius: 8px; font-size: 13px;
+  border-left: 3px solid var(--gray-300); margin-left: 20px;
+  background: var(--gray-50);
+}
+.decision-node.chosen {
+  border-left-color: var(--success); background: var(--success-bg);
+  font-weight: 600;
+}
+.decision-node.not-chosen {
+  border-left-color: var(--gray-300); background: var(--gray-50);
+  color: var(--gray-400);
+}
+
+@media (max-width: 640px) {
+  .header h1 { font-size: 22px; }
+  .nav-tab { padding: 8px 16px; font-size: 13px; }
+  .container { padding: 16px 10px; }
+  .card { padding: 16px; }
+  .viz-controls { flex-direction: column; align-items: stretch; }
+  .speed-control { margin-left: 0; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>121. 买卖股票的最佳时机</h1>
+  <p>动态规划 · 二维状态定义 · 只允许一次交易</p>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab(0)">📖 题目与代码</button>
+  <button class="nav-tab" onclick="switchTab(1)">🎬 演示可视化</button>
+  <button class="nav-tab" onclick="switchTab(2)">✏️ 动手练习</button>
+</div>
+
+<!-- ===================== 模块一：题目与答案代码 ===================== -->
+<div class="container">
+<div class="module active" id="mod0">
+
+<div class="card">
+  <h2>题目描述</h2>
+  <p>给定一个数组 <code>prices</code>，它的第 <code>i</code> 个元素 <code>prices[i]</code> 表示一支给定股票第 <code>i</code> 天的价格。</p>
+  <p style="margin-top:8px;">你只能选择<strong>某一天</strong>买入这只股票，并选择在<strong>未来的某一个不同的日子</strong>卖出该股票。设计一个算法来计算你所能获取的最大利润。</p>
+  <p style="margin-top:8px;">返回你可以从这笔交易中获取的最大利润。如果你不能获取任何利润，返回 <code>0</code>。</p>
+  <div style="margin-top:14px;">
+    <span class="tag tag-blue">动态规划</span>
+    <span class="tag tag-green">数组</span>
+    <span class="tag tag-orange">简单</span>
+  </div>
+  <div class="note-box note-blue" style="margin-top:16px;">
+    <strong>示例：</strong><br>
+    输入：prices = [7, 1, 5, 3, 6, 4]<br>
+    输出：5<br>
+    解释：在第 2 天（价格 = 1）买入，在第 5 天（价格 = 6）卖出，利润 = 6 - 1 = 5。
+  </div>
+</div>
+
+<div class="card">
+  <h2>核心思路：用 DP 模拟"每一天的决策"</h2>
+  <div class="note-box note-purple">
+    <strong>关键问题：</strong>每一天结束时，我可能处于两种状态之一——<strong>手里有股票</strong>或<strong>手里没股票</strong>。<br>
+    我们用 <code>dp[i][0]</code> 记录第 i 天结束时"不持有股票"的最大利润，<br>
+    用 <code>dp[i][1]</code> 记录第 i 天结束时"持有股票"的最大利润。
+  </div>
+  <h3>为什么要分两个状态？</h3>
+  <p>因为到第 i 天结束时，"不持有股票"和"持有股票"是两种本质不同的局面。它们能做的后续操作不同，所以必须分开记录。</p>
+  <h3>状态转移的暴力枚举本质</h3>
+  <div class="note-box note-orange">
+    <p><strong>dp[i][0]</strong>（第 i 天不持有）本质上枚举的是：</p>
+    <p>① 前 i 天从未买过股票（利润为 0）</p>
+    <p>② 在第 0~i 天中的某一天买入、又在第 0~i 天中的某一天卖出，且卖出时间 ≥ 买入时间（利润 = 卖价 - 买价）</p>
+    <p>dp[i][0] 记录的就是这些情况里利润最大的那个。</p>
+  </div>
+  <div class="note-box note-green" style="margin-top:10px;">
+    <p><strong>dp[i][1]</strong>（第 i 天持有）本质上枚举的是：</p>
+    <p>在第 0~i 天中的某一天买入股票、至今没卖出，利润 = -买入价</p>
+    <p>dp[i][1] 记录的就是"在哪天买入使得花费最小（利润最大）"的那个值。</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>答案代码（含教学注释）</h2>
+  <pre class="code-block"><span class="keyword">var</span> maxProfit = <span class="keyword">function</span>(prices) {
+    <span class="comment">// 边界处理：如果没有价格数据，无法交易</span>
+    <span class="keyword">if</span> (!prices || prices.length === <span class="num">0</span>) <span class="keyword">return</span> <span class="num">0</span>;
+
+    <span class="keyword">const</span> n = prices.length;
+
+    <span class="comment">// dp[i][0]：第 i 天结束时"不持有股票"的最大利润</span>
+    <span class="comment">//   → 本质：枚举了"前 i 天所有可能的【买入→卖出】方案"的最大值，</span>
+    <span class="comment">//     也包括"一直不买"这个方案（利润为 0）</span>
+    <span class="comment">// dp[i][1]：第 i 天结束时"持有股票"的最大利润</span>
+    <span class="comment">//   → 本质：枚举了"在第 0~i 天中哪天买入"的最优方案，</span>
+    <span class="comment">//     利润 = -买入价（因为只能买一次，买入前利润必为 0）</span>
+    <span class="keyword">const</span> dp = <span class="keyword">new</span> <span class="func">Array</span>(n).<span class="func">fill</span>(<span class="num">0</span>).<span class="func">map</span>(() => <span class="keyword">new</span> <span class="func">Array</span>(<span class="num">2</span>).<span class="func">fill</span>(<span class="num">0</span>));
+
+    <span class="comment">// 第 0 天：如果不持有 → 利润为 0（还没买过）</span>
+    <span class="comment">//         如果持有   → 必定是今天买的，花了 prices[0]</span>
+    dp[<span class="num">0</span>][<span class="num">0</span>] = <span class="num">0</span>;
+    dp[<span class="num">0</span>][<span class="num">1</span>] = -prices[<span class="num">0</span>];
+
+    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="num">1</span>; i < n; i++) {
+        <span class="comment">// 今天不持有：要么"昨天就不持有"，要么"昨天持有+今天卖掉"</span>
+        <span class="comment">// 暴力视角：把 dp[i-1][0] 里的所有方案照搬过来，</span>
+        <span class="comment">//   再加上"把 dp[i-1][1] 代表的最优持有 + 今天卖出"这个新方案</span>
+        dp[i][<span class="num">0</span>] = Math.<span class="func">max</span>(dp[i - <span class="num">1</span>][<span class="num">0</span>], dp[i - <span class="num">1</span>][<span class="num">1</span>] + prices[i]);
+
+        <span class="comment">// 今天持有：要么"昨天就持有"，要么"今天新买入"</span>
+        <span class="comment">// 暴力视角：dp[i-1][1] 里的所有"第 0~i-1 天买入"方案照搬过来，</span>
+        <span class="comment">//   再加上"今天第 i 天买入"这个新方案（利润 = -prices[i]）</span>
+        <span class="comment">// 两者取最大值 = 花费最少的买入方案</span>
+        dp[i][<span class="num">1</span>] = Math.<span class="func">max</span>(dp[i - <span class="num">1</span>][<span class="num">1</span>], -prices[i]);
+    }
+
+    <span class="comment">// 最终答案：最后一天不持有的最大利润</span>
+    <span class="comment">// 因为持有股票说明还没卖，利润未实现</span>
+    <span class="keyword">return</span> dp[n - <span class="num">1</span>][<span class="num">0</span>];
+};</pre>
+</div>
+
+<div class="card">
+  <h2>状态转移公式总结</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="note-box note-blue">
+      <strong>dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])</strong><br><br>
+      <span class="tag tag-blue">含义A</span> dp[i-1][0]：昨天就不持有 → 今天继续不持有<br>
+      <span class="tag tag-green">含义B</span> dp[i-1][1] + prices[i]：昨天持有 → 今天卖出
+    </div>
+    <div class="note-box note-green">
+      <strong>dp[i][1] = max(dp[i-1][1], -prices[i])</strong><br><br>
+      <span class="tag tag-blue">含义A</span> dp[i-1][1]：昨天就持有 → 今天继续持有<br>
+      <span class="tag tag-red">含义B</span> -prices[i]：今天新买入（只允许买一次！）
+    </div>
+  </div>
+  <div class="note-box note-red" style="margin-top:14px;">
+    <strong>注意 dp[i][1] 的买入项是 <code>-prices[i]</code> 而不是 <code>dp[i-1][0] - prices[i]</code>！</strong><br>
+    因为题目只允许买卖一次，所以买入前的利润一定是 0，不可能有之前卖出的利润。这是本题和"多次买卖"变体的核心区别。
+  </div>
+</div>
+
+</div>
+
+<!-- ===================== 模块二：演示可视化 ===================== -->
+<div class="module" id="mod1">
+
+<div class="card">
+  <h2>演示示例：prices = [3, 1, 4, 2, 5]</h2>
+  <p>我们将逐步模拟代码在这个输入上的完整执行过程，展示每一天 DP 状态的计算。</p>
+
+  <div class="viz-controls">
+    <button class="btn btn-primary" id="btnPrev" onclick="vizPrev()" disabled>⬅ 上一步</button>
+    <button class="btn btn-primary" id="btnNext" onclick="vizNext()">下一步 ➡</button>
+    <button class="btn btn-outline" id="btnReset" onclick="vizReset()">🔄 重置</button>
+    <button class="btn btn-success" id="btnAuto" onclick="vizAutoPlay()">▶ 自动播放</button>
+    <div class="speed-control">
+      <label>速度：</label>
+      <select id="speedSelect">
+        <option value="2000">慢速</option>
+        <option value="1200" selected>正常</option>
+        <option value="600">快速</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="progress-bar"><div class="fill" id="vizProgress" style="width:0%"></div></div>
+
+  <div class="price-chart" id="priceChart"></div>
+
+  <div class="dp-table-wrapper">
+    <table class="dp-table" id="dpTable">
+      <thead>
+        <tr>
+          <th>天数 i</th>
+          <th>价格 prices[i]</th>
+          <th>dp[i][0]（不持有）</th>
+          <th>dp[i][1]（持有）</th>
+        </tr>
+      </thead>
+      <tbody id="dpTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="step-explain" id="stepExplain">
+    <h4>📌 准备开始</h4>
+    <p>点击"下一步"开始逐步执行代码。我们将看到每一天的 DP 状态是如何被计算出来的。</p>
+  </div>
+</div>
+
+</div>
+
+<!-- ===================== 模块三：动手练习 ===================== -->
+<div class="module" id="mod2">
+
+<div class="score-board">
+  <div class="score-label">当前得分</div>
+  <div class="score" id="totalScore">0</div>
+  <div class="score-label">/ 5 题</div>
+</div>
+
+<!-- 练习示例：prices = [2, 4, 1, 7, 5, 3] -->
+<div class="card" style="margin-bottom:10px;">
+  <div class="note-box note-purple">
+    <strong>练习数据：</strong>prices = [2, 4, 1, 7, 5, 3]<br>
+    请根据代码逻辑，完成以下练习题。
+  </div>
+</div>
+
+<!-- Q1 -->
+<div class="quiz-question" id="q1">
+  <h4>第 1 题：初始化值</h4>
+  <p>prices = [2, 4, 1, 7, 5, 3]，请问 dp[0][0] 和 dp[0][1] 分别是多少？</p>
+  <div class="quiz-input-group">
+    <span>dp[0][0] = </span>
+    <input class="quiz-input" id="q1a" type="number" placeholder="?">
+    <span style="margin-left:16px;">dp[0][1] = </span>
+    <input class="quiz-input" id="q1b" type="number" placeholder="?">
+    <button class="btn btn-primary" onclick="checkQ1()">提交</button>
+  </div>
+  <div class="feedback" id="q1fb"></div>
+</div>
+
+<!-- Q2 -->
+<div class="quiz-question" id="q2">
+  <h4>第 2 题：dp[1][1] 的计算</h4>
+  <p>第 1 天（i=1），prices[1] = 4。<br>
+  dp[1][1] = max(dp[0][1], -prices[1]) = max(?, ?) = ?</p>
+  <p>请问 dp[1][1] 等于多少？它代表了什么含义？</p>
+  <div class="quiz-options" id="q2opts">
+    <div class="quiz-option" onclick="selectOption('q2', 0)">A. dp[1][1] = -4，表示在第 1 天买入</div>
+    <div class="quiz-option" onclick="selectOption('q2', 1)">B. dp[1][1] = -2，表示在第 0 天买入更划算（花费更少）</div>
+    <div class="quiz-option" onclick="selectOption('q2', 2)">C. dp[1][1] = -6，表示两天都买了</div>
+    <div class="quiz-option" onclick="selectOption('q2', 3)">D. dp[1][1] = 2，表示第 1 天卖出的利润</div>
+  </div>
+  <button class="btn btn-primary" onclick="checkQ2()" style="margin-top:8px;">提交</button>
+  <div class="feedback" id="q2fb"></div>
+</div>
+
+<!-- Q3 -->
+<div class="quiz-question" id="q3">
+  <h4>第 3 题：dp[2][1] 的暴力枚举视角</h4>
+  <p>第 2 天（i=2），prices[2] = 1。<br>
+  dp[2][1] = max(dp[1][1], -prices[2]) = max(-2, -1) = -1</p>
+  <p>dp[2][1] = -1 的暴力枚举含义是什么？</p>
+  <div class="quiz-options" id="q3opts">
+    <div class="quiz-option" onclick="selectOption('q3', 0)">A. 在第 0、1、2 天中选一天买入，最优是第 2 天买入（花 1 元），利润 = -1</div>
+    <div class="quiz-option" onclick="selectOption('q3', 1)">B. 在第 0 天买入，花了 2 元，再在第 2 天又买一次，花了 1 元</div>
+    <div class="quiz-option" onclick="selectOption('q3', 2)">C. 第 2 天卖出获得利润 -1</div>
+    <div class="quiz-option" onclick="selectOption('q3', 3)">D. 第 2 天不做任何操作</div>
+  </div>
+  <button class="btn btn-primary" onclick="checkQ3()" style="margin-top:8px;">提交</button>
+  <div class="feedback" id="q3fb"></div>
+</div>
+
+<!-- Q4 -->
+<div class="quiz-question" id="q4">
+  <h4>第 4 题：填写 dp[3][0]</h4>
+  <p>第 3 天（i=3），prices[3] = 7。<br>
+  已知 dp[2][0] = 2，dp[2][1] = -1。</p>
+  <p>请计算 dp[3][0]：</p>
+  <div class="quiz-input-group">
+    <span>dp[3][0] = max(dp[2][0], dp[2][1] + prices[3]) = max(</span>
+    <input class="quiz-input" id="q4a" type="number" placeholder="?" style="width:60px;">
+    <span>,</span>
+    <input class="quiz-input" id="q4b" type="number" placeholder="?" style="width:60px;">
+    <span>) = </span>
+    <input class="quiz-input" id="q4c" type="number" placeholder="?" style="width:60px;">
+    <button class="btn btn-primary" onclick="checkQ4()">提交</button>
+  </div>
+  <div class="feedback" id="q4fb"></div>
+</div>
+
+<!-- Q5 -->
+<div class="quiz-question" id="q5">
+  <h4>第 5 题：最终答案</h4>
+  <p>prices = [2, 4, 1, 7, 5, 3]。请问最终的最大利润 dp[5][0] 是多少？最优方案是在第几天买入、第几天卖出？</p>
+  <div class="quiz-options" id="q5opts">
+    <div class="quiz-option" onclick="selectOption('q5', 0)">A. 最大利润 = 6，第 2 天买入（价格1），第 3 天卖出（价格7）</div>
+    <div class="quiz-option" onclick="selectOption('q5', 1)">B. 最大利润 = 5，第 0 天买入（价格2），第 3 天卖出（价格7）</div>
+    <div class="quiz-option" onclick="selectOption('q5', 2)">C. 最大利润 = 4，第 2 天买入（价格1），第 4 天卖出（价格5）</div>
+    <div class="quiz-option" onclick="selectOption('q5', 3)">D. 最大利润 = 3，第 0 天买入（价格2），第 4 天卖出（价格5）</div>
+  </div>
+  <button class="btn btn-primary" onclick="checkQ5()" style="margin-top:8px;">提交</button>
+  <div class="feedback" id="q5fb"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+// ============= Tab 切换 =============
+function switchTab(idx) {
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    t.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.module').forEach((m, i) => {
+    m.classList.toggle('active', i === idx);
+  });
+}
+
+// ============= 可视化核心 =============
+const VIZ_PRICES = [3, 1, 4, 2, 5];
+const N = VIZ_PRICES.length;
+const MAX_PRICE = Math.max(...VIZ_PRICES);
+
+const dpData = Array.from({length: N}, () => [null, null]);
+
+const steps = [];
+
+function buildSteps() {
+  steps.length = 0;
+
+  steps.push({
+    type: 'init',
+    day: -1,
+    title: '📌 代码开始执行',
+    html: `<p>输入 prices = [${VIZ_PRICES.join(', ')}]，共 ${N} 天。</p>
+<p>我们先创建一个 ${N}×2 的 dp 数组，然后进行初始化。</p>
+<p><strong>目标：</strong>找到只交易一次的最大利润。</p>`
+  });
+
+  steps.push({
+    type: 'compute',
+    day: 0,
+    state: 0,
+    val: 0,
+    title: '🔸 初始化 dp[0][0] = 0',
+    html: `<p><strong>执行代码：</strong><code>dp[0][0] = 0</code></p>
+<div class="enum-box">
+  <h5>暴力枚举视角：dp[0][0] 代表的所有情况</h5>
+  <div class="enum-item">🔹 <strong>情况1：从未买入</strong> → 第 0 天什么也没做 → 利润 = 0</div>
+  <div class="enum-item">（第 0 天不可能已经完成买入+卖出，因为买卖不能同一天）</div>
+</div>
+<p class="result-line">✅ 所有情况中最大利润 = max(0) = 0，所以 dp[0][0] = 0</p>`
+  });
+
+  steps.push({
+    type: 'compute',
+    day: 0,
+    state: 1,
+    val: -VIZ_PRICES[0],
+    title: `🔸 初始化 dp[0][1] = -${VIZ_PRICES[0]}`,
+    html: `<p><strong>执行代码：</strong><code>dp[0][1] = -prices[0] = -${VIZ_PRICES[0]}</code></p>
+<div class="enum-box">
+  <h5>暴力枚举视角：dp[0][1] 代表的所有情况</h5>
+  <div class="enum-item">🔹 <strong>情况1：在第 0 天买入</strong>（价格 = ${VIZ_PRICES[0]}）→ 利润 = -${VIZ_PRICES[0]}</div>
+  <div class="enum-item">（只有第 0 天可以买入，没有其他选择）</div>
+</div>
+<p class="result-line">✅ 所有情况中最大利润 = -${VIZ_PRICES[0]}，所以 dp[0][1] = -${VIZ_PRICES[0]}</p>`
+  });
+
+  for (let i = 1; i < N; i++) {
+    const prev0 = computeDP(i - 1, 0);
+    const prev1 = computeDP(i - 1, 1);
+    const cur0 = Math.max(prev0, prev1 + VIZ_PRICES[i]);
+    const cur1 = Math.max(prev1, -VIZ_PRICES[i]);
+
+    const optionA_0 = prev0;
+    const optionB_0 = prev1 + VIZ_PRICES[i];
+    const chosenA_0 = optionA_0 >= optionB_0;
+
+    const buyDays0to = [];
+    for (let d = 0; d <= i; d++) buyDays0to.push(d);
+
+    let bestBuyForHold = 0;
+    let bestBuyPrice = VIZ_PRICES[0];
+    for (let d = 0; d <= i; d++) {
+      if (VIZ_PRICES[d] < bestBuyPrice) {
+        bestBuyPrice = VIZ_PRICES[d];
+        bestBuyForHold = d;
+      }
+    }
+
+    let bestSellCombo = '';
+    if (cur0 > 0) {
+      let bestProfit = 0, bd = 0, sd = 0;
+      for (let b = 0; b <= i; b++) {
+        for (let s = b + 1; s <= i; s++) {
+          if (VIZ_PRICES[s] - VIZ_PRICES[b] > bestProfit) {
+            bestProfit = VIZ_PRICES[s] - VIZ_PRICES[b];
+            bd = b; sd = s;
+          }
+        }
+      }
+      if (bestProfit > 0) {
+        bestSellCombo = `最优卖出方案：第 ${bd} 天买入（价格${VIZ_PRICES[bd]}），第 ${sd} 天卖出（价格${VIZ_PRICES[sd]}），利润 = ${bestProfit}`;
+      }
+    }
+
+    const allBuyOptions = buyDays0to.map(d =>
+      `第 ${d} 天买入（价格 ${VIZ_PRICES[d]}），利润 = -${VIZ_PRICES[d]}`
+    ).join('</div><div class="enum-item">🔹 ');
+
+    steps.push({
+      type: 'compute',
+      day: i,
+      state: 0,
+      val: cur0,
+      title: `📅 第 ${i} 天 → 计算 dp[${i}][0]（不持有）`,
+      html: `<p><strong>当前价格 prices[${i}] = ${VIZ_PRICES[i]}</strong></p>
+<div class="formula">dp[${i}][0] = max(dp[${i-1}][0], dp[${i-1}][1] + prices[${i}])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = max(${prev0}, ${prev1} + ${VIZ_PRICES[i]})<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = max(${optionA_0}, ${optionB_0}) = <strong>${cur0}</strong></div>
+
+<div class="enum-box">
+  <h5>暴力枚举视角：dp[${i}][0] 覆盖了哪些情况？</h5>
+  <div class="enum-item">📦 <strong>来自 dp[${i-1}][0] = ${prev0} 的情况（继承）：</strong>
+    前 ${i-1} 天已经完成交易或从未交易的所有方案，今天不操作，原样继承。</div>
+  <div class="enum-item">📦 <strong>来自 dp[${i-1}][1] + prices[${i}] = ${prev1} + ${VIZ_PRICES[i]} = ${optionB_0} 的情况（新增）：</strong>
+    把 dp[${i-1}][1] 代表的"最优持有方案"在今天卖出。
+    dp[${i-1}][1] = ${prev1} 意味着在第 ${bestBuyForHold} 天买入（价格 ${VIZ_PRICES[bestBuyForHold]}），今天以 ${VIZ_PRICES[i]} 卖出，利润 = ${optionB_0}。</div>
+</div>
+
+<div class="decision-tree">
+  <div class="decision-node ${chosenA_0 ? 'chosen' : 'not-chosen'}">选项A：继承昨天不持有 dp[${i-1}][0] = ${optionA_0} ${chosenA_0 ? '✅ 选中' : ''}</div>
+  <div class="decision-node ${!chosenA_0 ? 'chosen' : 'not-chosen'}">选项B：昨天持有 + 今天卖出 = ${prev1} + ${VIZ_PRICES[i]} = ${optionB_0} ${!chosenA_0 ? '✅ 选中' : ''}</div>
+</div>
+
+<p class="result-line">✅ dp[${i}][0] = ${cur0}${bestSellCombo ? '（' + bestSellCombo + '）' : ''}</p>`
+    });
+
+    const optionA_1 = prev1;
+    const optionB_1 = -VIZ_PRICES[i];
+    const chosenA_1 = optionA_1 >= optionB_1;
+
+    steps.push({
+      type: 'compute',
+      day: i,
+      state: 1,
+      val: cur1,
+      title: `📅 第 ${i} 天 → 计算 dp[${i}][1]（持有）`,
+      html: `<p><strong>当前价格 prices[${i}] = ${VIZ_PRICES[i]}</strong></p>
+<div class="formula">dp[${i}][1] = max(dp[${i-1}][1], -prices[${i}])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = max(${prev1}, -${VIZ_PRICES[i]})<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = max(${optionA_1}, ${optionB_1}) = <strong>${cur1}</strong></div>
+
+<div class="enum-box">
+  <h5>暴力枚举视角：dp[${i}][1] 覆盖了哪些情况？</h5>
+  <div class="enum-item">🔹 ${allBuyOptions}</div>
+  <div class="enum-item" style="margin-top:6px;">以上 ${i+1} 种情况，取利润最大（花费最小）的那个。</div>
+</div>
+
+<div class="decision-tree">
+  <div class="decision-node ${chosenA_1 ? 'chosen' : 'not-chosen'}">选项A：继承昨天的最优持有 dp[${i-1}][1] = ${optionA_1}（之前某天买入更便宜） ${chosenA_1 ? '✅ 选中' : ''}</div>
+  <div class="decision-node ${!chosenA_1 ? 'chosen' : 'not-chosen'}">选项B：今天买入 -prices[${i}] = ${optionB_1} ${!chosenA_1 ? '✅ 选中' : ''}</div>
+</div>
+
+<p class="result-line">✅ dp[${i}][1] = ${cur1}（最优持有策略：在第 ${bestBuyForHold} 天买入，花费 ${VIZ_PRICES[bestBuyForHold]}）</p>`
+    });
+  }
+
+  const finalVal = computeDP(N - 1, 0);
+  let bestB = 0, bestS = 0, bestP = 0;
+  for (let b = 0; b < N; b++) {
+    for (let s = b + 1; s < N; s++) {
+      if (VIZ_PRICES[s] - VIZ_PRICES[b] > bestP) {
+        bestP = VIZ_PRICES[s] - VIZ_PRICES[b];
+        bestB = b; bestS = s;
+      }
+    }
+  }
+
+  steps.push({
+    type: 'result',
+    day: N - 1,
+    title: '🎉 最终结果',
+    html: `<p><strong>return dp[${N-1}][0] = ${finalVal}</strong></p>
+<div class="enum-box">
+  <h5>最终答案的含义</h5>
+  <div class="enum-item">dp[${N-1}][0] = ${finalVal} 代表：在所有 ${N} 天中，只做一次买卖（或不做），所能获得的最大利润。</div>
+  <div class="enum-item"><strong>最优方案：</strong>第 ${bestB} 天买入（价格 ${VIZ_PRICES[bestB]}），第 ${bestS} 天卖出（价格 ${VIZ_PRICES[bestS]}），利润 = ${VIZ_PRICES[bestS]} - ${VIZ_PRICES[bestB]} = ${bestP}</div>
+</div>
+<p class="result-line">🏆 最大利润 = ${finalVal}</p>`
+  });
+}
+
+function computeDP(i, state) {
+  if (i === 0) return state === 0 ? 0 : -VIZ_PRICES[0];
+  const prev0 = computeDP(i - 1, 0);
+  const prev1 = computeDP(i - 1, 1);
+  if (state === 0) return Math.max(prev0, prev1 + VIZ_PRICES[i]);
+  return Math.max(prev1, -VIZ_PRICES[i]);
+}
+
+let currentStep = -1;
+let autoTimer = null;
+
+function initViz() {
+  buildSteps();
+  renderPriceChart(-1);
+  renderDPTable();
+}
+
+function renderPriceChart(activeDay) {
+  const chart = document.getElementById('priceChart');
+  let html = '<div class="price-bar-container">';
+  for (let d = 0; d < N; d++) {
+    const h = (VIZ_PRICES[d] / MAX_PRICE) * 130 + 20;
+    let cls = '';
+    if (activeDay >= 0) {
+      if (d < getCurrentComputeDay()) cls = 'past';
+      if (d === getCurrentComputeDay()) cls = 'active';
+    }
+    html += `<div class="price-bar-wrapper">
+      <div class="price-bar ${cls}" style="height:${h}px;">
+        <div class="price-value" style="color:${cls === 'active' ? 'var(--primary)' : 'var(--gray-600)'}">$${VIZ_PRICES[d]}</div>
+      </div>
+      <div class="price-label">第${d}天</div>
+    </div>`;
+  }
+  html += '</div>';
+  chart.innerHTML = html;
+}
+
+function getCurrentComputeDay() {
+  if (currentStep < 0 || currentStep >= steps.length) return -1;
+  return steps[currentStep].day;
+}
+
+function renderDPTable() {
+  const tbody = document.getElementById('dpTableBody');
+  let html = '';
+  for (let i = 0; i < N; i++) {
+    const v0 = dpData[i][0] !== null ? dpData[i][0] : '-';
+    const v1 = dpData[i][1] !== null ? dpData[i][1] : '-';
+    const step = steps[currentStep] || {};
+    const isCurrentRow = step.day === i;
+    const isCurrentS0 = isCurrentRow && step.state === 0 && step.type === 'compute';
+    const isCurrentS1 = isCurrentRow && step.state === 1 && step.type === 'compute';
+    const isResult = step.type === 'result' && i === N - 1;
+
+    let cls0 = dpData[i][0] !== null ? 'computed' : '';
+    let cls1 = dpData[i][1] !== null ? 'computed' : '';
+    if (isCurrentS0) cls0 = 'current';
+    if (isCurrentS1) cls1 = 'current';
+    if (isResult && i === N - 1) cls0 = 'current';
+
+    html += `<tr>
+      <td class="label-col">第 ${i} 天</td>
+      <td>${VIZ_PRICES[i]}</td>
+      <td class="${cls0}">${v0}</td>
+      <td class="${cls1}">${v1}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+function vizNext() {
+  if (currentStep >= steps.length - 1) return;
+  currentStep++;
+  applyStep();
+}
+
+function vizPrev() {
+  if (currentStep <= 0) { vizReset(); return; }
+  currentStep--;
+  recomputeState();
+  applyStep();
+}
+
+function vizReset() {
+  stopAuto();
+  currentStep = -1;
+  for (let i = 0; i < N; i++) { dpData[i][0] = null; dpData[i][1] = null; }
+  renderPriceChart(-1);
+  renderDPTable();
+  document.getElementById('stepExplain').innerHTML = '<h4>📌 准备开始</h4><p>点击"下一步"开始逐步执行代码。</p>';
+  document.getElementById('vizProgress').style.width = '0%';
+  updateButtons();
+}
+
+function recomputeState() {
+  for (let i = 0; i < N; i++) { dpData[i][0] = null; dpData[i][1] = null; }
+  for (let s = 0; s <= currentStep; s++) {
+    const st = steps[s];
+    if (st.type === 'compute') {
+      dpData[st.day][st.state] = st.val;
+    }
+  }
+}
+
+function applyStep() {
+  const step = steps[currentStep];
+  if (step.type === 'compute') {
+    dpData[step.day][step.state] = step.val;
+  }
+  renderPriceChart(step.day);
+  renderDPTable();
+  document.getElementById('stepExplain').innerHTML = `<h4>${step.title}</h4>${step.html}`;
+  document.getElementById('vizProgress').style.width = ((currentStep + 1) / steps.length * 100) + '%';
+  updateButtons();
+}
+
+function updateButtons() {
+  document.getElementById('btnPrev').disabled = currentStep <= -1;
+  document.getElementById('btnNext').disabled = currentStep >= steps.length - 1;
+}
+
+function vizAutoPlay() {
+  if (autoTimer) { stopAuto(); return; }
+  const speed = parseInt(document.getElementById('speedSelect').value);
+  document.getElementById('btnAuto').textContent = '⏸ 暂停';
+  document.getElementById('btnAuto').classList.remove('btn-success');
+  document.getElementById('btnAuto').classList.add('btn-danger');
+  autoTimer = setInterval(() => {
+    if (currentStep >= steps.length - 1) { stopAuto(); return; }
+    vizNext();
+  }, speed);
+}
+
+function stopAuto() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  document.getElementById('btnAuto').textContent = '▶ 自动播放';
+  document.getElementById('btnAuto').classList.remove('btn-danger');
+  document.getElementById('btnAuto').classList.add('btn-success');
+}
+
+// ============= 练习模块 =============
+let score = 0;
+const answered = {};
+const selections = {};
+
+function selectOption(qid, idx) {
+  if (answered[qid]) return;
+  selections[qid] = idx;
+  document.querySelectorAll(`#${qid}opts .quiz-option`).forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+}
+
+function showFeedback(qid, correct, explanation) {
+  const fb = document.getElementById(qid + 'fb');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  fb.innerHTML = (correct ? '✅ 正确！' : '❌ 不正确。') + ' ' + explanation;
+  if (correct && !answered[qid]) {
+    score++;
+    document.getElementById('totalScore').textContent = score;
+  }
+  answered[qid] = true;
+}
+
+function markOptions(qid, correctIdx) {
+  document.querySelectorAll(`#${qid}opts .quiz-option`).forEach((el, i) => {
+    if (i === correctIdx) el.classList.add('correct');
+    else if (i === selections[qid]) el.classList.add('wrong');
+  });
+}
+
+function checkQ1() {
+  if (answered['q1']) return;
+  const a = parseInt(document.getElementById('q1a').value);
+  const b = parseInt(document.getElementById('q1b').value);
+  const correct = (a === 0 && b === -2);
+  document.getElementById('q1a').classList.add(a === 0 ? 'correct' : 'wrong');
+  document.getElementById('q1b').classList.add(b === -2 ? 'correct' : 'wrong');
+  showFeedback('q1', correct,
+    `dp[0][0] = 0（第 0 天不持有，从未买过，利润为 0）。
+     dp[0][1] = -prices[0] = -2（第 0 天持有，说明今天买入，花了 2 元，利润为 -2）。`);
+}
+
+function checkQ2() {
+  if (answered['q2']) return;
+  if (selections['q2'] === undefined) return;
+  const correct = selections['q2'] === 1;
+  markOptions('q2', 1);
+  showFeedback('q2', correct,
+    `dp[1][1] = max(dp[0][1], -prices[1]) = max(-2, -4) = -2。
+     暴力枚举视角：在第 0 天和第 1 天中选一天买入，第 0 天买入花 2 元（利润 -2），第 1 天买入花 4 元（利润 -4）。
+     -2 > -4，说明在第 0 天买入花费更少，所以 dp[1][1] = -2，代表"最优买入方案是第 0 天买入"。`);
+}
+
+function checkQ3() {
+  if (answered['q3']) return;
+  if (selections['q3'] === undefined) return;
+  const correct = selections['q3'] === 0;
+  markOptions('q3', 0);
+  showFeedback('q3', correct,
+    `dp[2][1] = -1 的暴力枚举含义：在第 0、1、2 天中选一天买入——
+     第 0 天买入花 2 元（利润 -2），第 1 天买入花 4 元（利润 -4），第 2 天买入花 1 元（利润 -1）。
+     -1 是三者中最大的，说明第 2 天买入最划算。所以 dp[2][1] = -1 代表"在前 3 天中，最优的单次买入是在第 2 天"。`);
+}
+
+function checkQ4() {
+  if (answered['q4']) return;
+  const a = parseInt(document.getElementById('q4a').value);
+  const b = parseInt(document.getElementById('q4b').value);
+  const c = parseInt(document.getElementById('q4c').value);
+  const correct = (a === 2 && b === 6 && c === 6);
+  document.getElementById('q4a').classList.add(a === 2 ? 'correct' : 'wrong');
+  document.getElementById('q4b').classList.add(b === 6 ? 'correct' : 'wrong');
+  document.getElementById('q4c').classList.add(c === 6 ? 'correct' : 'wrong');
+  showFeedback('q4', correct,
+    `dp[3][0] = max(dp[2][0], dp[2][1] + prices[3]) = max(2, -1 + 7) = max(2, 6) = 6。
+     暴力枚举视角：dp[2][0] = 2 代表"之前最好的完整交易利润为 2（第 0 天买第 1 天卖：4-2=2）"，
+     dp[2][1] + prices[3] = -1 + 7 = 6 代表"在第 2 天买入（最优持有），第 3 天卖出，利润 = 7 - 1 = 6"。
+     6 > 2，所以 dp[3][0] = 6。`);
+}
+
+function checkQ5() {
+  if (answered['q5']) return;
+  if (selections['q5'] === undefined) return;
+  const correct = selections['q5'] === 0;
+  markOptions('q5', 0);
+  showFeedback('q5', correct,
+    `完整 DP 过程：dp[5][0] = 6。最优方案是在第 2 天买入（价格 1），第 3 天卖出（价格 7），利润 = 7 - 1 = 6。
+     虽然后面第 4 天价格是 5，但 5 - 1 = 4 < 6，不如在第 3 天卖出划算。`);
+}
+
+// ============= 初始化 =============
+window.addEventListener('DOMContentLoaded', initViz);
+</script>
+
+</body>
+</html>
