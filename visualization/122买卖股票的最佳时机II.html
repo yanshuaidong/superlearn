@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>122. 买卖股票的最佳时机 II - 动态规划教学可视化</title>
+  <style>
+    :root {
+      --bg: #f6efe5;
+      --panel: #fffaf3;
+      --card: #ffffff;
+      --ink: #2f241d;
+      --muted: #6e5b4f;
+      --accent: #c56a32;
+      --accent-2: #0f766e;
+      --line: #ead8c4;
+      --good: #176b52;
+      --bad: #9a3412;
+      --shadow: 0 14px 40px rgba(82, 52, 31, 0.08);
+      --radius: 20px;
+      --mono: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+      --sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(197, 106, 50, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 24%),
+        linear-gradient(180deg, #f9f2e8 0%, var(--bg) 100%);
+      line-height: 1.65;
+    }
+    .page { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 64px; }
+    .hero, .section, .card, .practice-card, .mini-card {
+      background: rgba(255, 250, 243, 0.92);
+      border: 1px solid rgba(234, 216, 196, 0.9);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(8px);
+    }
+    .hero { padding: 28px; margin-bottom: 24px; position: relative; overflow: hidden; }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -30px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(197, 106, 50, 0.18), transparent 68%);
+      pointer-events: none;
+    }
+    h1, h2, h3 { margin: 0; line-height: 1.25; }
+    h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 12px; }
+    h2 { font-size: 28px; margin-bottom: 18px; }
+    h3 { font-size: 20px; margin-bottom: 12px; }
+    .hero p, .section p, li { color: var(--muted); }
+    .tag-row, .quick-grid, .two-col, .status-grid, .practice-grid, .legend, .control-row, .option-row, .fill-row {
+      display: grid; gap: 14px;
+    }
+    .tag-row { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-top: 18px; }
+    .tag { padding: 12px 14px; background: rgba(255, 255, 255, 0.75); border: 1px solid var(--line); border-radius: 14px; font-size: 14px; }
+    .section { padding: 24px; margin-top: 24px; }
+    .quick-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 16px; }
+    .mini-card { padding: 16px; }
+    .two-col { grid-template-columns: 1.05fr 0.95fr; align-items: start; }
+    .card { padding: 20px; }
+    .problem-box { padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+    .problem-box ul { padding-left: 20px; margin: 10px 0 0; }
+    .code-wrap { overflow: auto; border: 1px solid #e6d6c8; border-radius: 16px; background: #241d19; }
+    pre { margin: 0; padding: 18px; color: #fdf8f2; font-family: var(--mono); font-size: 14px; line-height: 1.7; }
+    .line { display: block; padding: 0 8px; border-radius: 8px; transition: background 0.25s ease; }
+    .line.active { background: rgba(197, 106, 50, 0.28); }
+    .line-no { display: inline-block; width: 28px; margin-right: 14px; color: #d4baaa; user-select: none; }
+    .commentary, .explain-box, .table-wrap, .practice-feedback { margin-top: 18px; padding: 16px; border-radius: 16px; background: #fff; border: 1px solid var(--line); }
+    .control-row { grid-template-columns: repeat(auto-fit, minmax(130px, auto)); align-items: center; margin-bottom: 18px; }
+    button, select, input { font: inherit; }
+    button {
+      border: none; cursor: pointer; border-radius: 12px; padding: 12px 16px;
+      background: var(--accent); color: #fffaf3; transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    button.secondary { background: #efe0d0; color: var(--ink); }
+    button.ghost { background: #fff; color: var(--accent-2); border: 1px solid #cfe5df; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    select, input { padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+    .demo-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.88); border: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    .array-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .day-chip { min-width: 90px; padding: 12px; border-radius: 16px; background: #fff; border: 1px solid var(--line); transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease; }
+    .day-chip.active { border-color: var(--accent); background: #fff4ec; transform: translateY(-3px); }
+    .day-chip.done { border-color: #b8d4cd; background: #f2fbf8; }
+    .day-chip .label { font-size: 12px; color: var(--muted); }
+    .day-chip .price { font-size: 22px; font-weight: 700; color: var(--ink); }
+    .status-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 18px 0; }
+    .state-box, .branch, .legend-item, .option { padding: 16px; border-radius: 16px; background: #fff; border: 1px solid var(--line); }
+    .state-box h4 { margin: 0 0 8px; font-size: 16px; }
+    .big { font-size: 30px; font-weight: 800; letter-spacing: 0.02em; }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+    .logic-box { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+    .branch.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(197, 106, 50, 0.12); }
+    .branch .formula { font-family: var(--mono); font-size: 14px; color: var(--ink); margin: 8px 0 10px; word-break: break-word; }
+    .branch .result { font-size: 24px; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #efe2d4; text-align: center; }
+    th { background: #fbf2e9; color: var(--ink); }
+    tr.active-row td { background: #fff4ec; }
+    .legend { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 14px; }
+    .practice-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 18px; }
+    .practice-card { padding: 18px; }
+    .practice-card h4 { margin: 0 0 10px; font-size: 18px; }
+    .practice-card .prompt { color: var(--ink); margin-bottom: 14px; }
+    .option-row { grid-template-columns: 1fr; margin: 14px 0; }
+    .option { display: flex; gap: 10px; align-items: flex-start; }
+    .fill-row { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 14px 0; }
+    .feedback-good { color: var(--good); }
+    .feedback-bad { color: var(--bad); }
+    .small { font-size: 13px; color: var(--muted); }
+    .footer-note { margin-top: 20px; padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.7); border: 1px dashed var(--line); color: var(--muted); }
+    @media (max-width: 920px) {
+      .two-col { grid-template-columns: 1fr; }
+      .fill-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>122. 买卖股票的最佳时机 II</h1>
+      <p>这不是只告诉你答案的页面，而是把题目、代码、状态定义、转移来源、真实枚举过程和练习反馈都串成一个完整的学习流程。你会看到：<strong>公式不是凭空来的，它是在替代一堆暴力枚举情况。</strong></p>
+      <div class="tag-row">
+        <div class="tag"><strong>题型核心</strong><br />每天结束后只有两种状态：持股 / 不持股</div>
+        <div class="tag"><strong>学习重点</strong><br />看懂 <code>dp[i][0]</code> 和 <code>dp[i][1]</code> 各自收集了哪些情况</div>
+        <div class="tag"><strong>演示方式</strong><br />逐天推进、逐状态比较、逐分支解释来源</div>
+        <div class="tag"><strong>练习重点</strong><br />预测“下一步会更新什么”，而不是只背最终利润</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>模块一：题目与答案代码</h2>
+      <div class="quick-grid">
+        <div class="mini-card">
+          <h3>先建立整体印象</h3>
+          <p>这道题允许你进行多次交易，但同一时间只能持有一股股票。所以每一天结束时，我们真正关心的不是“做了几次交易”，而是：</p>
+          <ul>
+            <li>今天结束后，我手里<strong>没有股票</strong>时，最多赚多少。</li>
+            <li>今天结束后，我手里<strong>有一股股票</strong>时，最多赚多少。</li>
+          </ul>
+        </div>
+        <div class="mini-card">
+          <h3>为什么这个视角有效</h3>
+          <p>因为明天要怎么做，只和“今天结束时的状态”有关，和更早之前具体怎么操作的细节无关。于是，很多暴力枚举路径都能被压缩进两个状态里。</p>
+        </div>
+      </div>
+
+      <div class="two-col" style="margin-top: 18px;">
+        <div class="card">
+          <h3>题目内容</h3>
+          <div class="problem-box">
+            <p>给定一个数组 <code>prices</code>，其中 <code>prices[i]</code> 表示某支股票第 <code>i</code> 天的价格。</p>
+            <p>在每一天，你可以决定是否买入和/或卖出股票。你最多只能持有 <strong>一股</strong> 股票。你也可以在同一天先买入再卖出，但最终仍然不能同时持有多股。</p>
+            <p>请你计算能够获得的 <strong>最大利润</strong>。</p>
+            <ul>
+              <li>如果你什么都不做，利润是 <code>0</code>。</li>
+              <li>一旦买入，利润会先减少；卖出时利润会增加。</li>
+              <li>最终答案一定看“最后一天结束后不持股”的状态。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>状态定义先记住这两句</h3>
+          <div class="commentary">
+            <p><strong><code>dp[i][0]</code></strong>：第 <code>i</code> 天结束后，不持有股票时的最大利润。</p>
+            <p><strong><code>dp[i][1]</code></strong>：第 <code>i</code> 天结束后，持有股票时的最大利润。</p>
+            <p>注意这里的“持有 / 不持有”是<strong>一天结束时</strong>的状态，不是白天中途的某个瞬间。这个细节决定了转移式为什么写成现在这样。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 18px;">
+        <h3>答案代码（补充教学注释版）</h3>
+        <div class="code-wrap">
+          <pre id="annotated-code"></pre>
+        </div>
+        <div class="commentary">
+          <p><strong>这一段代码的主线：</strong>先初始化第 0 天的两个状态，然后从第 1 天开始，逐天更新“今天结束后不持股 / 持股”这两个最优结果。</p>
+          <p><strong>后面可视化会紧扣这段代码：</strong>每一步都会告诉你当前正在算哪一行、比较了哪两个候选值、每个候选值分别对应哪些真实枚举情况。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>模块二：演示可视化</h2>
+      <div class="demo-top">
+        <div class="pill">演示示例：<strong id="demo-array-label">[7, 1, 5, 3, 6, 4]</strong></div>
+        <div class="pill">当前步骤：<strong id="step-label">初始化</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="control-row">
+          <button class="secondary" id="prev-btn">上一步</button>
+          <button id="play-btn">自动播放</button>
+          <button class="secondary" id="next-btn">下一步</button>
+          <button class="ghost" id="reset-btn">重新开始</button>
+        </div>
+
+        <div class="array-bar" id="array-bar"></div>
+
+        <div class="status-grid">
+          <div class="state-box">
+            <h4>上一天最优状态</h4>
+            <div id="prev-state-text">初始化阶段，没有上一天。</div>
+          </div>
+          <div class="state-box">
+            <h4>今天结束后不持股 <code>dp[i][0]</code></h4>
+            <div class="big good" id="no-stock-value">0</div>
+            <div id="no-stock-desc" class="small">等待开始</div>
+          </div>
+          <div class="state-box">
+            <h4>今天结束后持股 <code>dp[i][1]</code></h4>
+            <div class="big bad" id="hold-value">0</div>
+            <div id="hold-desc" class="small">等待开始</div>
+          </div>
+        </div>
+
+        <div class="logic-box">
+          <div class="branch" id="branch-no-keep">
+            <strong>分支 A：继承昨天的不持股</strong>
+            <div class="formula" id="formula-no-keep">dp[i-1][0]</div>
+            <div class="result" id="result-no-keep">-</div>
+            <div class="small">真实情况：昨天就已经不持股，今天继续什么都不做。</div>
+          </div>
+          <div class="branch" id="branch-no-sell">
+            <strong>分支 B：昨天持股，今天卖出</strong>
+            <div class="formula" id="formula-no-sell">dp[i-1][1] + prices[i]</div>
+            <div class="result" id="result-no-sell">-</div>
+            <div class="small">真实情况：昨天所有“持股”方案，今天统一补上一笔“卖出”。</div>
+          </div>
+          <div class="branch" id="branch-hold-keep">
+            <strong>分支 C：继承昨天的持股</strong>
+            <div class="formula" id="formula-hold-keep">dp[i-1][1]</div>
+            <div class="result" id="result-hold-keep">-</div>
+            <div class="small">真实情况：昨天就持股，今天继续拿着。</div>
+          </div>
+          <div class="branch" id="branch-hold-buy">
+            <strong>分支 D：昨天不持股，今天买入</strong>
+            <div class="formula" id="formula-hold-buy">dp[i-1][0] - prices[i]</div>
+            <div class="result" id="result-hold-buy">-</div>
+            <div class="small">真实情况：昨天所有“不持股”方案，今天统一补上一笔“买入”。</div>
+          </div>
+        </div>
+
+        <div class="explain-box">
+          <h3>这一轮到底在枚举什么</h3>
+          <div id="enumeration-text"></div>
+        </div>
+
+        <div class="table-wrap">
+          <h3>DP 表推进过程</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>天数 i</th>
+                <th>价格 prices[i]</th>
+                <th>dp[i][0] 不持股</th>
+                <th>dp[i][1] 持股</th>
+              </tr>
+            </thead>
+            <tbody id="dp-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><strong>黄色高亮行</strong><br />当前正在计算的这一天</div>
+          <div class="legend-item"><strong>分支高亮</strong><br />表示这一轮真正被 <code>Math.max</code> 选中的来源</div>
+          <div class="legend-item"><strong>枚举说明</strong><br />把公式背后的暴力情况展开成人话</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>模块三：动手练习</h2>
+      <p>下面换一个新的例子 <strong>[1, 4, 2, 8]</strong>。这里的重点不是让你立刻算最终答案，而是让你练“某一天的状态为什么这样更新”。</p>
+
+      <div class="practice-grid">
+        <div class="practice-card">
+          <h4>练习 1：填状态值</h4>
+          <div class="prompt">
+            已知第 0 天价格是 1，所以：
+            <br />
+            <code>dp[0][0] = 0</code>，<code>dp[0][1] = -1</code>
+            <br />
+            第 1 天价格是 4，请填写：
+          </div>
+          <div class="fill-row">
+            <label>dp[1][0]
+              <input id="fill-no-stock" type="number" />
+            </label>
+            <label>dp[1][1]
+              <input id="fill-hold" type="number" />
+            </label>
+          </div>
+          <button data-action="check-fill">检查答案</button>
+          <div class="practice-feedback" id="feedback-fill"></div>
+        </div>
+
+        <div class="practice-card">
+          <h4>练习 2：找来源</h4>
+          <div class="prompt">
+            继续用数组 <code>[1, 4, 2, 8]</code>。在第 2 天，价格是 2。此时 <code>dp[2][1]</code> 来自哪一项？
+          </div>
+          <div class="option-row">
+            <label class="option"><input type="radio" name="q2" value="a" /> 来自 <code>dp[1][1]</code>，表示继续持有前一天已经买过的股票</label>
+            <label class="option"><input type="radio" name="q2" value="b" /> 来自 <code>dp[1][1] + prices[2]</code>，表示今天卖出</label>
+            <label class="option"><input type="radio" name="q2" value="c" /> 来自 <code>dp[1][0] - prices[2]</code>，表示从前一天不持股的最优方案里重新买入</label>
+          </div>
+          <button data-action="check-q2">检查答案</button>
+          <div class="practice-feedback" id="feedback-q2"></div>
+        </div>
+
+        <div class="practice-card">
+          <h4>练习 3：预测下一步</h4>
+          <div class="prompt">
+            还是数组 <code>[1, 4, 2, 8]</code>。假设你已经算出：
+            <br />
+            <code>dp[2][0] = 3</code>，<code>dp[2][1] = 1</code>
+            <br />
+            第 3 天价格是 8，那么 <code>dp[3][0]</code> 为什么会更新成 9？
+          </div>
+          <div class="option-row">
+            <label class="option"><input type="radio" name="q3" value="a" /> 因为直接继承 <code>dp[2][0] = 3</code>，所以还是 3</label>
+            <label class="option"><input type="radio" name="q3" value="b" /> 因为从 <code>dp[2][1] = 1</code> 卖出，得到 <code>1 + 8 = 9</code></label>
+            <label class="option"><input type="radio" name="q3" value="c" /> 因为今天可以同时买入卖出，所以直接是 8</label>
+          </div>
+          <button data-action="check-q3">检查答案</button>
+          <div class="practice-feedback" id="feedback-q3"></div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        这三题分别对应三种最容易卡住的点：初始化、状态来源判断、以及“公式背后是哪种真实操作”。如果这三步都能说清楚，说明你已经不是在背模板，而是真的看懂了这段代码。
+      </div>
+    </section>
+  </div>
+  <script>
+    const codeLines = [
+      "/**",
+      " * 122. 买卖股票的最佳时机 II",
+      " * 动态规划解法：把所有交易路径压缩成“每天结束后的两种状态”",
+      " */",
+      "var maxProfit = function(prices) {",
+      "    // 数组长度小于 2，连一次完整的买入+卖出都做不成",
+      "    if (!prices || prices.length < 2) {",
+      "        return 0;",
+      "    }",
+      "",
+      "    const n = prices.length;",
+      "",
+      "    // dp[i][0]：第 i 天结束时，不持股的最大利润",
+      "    // 这里把“前面做过哪些交易”都压缩掉了，只保留对明天有用的状态",
+      "    // dp[i][1]：第 i 天结束时，持股的最大利润",
+      "    const dp = new Array(n).fill(0).map(() => new Array(2).fill(0));",
+      "",
+      "    // 第 0 天结束时：",
+      "    // 不持股只能是什么都没做，所以利润是 0",
+      "    dp[0][0] = 0;",
+      "    // 持股只能是今天买了一股，所以利润要减去 prices[0]",
+      "    dp[0][1] = -prices[0];",
+      "",
+      "    // 从第 1 天开始，逐天比较“延续旧状态”和“今天新操作”谁更优",
+      "    for (let i = 1; i < n; i++) {",
+      "        // 今天结束后不持股：",
+      "        // 方案 1：昨天就不持股，今天继续休息",
+      "        // 方案 2：昨天持股，今天卖出",
+      "        dp[i][0] = Math.max(",
+      "            dp[i - 1][0],",
+      "            dp[i - 1][1] + prices[i]",
+      "        );",
+      "",
+      "        // 今天结束后持股：",
+      "        // 方案 1：昨天就持股，今天继续拿着",
+      "        // 方案 2：昨天不持股，今天买入",
+      "        dp[i][1] = Math.max(",
+      "            dp[i - 1][1],",
+      "            dp[i - 1][0] - prices[i]",
+      "        );",
+      "    }",
+      "",
+      "    // 最后一天结束后，想把利润真正落袋为安，就应该处于不持股状态",
+      "    return dp[n - 1][0];",
+      "};"
+    ];
+
+    const codeMap = {
+      guard: [7, 8],
+      initNoStock: [20],
+      initHold: [22],
+      loop: [25],
+      calcNoStock: [29, 30, 31, 32],
+      calcHold: [37, 38, 39, 40],
+      return: [43]
+    };
+
+    const demoPrices = [7, 1, 5, 3, 6, 4];
+    const steps = buildSteps(demoPrices);
+    let stepIndex = 0;
+    let timer = null;
+
+    function buildSteps(prices) {
+      const dp = Array.from({ length: prices.length }, () => [null, null]);
+      const result = [];
+
+      if (!prices || prices.length < 2) {
+        return [{
+          type: "guard",
+          title: "数组太短，直接返回 0",
+          activeLines: codeMap.guard,
+          dp: [],
+          currentDay: 0,
+          prevStateText: "数组长度不足 2，没有完整交易机会。",
+          noStock: 0,
+          hold: 0,
+          noStockDesc: "直接返回 0",
+          holdDesc: "无需计算",
+          branchValues: {},
+          selected: [],
+          enumeration: "<p>连一次买入再卖出的完整流程都拼不出来，所以代码在开头直接返回 0。</p>"
+        }];
+      }
+
+      dp[0][0] = 0;
+      dp[0][1] = -prices[0];
+      result.push({
+        type: "init",
+        title: "初始化第 0 天",
+        activeLines: [...codeMap.initNoStock, ...codeMap.initHold],
+        dp: dp.map(row => [...row]),
+        currentDay: 0,
+        prevStateText: "初始化阶段，没有上一天。",
+        noStock: dp[0][0],
+        hold: dp[0][1],
+        noStockDesc: "什么都不做，所以利润是 0",
+        holdDesc: "如果今天结束后手里有股票，只能说明今天买入了，利润 = -prices[0]",
+        branchValues: {
+          noKeep: "0",
+          noSell: "不存在",
+          holdKeep: "不存在",
+          holdBuy: `-${prices[0]}`
+        },
+        selected: ["branch-hold-buy"],
+        enumeration: `
+          <p><strong>把第 0 天的真实情况全列出来：</strong></p>
+          <p>1. 第 0 天结束后不持股：只能是“什么都不做”，所以 <code>dp[0][0] = 0</code>。</p>
+          <p>2. 第 0 天结束后持股：只能是“今天买入”，所以 <code>dp[0][1] = -prices[0] = -${prices[0]}</code>。</p>
+          <p>这里不是在套公式，而是在把第 0 天所有可能情况一次性列完。</p>
+        `
+      });
+
+      for (let i = 1; i < prices.length; i++) {
+        const noKeep = dp[i - 1][0];
+        const noSell = dp[i - 1][1] + prices[i];
+        const holdKeep = dp[i - 1][1];
+        const holdBuy = dp[i - 1][0] - prices[i];
+        dp[i][0] = Math.max(noKeep, noSell);
+        dp[i][1] = Math.max(holdKeep, holdBuy);
+
+        const noChoice = dp[i][0] === noKeep ? "继承昨天不持股" : "今天卖出";
+        const holdChoice = dp[i][1] === holdKeep ? "继续持有" : "今天买入";
+
+        result.push({
+          type: "day",
+          title: `计算第 ${i} 天`,
+          activeLines: [...codeMap.loop, ...codeMap.calcNoStock, ...codeMap.calcHold],
+          dp: dp.map(row => [...row]),
+          currentDay: i,
+          prevStateText: `第 ${i - 1} 天结束后：dp[${i - 1}][0] = ${dp[i - 1][0]}，dp[${i - 1}][1] = ${dp[i - 1][1]}`,
+          noStock: dp[i][0],
+          hold: dp[i][1],
+          noStockDesc: `${noChoice}，所以 dp[${i}][0] = ${dp[i][0]}`,
+          holdDesc: `${holdChoice}，所以 dp[${i}][1] = ${dp[i][1]}`,
+          branchValues: { noKeep, noSell, holdKeep, holdBuy },
+          selected: [
+            dp[i][0] === noKeep ? "branch-no-keep" : "branch-no-sell",
+            dp[i][1] === holdKeep ? "branch-hold-keep" : "branch-hold-buy"
+          ],
+          enumeration: `
+            <p><strong>先看 <code>dp[${i}][0]</code>：</strong>它表示“第 ${i} 天结束后不持股的最大利润”。真实情况有两大类：</p>
+            <p>1. <strong>继承类</strong>：第 ${i - 1} 天结束后就已经不持股。那些方案今天全部“原样保留”，对应 <code>dp[${i - 1}][0] = ${noKeep}</code>。</p>
+            <p>2. <strong>新增卖出类</strong>：第 ${i - 1} 天结束后持股。那些方案今天统一补一笔“卖出”，利润变成 <code>dp[${i - 1}][1] + prices[${i}] = ${noSell}</code>。</p>
+            <p>这两大类合并后，取更大值，就是 <code>dp[${i}][0] = ${dp[i][0]}</code>。</p>
+            <p><strong>再看 <code>dp[${i}][1]</code>：</strong>它表示“第 ${i} 天结束后持股的最大利润”，真实情况也有两类：</p>
+            <p>1. <strong>继承类</strong>：昨天已经持股，今天继续拿着，对应 <code>dp[${i - 1}][1] = ${holdKeep}</code>。</p>
+            <p>2. <strong>新增买入类</strong>：昨天不持股，今天从这些方案里挑利润最高的一个去买入，对应 <code>dp[${i - 1}][0] - prices[${i}] = ${holdBuy}</code>。</p>
+            <p>这就是为什么两个 <code>Math.max</code>，本质上是在替代大量“昨天怎么交易、今天是否操作”的暴力枚举。</p>
+          `
+        });
+      }
+
+      result.push({
+        type: "return",
+        title: "返回最终答案",
+        activeLines: codeMap.return,
+        dp: dp.map(row => [...row]),
+        currentDay: prices.length - 1,
+        prevStateText: `最后一天已经计算完成：dp[${prices.length - 1}][0] = ${dp[prices.length - 1][0]}，dp[${prices.length - 1}][1] = ${dp[prices.length - 1][1]}`,
+        noStock: dp[prices.length - 1][0],
+        hold: dp[prices.length - 1][1],
+        noStockDesc: "最终答案来自最后一天结束后不持股的状态",
+        holdDesc: "持股说明股票还没卖掉，利润还没有真正结算",
+        branchValues: { noKeep: "-", noSell: "-", holdKeep: "-", holdBuy: "-" },
+        selected: [],
+        enumeration: `
+          <p><strong>为什么最后返回 <code>dp[n - 1][0]</code>？</strong></p>
+          <p>因为 <code>dp[n - 1][1]</code> 表示“最后一天结束后手里还拿着一股股票”。这说明还有一部分价值没有通过卖出落袋为安。</p>
+          <p>题目要的是实际能拿到手的最大利润，所以应该返回最后一天结束时<strong>不持股</strong>的最优值：<code>${dp[prices.length - 1][0]}</code>。</p>
+        `
+      });
+
+      return result;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function renderCode() {
+      const container = document.getElementById("annotated-code");
+      container.innerHTML = codeLines.map((line, index) => {
+        const lineNo = index + 1;
+        return `<span class="line" data-line="${lineNo}"><span class="line-no">${lineNo}</span>${escapeHtml(line)}</span>`;
+      }).join("");
+    }
+
+    function renderArrayBar(step) {
+      const bar = document.getElementById("array-bar");
+      bar.innerHTML = demoPrices.map((price, idx) => {
+        let cls = "day-chip";
+        if (idx < step.currentDay) cls += " done";
+        if (idx === step.currentDay) cls += " active";
+        return `
+          <div class="${cls}">
+            <div class="label">第 ${idx} 天</div>
+            <div class="price">${price}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderTable(step) {
+      const body = document.getElementById("dp-table-body");
+      body.innerHTML = demoPrices.map((price, idx) => {
+        const row = step.dp[idx] || [];
+        const noStock = row[0] === null || row[0] === undefined ? "-" : row[0];
+        const hold = row[1] === null || row[1] === undefined ? "-" : row[1];
+        return `
+          <tr class="${idx === step.currentDay ? "active-row" : ""}">
+            <td>${idx}</td>
+            <td>${price}</td>
+            <td>${noStock}</td>
+            <td>${hold}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function clearCodeHighlight() {
+      document.querySelectorAll(".line").forEach(line => line.classList.remove("active"));
+    }
+
+    function renderStep() {
+      const step = steps[stepIndex];
+      document.getElementById("step-label").textContent = `${stepIndex + 1} / ${steps.length} · ${step.title}`;
+      document.getElementById("prev-state-text").textContent = step.prevStateText;
+      document.getElementById("no-stock-value").textContent = step.noStock;
+      document.getElementById("hold-value").textContent = step.hold;
+      document.getElementById("no-stock-desc").textContent = step.noStockDesc;
+      document.getElementById("hold-desc").textContent = step.holdDesc;
+      document.getElementById("enumeration-text").innerHTML = step.enumeration;
+
+      document.getElementById("result-no-keep").textContent = step.branchValues.noKeep ?? "-";
+      document.getElementById("result-no-sell").textContent = step.branchValues.noSell ?? "-";
+      document.getElementById("result-hold-keep").textContent = step.branchValues.holdKeep ?? "-";
+      document.getElementById("result-hold-buy").textContent = step.branchValues.holdBuy ?? "-";
+
+      document.getElementById("formula-no-keep").textContent = step.type === "day"
+        ? `dp[${step.currentDay - 1}][0] = ${step.branchValues.noKeep}`
+        : "dp[i-1][0]";
+      document.getElementById("formula-no-sell").textContent = step.type === "day"
+        ? `dp[${step.currentDay - 1}][1] + prices[${step.currentDay}] = ${step.branchValues.noSell}`
+        : "dp[i-1][1] + prices[i]";
+      document.getElementById("formula-hold-keep").textContent = step.type === "day"
+        ? `dp[${step.currentDay - 1}][1] = ${step.branchValues.holdKeep}`
+        : "dp[i-1][1]";
+      document.getElementById("formula-hold-buy").textContent = step.type === "day" || step.type === "init"
+        ? (step.type === "init"
+          ? `-prices[0] = -${demoPrices[0]}`
+          : `dp[${step.currentDay - 1}][0] - prices[${step.currentDay}] = ${step.branchValues.holdBuy}`)
+        : "dp[i-1][0] - prices[i]";
+
+      ["branch-no-keep", "branch-no-sell", "branch-hold-keep", "branch-hold-buy"].forEach(id => {
+        document.getElementById(id).classList.remove("selected");
+      });
+      step.selected.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("selected");
+      });
+
+      clearCodeHighlight();
+      step.activeLines.forEach(lineNo => {
+        const line = document.querySelector(`.line[data-line="${lineNo}"]`);
+        if (line) line.classList.add("active");
+      });
+
+      renderArrayBar(step);
+      renderTable(step);
+
+      document.getElementById("prev-btn").disabled = stepIndex === 0;
+      document.getElementById("next-btn").disabled = stepIndex === steps.length - 1;
+    }
+
+    function nextStep() {
+      if (stepIndex < steps.length - 1) {
+        stepIndex += 1;
+        renderStep();
+      } else {
+        stopPlay();
+      }
+    }
+
+    function prevStep() {
+      if (stepIndex > 0) {
+        stepIndex -= 1;
+        renderStep();
+      }
+    }
+
+    function startPlay() {
+      const btn = document.getElementById("play-btn");
+      btn.textContent = "暂停播放";
+      timer = setInterval(() => {
+        if (stepIndex >= steps.length - 1) {
+          stopPlay();
+        } else {
+          nextStep();
+        }
+      }, 2200);
+    }
+
+    function stopPlay() {
+      clearInterval(timer);
+      timer = null;
+      document.getElementById("play-btn").textContent = "自动播放";
+    }
+
+    document.getElementById("next-btn").addEventListener("click", () => {
+      stopPlay();
+      nextStep();
+    });
+    document.getElementById("prev-btn").addEventListener("click", () => {
+      stopPlay();
+      prevStep();
+    });
+    document.getElementById("reset-btn").addEventListener("click", () => {
+      stopPlay();
+      stepIndex = 0;
+      renderStep();
+    });
+    document.getElementById("play-btn").addEventListener("click", () => {
+      if (timer) {
+        stopPlay();
+      } else {
+        startPlay();
+      }
+    });
+
+    function setFeedback(id, ok, html) {
+      const box = document.getElementById(id);
+      box.innerHTML = `<div class="${ok ? "feedback-good" : "feedback-bad"}"><strong>${ok ? "回答正确" : "再想一想"}</strong></div><div style="margin-top:8px;">${html}</div>`;
+    }
+
+    document.querySelector('[data-action="check-fill"]').addEventListener("click", () => {
+      const a = Number(document.getElementById("fill-no-stock").value);
+      const b = Number(document.getElementById("fill-hold").value);
+      const ok = a === 3 && b === -1;
+      setFeedback(
+        "feedback-fill",
+        ok,
+        `
+          <p>第 1 天价格是 4：</p>
+          <p><code>dp[1][0] = max(dp[0][0], dp[0][1] + 4) = max(0, -1 + 4) = 3</code></p>
+          <p><code>dp[1][1] = max(dp[0][1], dp[0][0] - 4) = max(-1, -4) = -1</code></p>
+          <p>意思是：到第 1 天结束时，不持股最好的做法是“第 0 天买入，第 1 天卖出”；持股最好的做法则是“继续保留第 0 天买入的那一股”。</p>
+        `
+      );
+    });
+
+    document.querySelector('[data-action="check-q2"]').addEventListener("click", () => {
+      const value = document.querySelector('input[name="q2"]:checked')?.value;
+      const ok = value === "c";
+      setFeedback(
+        "feedback-q2",
+        ok,
+        `
+          <p>先算一下：</p>
+          <p>第 1 天后有 <code>dp[1][0] = 3</code>，<code>dp[1][1] = -1</code>。</p>
+          <p>所以第 2 天：</p>
+          <p><code>dp[2][1] = max(dp[1][1], dp[1][0] - 2) = max(-1, 1) = 1</code></p>
+          <p>这里选的是 <code>dp[1][0] - 2</code>，也就是：前面先赚到 3，再在第 2 天用价格 2 重新买入，手里继续持股，此时账面利润变成 1。</p>
+        `
+      );
+    });
+
+    document.querySelector('[data-action="check-q3"]').addEventListener("click", () => {
+      const value = document.querySelector('input[name="q3"]:checked')?.value;
+      const ok = value === "b";
+      setFeedback(
+        "feedback-q3",
+        ok,
+        `
+          <p><code>dp[3][0]</code> 表示第 3 天结束后不持股的最大利润，所以要比较两类情况：</p>
+          <p>1. 继承昨天不持股：<code>dp[2][0] = 3</code></p>
+          <p>2. 昨天持股，今天卖出：<code>dp[2][1] + 8 = 1 + 8 = 9</code></p>
+          <p>因为 9 更大，所以 <code>dp[3][0] = 9</code>。这正是“前面先完成一次交易赚 3，再在第 2 天买入，第 3 天卖出”的汇总结果。</p>
+        `
+      );
+    });
+
+    renderCode();
+    renderStep();
+  </script>
+</body>
+</html>
