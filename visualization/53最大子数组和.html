@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>53. 最大子数组和 - 动态规划可视化</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --primary: #0f766e;
+      --primary-soft: #ccfbf1;
+      --good: #166534;
+      --good-soft: #dcfce7;
+      --warn: #92400e;
+      --warn-soft: #fef3c7;
+      --danger: #991b1b;
+      --danger-soft: #fee2e2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top right, #e0f2fe, transparent 35%), var(--bg);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .desc {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toolbar label {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    select, button {
+      height: 36px;
+      border-radius: 9px;
+      border: 1px solid #cbd5e1;
+      padding: 0 12px;
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      min-height: 64px;
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat .v {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    #canvasWrap {
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    .log {
+      margin-top: 8px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #0f172a;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
+      min-height: 58px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend i {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: -1px;
+      border: 1px solid rgba(15, 23, 42, 0.2);
+    }
+
+    @media (max-width: 880px) {
+      .stats {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <h1>53. 最大子数组和（动态规划可视化）</h1>
+      <p class="desc">状态定义：<b>dp[i]</b> 表示“必须以 <b>i</b> 结尾”的最大子数组和。<br>转移方程：<b>dp[i] = max(nums[i], dp[i-1] + nums[i])</b>。<br>默认展示示例 1 的求解过程：<b>[-2,1,-3,4,-1,2,1,-5,4]</b></p>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <label for="exampleSelect">选择示例：</label>
+        <select id="exampleSelect">
+          <option value="1">示例1：[-2,1,-3,4,-1,2,1,-5,4]</option>
+          <option value="2">示例2：[1]</option>
+          <option value="3">示例3：[5,4,-1,7,8]</option>
+        </select>
+        <button id="prevBtn">上一步</button>
+        <button class="primary" id="nextBtn">下一步</button>
+        <button id="playBtn">自动播放</button>
+        <button id="resetBtn">重置</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><div class="k">当前下标 i</div><div class="v" id="si">-</div></div>
+        <div class="stat"><div class="k">nums[i]</div><div class="v" id="sNum">-</div></div>
+        <div class="stat"><div class="k">dp[i]（以 i 结尾）</div><div class="v" id="sDp">-</div></div>
+        <div class="stat"><div class="k">全局最大和</div><div class="v" id="sBest">-</div></div>
+      </div>
+      <div id="canvasWrap">
+        <canvas id="viz" width="1000" height="460"></canvas>
+      </div>
+      <div class="legend">
+        <span><i style="background:#dbeafe"></i>当前处理位置 i</span>
+        <span><i style="background:#fef3c7"></i>当前子数组（以 i 结尾）</span>
+        <span><i style="background:#dcfce7"></i>全局最优子数组</span>
+        <span><i style="background:#fee2e2"></i>未选中/被截断</span>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    const examples = {
+      1: { nums: [-2, 1, -3, 4, -1, 2, 1, -5, 4], answer: 6 },
+      2: { nums: [1], answer: 1 },
+      3: { nums: [5, 4, -1, 7, 8], answer: 23 },
+    };
+
+    const canvas = document.getElementById('viz');
+    const ctx = canvas.getContext('2d');
+
+    const els = {
+      select: document.getElementById('exampleSelect'),
+      prev: document.getElementById('prevBtn'),
+      next: document.getElementById('nextBtn'),
+      play: document.getElementById('playBtn'),
+      reset: document.getElementById('resetBtn'),
+      si: document.getElementById('si'),
+      sNum: document.getElementById('sNum'),
+      sDp: document.getElementById('sDp'),
+      sBest: document.getElementById('sBest'),
+      log: document.getElementById('log'),
+    };
+
+    let state = null;
+    let timer = null;
+
+    function init(exampleId) {
+      const nums = examples[exampleId].nums.slice();
+      const n = nums.length;
+      const dp = new Array(n).fill(0);
+      const steps = [];
+
+      let currStart = 0;
+      let bestStart = 0;
+      let bestEnd = 0;
+
+      dp[0] = nums[0];
+      let best = dp[0];
+
+      steps.push({
+        i: 0,
+        num: nums[0],
+        fromPrev: null,
+        extendValue: null,
+        restartValue: nums[0],
+        dpValue: dp[0],
+        currStart,
+        currEnd: 0,
+        best,
+        bestStart,
+        bestEnd,
+        text: `i=0: dp[0]=nums[0]=${nums[0]}，初始化全局最大和 best=${best}`,
+      });
+
+      for (let i = 1; i < n; i++) {
+        const extendValue = dp[i - 1] + nums[i];
+        const restartValue = nums[i];
+
+        if (restartValue > extendValue) {
+          dp[i] = restartValue;
+          currStart = i;
+        } else {
+          dp[i] = extendValue;
+        }
+
+        if (dp[i] > best) {
+          best = dp[i];
+          bestStart = currStart;
+          bestEnd = i;
+        }
+
+        steps.push({
+          i,
+          num: nums[i],
+          fromPrev: restartValue <= extendValue,
+          extendValue,
+          restartValue,
+          dpValue: dp[i],
+          currStart,
+          currEnd: i,
+          best,
+          bestStart,
+          bestEnd,
+          text: [
+            `i=${i}: 比较 restart=nums[${i}]=${restartValue} 与 extend=dp[${i - 1}]+nums[${i}]=${extendValue}`,
+            `选择${restartValue > extendValue ? '重启新子数组' : '继续延长当前子数组'}，所以 dp[${i}]=${dp[i]}`,
+            `当前全局 best=${best}，最优区间=[${bestStart}, ${bestEnd}]`
+          ].join('\n'),
+        });
+      }
+
+      state = {
+        nums,
+        dp,
+        steps,
+        idx: 0,
+        expected: examples[exampleId].answer,
+      };
+
+      resizeCanvas();
+      render();
+      updateBtns();
+    }
+
+    function resizeCanvas() {
+      const n = state.nums.length;
+      const cellW = 86;
+      const left = 28;
+      const right = 26;
+      const targetW = Math.max(700, left + right + n * cellW);
+      canvas.width = targetW;
+      canvas.height = 460;
+    }
+
+    function drawText(text, x, y, size = 14, color = '#111827', align = 'center', weight = '500') {
+      ctx.save();
+      ctx.font = `${weight} ${size}px "Microsoft YaHei", "Segoe UI", sans-serif`;
+      ctx.fillStyle = color;
+      ctx.textAlign = align;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function roundRect(x, y, w, h, r, fill, stroke = '#cbd5e1') {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function render() {
+      const { nums, dp, steps, idx } = state;
+      const step = steps[idx];
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const startX = 28;
+      const cellW = 76;
+      const gap = 10;
+      const boxW = cellW;
+      const boxH = 56;
+      const row1Y = 80;
+      const row2Y = 220;
+
+      drawText('数组 nums', 70, row1Y - 34, 18, '#0f172a', 'left', '700');
+      drawText('DP 值（以 i 结尾）', 70, row2Y - 34, 18, '#0f172a', 'left', '700');
+
+      for (let i = 0; i < nums.length; i++) {
+        const x = startX + i * (cellW + gap);
+
+        let topFill = '#ffffff';
+        let bottomFill = '#ffffff';
+
+        if (i >= step.currStart && i <= step.currEnd) {
+          topFill = '#fef3c7';
+        }
+        if (i >= step.bestStart && i <= step.bestEnd) {
+          topFill = '#dcfce7';
+        }
+        if (i === step.i) {
+          topFill = '#dbeafe';
+          bottomFill = '#dbeafe';
+        }
+        if (i < step.currStart && i > step.bestEnd) {
+          topFill = '#fff7ed';
+        }
+
+        roundRect(x, row1Y, boxW, boxH, 10, topFill);
+        drawText(`i=${i}`, x + boxW / 2, row1Y + 16, 12, '#475569');
+        drawText(String(nums[i]), x + boxW / 2, row1Y + 38, 20, nums[i] >= 0 ? '#166534' : '#991b1b', 'center', '700');
+
+        roundRect(x, row2Y, boxW, boxH, 10, bottomFill);
+        drawText(`dp[${i}]`, x + boxW / 2, row2Y + 16, 12, '#475569');
+
+        const known = i <= step.i;
+        drawText(known ? String(dp[i]) : '?', x + boxW / 2, row2Y + 38, 20, known ? '#0f766e' : '#94a3b8', 'center', '700');
+      }
+
+      const title = `Step ${idx + 1} / ${steps.length}`;
+      drawText(title, canvas.width - 24, 24, 14, '#475569', 'right', '600');
+
+      drawCalc(step);
+      updatePanel(step);
+      updateBtns();
+    }
+
+    function drawCalc(step) {
+      const y = 350;
+      const left = 34;
+
+      roundRect(left, y - 26, canvas.width - 68, 96, 12, '#f8fafc', '#cbd5e1');
+
+      if (step.i === 0) {
+        drawText(`初始化：dp[0] = nums[0] = ${step.dpValue}，best = ${step.best}`, left + 14, y + 14, 16, '#0f172a', 'left', '600');
+      } else {
+        const chooseText = step.fromPrev
+          ? `extend 更大，沿用之前子数组`
+          : `restart 更大，从 i=${step.i} 重新开始`;
+
+        drawText(`dp[${step.i}] = max(nums[${step.i}], dp[${step.i - 1}] + nums[${step.i}]) = max(${step.restartValue}, ${step.extendValue}) = ${step.dpValue}`,
+          left + 14, y + 14, 15, '#0f172a', 'left', '600');
+        drawText(`${chooseText}；当前 best = ${step.best}`,
+          left + 14, y + 46, 15, '#334155', 'left', '500');
+      }
+    }
+
+    function updatePanel(step) {
+      els.si.textContent = step.i;
+      els.sNum.textContent = step.num;
+      els.sDp.textContent = step.dpValue;
+      els.sBest.textContent = `${step.best}（[${step.bestStart}, ${step.bestEnd}]）`;
+
+      const seg = state.nums.slice(step.bestStart, step.bestEnd + 1);
+      const done = step.i === state.nums.length - 1;
+      const endMsg = done
+        ? `\n最终答案：${step.best}，最优子数组 = [${seg.join(',')}]，与题目示例输出 ${state.expected} 一致。`
+        : '';
+
+      els.log.textContent = step.text + endMsg;
+    }
+
+    function next() {
+      if (state.idx < state.steps.length - 1) {
+        state.idx += 1;
+        render();
+      } else {
+        stopPlay();
+      }
+    }
+
+    function prev() {
+      if (state.idx > 0) {
+        state.idx -= 1;
+        render();
+      }
+    }
+
+    function reset() {
+      stopPlay();
+      state.idx = 0;
+      render();
+    }
+
+    function play() {
+      if (timer) {
+        stopPlay();
+        return;
+      }
+      els.play.textContent = '暂停';
+      timer = setInterval(() => {
+        if (state.idx >= state.steps.length - 1) {
+          stopPlay();
+        } else {
+          next();
+        }
+      }, 1000);
+    }
+
+    function stopPlay() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      els.play.textContent = '自动播放';
+    }
+
+    function updateBtns() {
+      els.prev.disabled = state.idx <= 0;
+      els.next.disabled = state.idx >= state.steps.length - 1;
+    }
+
+    els.select.addEventListener('change', () => {
+      stopPlay();
+      init(els.select.value);
+    });
+    els.prev.addEventListener('click', prev);
+    els.next.addEventListener('click', next);
+    els.play.addEventListener('click', play);
+    els.reset.addEventListener('click', reset);
+
+    init('1');
+  </script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>123. 买卖股票的最佳时机 III - DP 可视化</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2430;
+      --sub: #5a6475;
+      --primary: #0f766e;
+      --primary-soft: #ccfbf1;
+      --accent: #b45309;
+      --accent-soft: #fef3c7;
+      --line: #d6dbe6;
+      --ok: #166534;
+      --warn: #b91c1c;
+      --shadow: 0 8px 20px rgba(12, 25, 53, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: radial-gradient(circle at top right, #e0f2fe 0%, var(--bg) 45%);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    h1, h2, h3 { margin: 0 0 10px; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; color: #0b3a66; }
+    h3 { font-size: 16px; color: #0b3a66; }
+
+    .muted { color: var(--sub); }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font-size: 15px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    button:hover { filter: brightness(0.98); }
+
+    .state-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .state-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: linear-gradient(180deg, #fff, #f8fbff);
+    }
+
+    .state-card code {
+      display: inline-block;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0b3a66;
+      margin-bottom: 8px;
+    }
+
+    .formula-box {
+      display: grid;
+      gap: 8px;
+      border-left: 4px solid var(--primary);
+      background: #f8fffd;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: Consolas, Monaco, monospace;
+      overflow-x: auto;
+    }
+
+    .calc {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 14px;
+    }
+
+    .calc strong { color: var(--primary); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .win { background: var(--primary-soft); color: var(--ok); }
+    .lose { background: #fee2e2; color: var(--warn); }
+
+    .day-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .day {
+      min-width: 84px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .day.active {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      box-shadow: inset 0 0 0 1px var(--primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #f3f7ff;
+      color: #123a63;
+    }
+
+    tr.current {
+      background: #ecfeff;
+    }
+
+    .small { font-size: 12px; color: var(--sub); }
+
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .state-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      body { padding: 12px; }
+      .controls { grid-template-columns: 1fr; }
+      .state-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="panel">
+      <h1>123. 买卖股票的最佳时机 III</h1>
+      <p class="muted">目标：最多做 <strong>2 笔交易</strong>，并且必须先卖后买。这个页面把 <strong>DP 定义 + 递推公式 + 每日更新过程</strong>可视化。</p>
+
+      <div class="controls">
+        <input id="priceInput" type="text" value="3,3,5,0,0,3,1,4" />
+        <button id="buildBtn" class="primary">生成可视化</button>
+        <button id="nextBtn">下一天</button>
+        <button id="playBtn">自动播放</button>
+      </div>
+      <p class="small">可直接替换输入，如：<code>1,2,3,4,5</code>、<code>7,6,4,3,1</code>。</p>
+    </section>
+
+    <section class="panel">
+      <h2>1) DP 状态定义（4 个状态）</h2>
+      <div class="state-grid">
+        <div class="state-card">
+          <code>dp[i][0]</code>
+          <div>第 i 天结束后，<strong>第一次买入后</strong>手里持股的最大利润</div>
+        </div>
+        <div class="state-card">
+          <code>dp[i][1]</code>
+          <div>第 i 天结束后，<strong>第一次卖出后</strong>手里不持股的最大利润</div>
+        </div>
+        <div class="state-card">
+          <code>dp[i][2]</code>
+          <div>第 i 天结束后，<strong>第二次买入后</strong>手里持股的最大利润</div>
+        </div>
+        <div class="state-card">
+          <code>dp[i][3]</code>
+          <div>第 i 天结束后，<strong>第二次卖出后</strong>手里不持股的最大利润（最终答案）</div>
+        </div>
+      </div>
+      <p class="small">初始化（i=0, price=prices[0]）：<code>dp[0][0]=-price</code>, <code>dp[0][1]=0</code>, <code>dp[0][2]=-price</code>, <code>dp[0][3]=0</code></p>
+    </section>
+
+    <section class="panel">
+      <h2>2) 状态转移公式</h2>
+      <div class="formula-box">
+        <div>dp[i][0] = max(dp[i-1][0], -prices[i])</div>
+        <div>dp[i][1] = max(dp[i-1][1], dp[i-1][0] + prices[i])</div>
+        <div>dp[i][2] = max(dp[i-1][2], dp[i-1][1] - prices[i])</div>
+        <div>dp[i][3] = max(dp[i-1][3], dp[i-1][2] + prices[i])</div>
+      </div>
+      <p class="small">含义：每个状态都在比较“<strong>今天不操作（继承昨天）</strong>”和“<strong>今天执行对应买/卖动作</strong>”。</p>
+    </section>
+
+    <section class="panel">
+      <h2>3) 今日递推代入（逐天解释）</h2>
+      <div id="dayStrip" class="day-strip"></div>
+      <div id="calcArea" style="margin-top: 10px;"></div>
+    </section>
+
+    <section class="panel">
+      <h2>4) DP 表格（全程）</h2>
+      <div style="overflow:auto;">
+        <table id="dpTable"></table>
+      </div>
+      <p id="finalAns" class="muted"></p>
+    </section>
+  </div>
+
+  <script>
+    const priceInput = document.getElementById('priceInput');
+    const buildBtn = document.getElementById('buildBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const playBtn = document.getElementById('playBtn');
+    const dayStrip = document.getElementById('dayStrip');
+    const calcArea = document.getElementById('calcArea');
+    const dpTable = document.getElementById('dpTable');
+    const finalAns = document.getElementById('finalAns');
+
+    let prices = [];
+    let dp = [];
+    let day = 0;
+    let timer = null;
+
+    function parsePrices() {
+      const arr = priceInput.value
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(Number)
+        .filter(v => Number.isFinite(v) && v >= 0);
+      return arr;
+    }
+
+    function buildDP(arr) {
+      const n = arr.length;
+      if (!n) return [];
+      const d = Array.from({ length: n }, () => Array(4).fill(0));
+
+      d[0][0] = -arr[0];
+      d[0][1] = 0;
+      d[0][2] = -arr[0];
+      d[0][3] = 0;
+
+      for (let i = 1; i < n; i++) {
+        const p = arr[i];
+        d[i][0] = Math.max(d[i - 1][0], -p);
+        d[i][1] = Math.max(d[i - 1][1], d[i - 1][0] + p);
+        d[i][2] = Math.max(d[i - 1][2], d[i - 1][1] - p);
+        d[i][3] = Math.max(d[i - 1][3], d[i - 1][2] + p);
+      }
+      return d;
+    }
+
+    function fmt(v) {
+      return (v >= 0 ? '+' : '') + v;
+    }
+
+    function renderDayStrip() {
+      dayStrip.innerHTML = '';
+      prices.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = 'day' + (i === day ? ' active' : '');
+        div.innerHTML = `<div>Day ${i}</div><strong>${p}</strong>`;
+        div.onclick = () => {
+          day = i;
+          renderAll();
+        };
+        dayStrip.appendChild(div);
+      });
+    }
+
+    function pickBadge(keep, act) {
+      if (keep >= act) {
+        return `<span class="badge win">选继承: ${fmt(keep)}</span>`;
+      }
+      return `<span class="badge lose">选操作: ${fmt(act)}</span>`;
+    }
+
+    function renderCalc() {
+      if (!prices.length) {
+        calcArea.innerHTML = '<div class="muted">请输入价格数组后点击“生成可视化”。</div>';
+        return;
+      }
+
+      if (day === 0) {
+        calcArea.innerHTML = `
+          <div class="calc">
+            Day 0, price=${prices[0]}：初始化<br/>
+            dp[0][0] = -${prices[0]} = ${fmt(dp[0][0])}<br/>
+            dp[0][1] = 0<br/>
+            dp[0][2] = -${prices[0]} = ${fmt(dp[0][2])}<br/>
+            dp[0][3] = 0
+          </div>
+        `;
+        return;
+      }
+
+      const i = day;
+      const p = prices[i];
+      const prev = dp[i - 1];
+      const cur = dp[i];
+
+      const keep0 = prev[0], act0 = -p;
+      const keep1 = prev[1], act1 = prev[0] + p;
+      const keep2 = prev[2], act2 = prev[1] - p;
+      const keep3 = prev[3], act3 = prev[2] + p;
+
+      calcArea.innerHTML = `
+        <div class="calc">
+          Day ${i}, price=${p}<br/><br/>
+          dp[${i}][0] = max(dp[${i - 1}][0], -price) = max(${fmt(keep0)}, ${fmt(act0)}) = <strong>${fmt(cur[0])}</strong>
+          ${pickBadge(keep0, act0)}<br/><br/>
+
+          dp[${i}][1] = max(dp[${i - 1}][1], dp[${i - 1}][0] + price) = max(${fmt(keep1)}, ${fmt(act1)}) = <strong>${fmt(cur[1])}</strong>
+          ${pickBadge(keep1, act1)}<br/><br/>
+
+          dp[${i}][2] = max(dp[${i - 1}][2], dp[${i - 1}][1] - price) = max(${fmt(keep2)}, ${fmt(act2)}) = <strong>${fmt(cur[2])}</strong>
+          ${pickBadge(keep2, act2)}<br/><br/>
+
+          dp[${i}][3] = max(dp[${i - 1}][3], dp[${i - 1}][2] + price) = max(${fmt(keep3)}, ${fmt(act3)}) = <strong>${fmt(cur[3])}</strong>
+          ${pickBadge(keep3, act3)}
+        </div>
+      `;
+    }
+
+    function renderTable() {
+      if (!prices.length) {
+        dpTable.innerHTML = '';
+        finalAns.textContent = '';
+        return;
+      }
+
+      let html = `
+        <thead>
+          <tr>
+            <th>i</th>
+            <th>price</th>
+            <th>dp[i][0]<br/><span class="small">1买后持股</span></th>
+            <th>dp[i][1]<br/><span class="small">1卖后空仓</span></th>
+            <th>dp[i][2]<br/><span class="small">2买后持股</span></th>
+            <th>dp[i][3]<br/><span class="small">2卖后空仓</span></th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+
+      for (let i = 0; i < prices.length; i++) {
+        html += `
+          <tr class="${i === day ? 'current' : ''}">
+            <td>${i}</td>
+            <td>${prices[i]}</td>
+            <td>${fmt(dp[i][0])}</td>
+            <td>${fmt(dp[i][1])}</td>
+            <td>${fmt(dp[i][2])}</td>
+            <td>${fmt(dp[i][3])}</td>
+          </tr>
+        `;
+      }
+
+      html += '</tbody>';
+      dpTable.innerHTML = html;
+      finalAns.innerHTML = `最终答案：<strong>maxProfit = dp[n-1][3] = ${dp[prices.length - 1][3]}</strong>`;
+    }
+
+    function renderAll() {
+      renderDayStrip();
+      renderCalc();
+      renderTable();
+    }
+
+    function rebuild() {
+      const arr = parsePrices();
+      if (!arr.length) {
+        alert('请输入至少一个非负整数价格，例如 3,3,5,0,0,3,1,4');
+        return;
+      }
+      prices = arr;
+      dp = buildDP(prices);
+      day = 0;
+      stopPlay();
+      renderAll();
+    }
+
+    function stepDay() {
+      if (!prices.length) return;
+      day = (day + 1) % prices.length;
+      renderAll();
+    }
+
+    function stopPlay() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        playBtn.textContent = '自动播放';
+      }
+    }
+
+    buildBtn.onclick = rebuild;
+    nextBtn.onclick = stepDay;
+    playBtn.onclick = () => {
+      if (timer) {
+        stopPlay();
+      } else {
+        timer = setInterval(stepDay, 1200);
+        playBtn.textContent = '暂停';
+      }
+    };
+
+    rebuild();
+  </script>
+</body>
+</html>

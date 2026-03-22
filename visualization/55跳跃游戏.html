@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>55. 跳跃游戏 - 贪心算法教学可视化</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #5f6b7a;
+      --primary: #147a73;
+      --primary-soft: #e7f7f5;
+      --accent: #f59f00;
+      --border: #dde2ea;
+      --code-bg: #0f172a;
+      --code-text: #d9e3f0;
+      --code-active: #1e293b;
+      --ok: #22863a;
+      --bad: #d1242f;
+      --shadow: 0 8px 24px rgba(17, 24, 39, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #eefaf7 0%, var(--bg) 44%, #f5f8ff 100%);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+    }
+
+    h1, h2, h3 {
+      margin: 0 0 10px;
+      line-height: 1.3;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #0f4f4a;
+    }
+
+    h2 {
+      font-size: 18px;
+      color: #144a80;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    .desc-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      width: min(100%, 420px);
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid #c9d3df;
+      font-size: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #eef2f7;
+      color: #233245;
+      transition: 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: #dde7f2;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #0f6761;
+    }
+
+    .btn-warning {
+      background: #fff5dc;
+      color: #7a4a00;
+    }
+
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .playground {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .array-visual {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 8px 0 2px;
+    }
+
+    .cell {
+      width: 58px;
+      border: 1px solid #cbd6e4;
+      border-radius: 10px;
+      background: #fafcff;
+      text-align: center;
+      padding: 6px 4px;
+      transition: 0.2s;
+    }
+
+    .cell .idx {
+      font-size: 11px;
+      color: #627084;
+    }
+
+    .cell .val {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2b3b50;
+    }
+
+    .cell.current {
+      border-color: #207bd6;
+      background: #e9f4ff;
+      transform: translateY(-2px);
+    }
+
+    .cell.reachable {
+      border-color: #45a36e;
+      background: #ecf9f0;
+    }
+
+    .cell.blocked {
+      border-color: #cc4f4f;
+      background: #fff1f1;
+    }
+
+    .state-box {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #2f3f53;
+      display: grid;
+      gap: 6px;
+    }
+
+    .state-item {
+      background: #f6f9fc;
+      border: 1px solid #dde6f0;
+      border-radius: 8px;
+      padding: 6px 9px;
+    }
+
+    .result {
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .result.ok {
+      color: var(--ok);
+    }
+
+    .result.bad {
+      color: var(--bad);
+    }
+
+    .code-panel {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 12px;
+      padding: 12px;
+      overflow: auto;
+      min-height: 360px;
+    }
+
+    .code-line {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 10px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: pre;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+    }
+
+    .code-line .ln {
+      color: #8aa1bf;
+      text-align: right;
+      user-select: none;
+    }
+
+    .code-line.active {
+      background: var(--code-active);
+      outline: 1px solid #38537a;
+    }
+
+    .explain {
+      min-height: 360px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid #b7ece5;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .explain-item {
+      border: 1px solid #dde6f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fbfdff;
+    }
+
+    .explain-item h3 {
+      font-size: 15px;
+      margin-bottom: 5px;
+      color: #1c3f66;
+    }
+
+    .step-counter {
+      font-size: 13px;
+      color: #53657b;
+    }
+
+    @media (max-width: 980px) {
+      .playground {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="card">
+      <h1>55. 跳跃游戏（贪心算法教学可视化）</h1>
+      <p>目标：通过“下一步”逐行看懂贪心算法为什么能判断是否到达终点。</p>
+    </section>
+
+    <section class="card">
+      <h2>1) 题目原文描述</h2>
+      <p>给你一个非负整数数组 <code>nums</code>，你最初位于数组的第一个下标。数组中的每个元素代表你在该位置可以跳跃的最大长度。</p>
+      <p>判断你是否能够到达最后一个下标，如果可以返回 <code>true</code>，否则返回 <code>false</code>。</p>
+      <ul class="desc-list">
+        <li>示例 1：<code>[2,3,1,1,4]</code> -> <code>true</code></li>
+        <li>示例 2：<code>[3,2,1,0,4]</code> -> <code>false</code></li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>2) 大白话版本</h2>
+      <p>把每个位置看成一块石头，数字表示“从这块石头最多能跳多远”。我们站在第 0 块石头，问：能不能一路跳到最后一块？</p>
+      <p>如果走到某个位置时，发现它已经超出我们目前最远能到的范围，那就卡住了；如果最远范围已经覆盖到最后一格，就说明成功。</p>
+    </section>
+
+    <section class="card">
+      <h2>3) 解题思路（贪心）</h2>
+      <p><strong>核心变量：</strong><code>farthest</code> 表示“目前最远能到达的下标”。</p>
+      <ul class="desc-list">
+        <li>从左到右扫描每个位置 <code>i</code>。</li>
+        <li>如果 <code>i &gt; farthest</code>，说明这个位置根本到不了，直接失败。</li>
+        <li>否则更新 <code>farthest = max(farthest, i + nums[i])</code>，看能不能把可达范围继续推远。</li>
+        <li>一旦 <code>farthest &gt;= 最后下标</code>，立刻成功，不必继续算。</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>4) 输入与控制工具栏</h2>
+      <div class="toolbar">
+        <div class="input-row">
+          <label for="numsInput"><strong>输入 nums：</strong></label>
+          <input id="numsInput" type="text" value="[2,3,1,1,4]" />
+          <button id="applyBtn" class="btn-primary">应用输入</button>
+          <button id="ex1Btn">示例1</button>
+          <button id="ex2Btn">示例2</button>
+        </div>
+        <div class="input-row">
+          <button id="prevBtn">上一步</button>
+          <button id="nextBtn" class="btn-primary">下一步</button>
+          <button id="resetBtn" class="btn-warning">重置</button>
+        </div>
+      </div>
+      <div id="inputStatus" class="status">等待操作</div>
+      <div id="stepCounter" class="step-counter"></div>
+    </section>
+
+    <section class="card">
+      <h2>执行状态可视化</h2>
+      <div id="arrayVisual" class="array-visual"></div>
+      <div id="stateBox" class="state-box"></div>
+      <div id="resultBox" class="result"></div>
+    </section>
+
+    <section class="playground">
+      <div class="card">
+        <h2>5) 代码区（左侧，当前执行行高亮）</h2>
+        <div id="codePanel" class="code-panel"></div>
+      </div>
+
+      <div class="card">
+        <h2>6) 解释区（右侧）</h2>
+        <div id="explainPanel" class="explain"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const codeLines = [
+      "function canJump(nums) {",
+      "  let farthest = 0;",
+      "  for (let i = 0; i < nums.length; i++) {",
+      "    if (i > farthest) {",
+      "      return false;",
+      "    }",
+      "    farthest = Math.max(farthest, i + nums[i]);",
+      "    if (farthest >= nums.length - 1) {",
+      "      return true;",
+      "    }",
+      "  }",
+      "  return true;",
+      "}"
+    ];
+
+    const numsInput = document.getElementById('numsInput');
+    const applyBtn = document.getElementById('applyBtn');
+    const ex1Btn = document.getElementById('ex1Btn');
+    const ex2Btn = document.getElementById('ex2Btn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const inputStatus = document.getElementById('inputStatus');
+    const stepCounter = document.getElementById('stepCounter');
+    const codePanel = document.getElementById('codePanel');
+    const explainPanel = document.getElementById('explainPanel');
+    const arrayVisual = document.getElementById('arrayVisual');
+    const stateBox = document.getElementById('stateBox');
+    const resultBox = document.getElementById('resultBox');
+
+    let currentNums = [2, 3, 1, 1, 4];
+    let trace = [];
+    let stepIndex = 0;
+
+    function renderCode() {
+      codePanel.innerHTML = '';
+      codeLines.forEach((line, idx) => {
+        const div = document.createElement('div');
+        div.className = 'code-line';
+        div.dataset.line = String(idx + 1);
+        div.innerHTML = `<span class="ln">${idx + 1}</span><span>${escapeHtml(line)}</span>`;
+        codePanel.appendChild(div);
+      });
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function parseNums(text) {
+      let arr;
+      try {
+        arr = JSON.parse(text);
+      } catch (err) {
+        throw new Error('输入格式错误，请使用类似 [2,3,1,1,4] 的 JSON 数组格式。');
+      }
+
+      if (!Array.isArray(arr) || arr.length === 0) {
+        throw new Error('请输入非空数组。');
+      }
+
+      const ok = arr.every(v => Number.isInteger(v) && v >= 0);
+      if (!ok) {
+        throw new Error('数组元素必须是非负整数。');
+      }
+
+      return arr;
+    }
+
+    function step(line, action, reason, example, state, done = false, result = null) {
+      return { line, action, reason, example, state: { ...state }, done, result };
+    }
+
+    function buildTrace(nums) {
+      const steps = [];
+      const n = nums.length;
+      let farthest = 0;
+
+      steps.push(step(
+        1,
+        '进入函数 canJump(nums)。',
+        '先明确输入，再初始化变量并开始遍历。',
+        `当前输入示例：nums = [${nums.join(',')}]。`,
+        { i: '-', farthest, currentValue: '-', candidate: '-', n },
+        false,
+        null
+      ));
+
+      steps.push(step(
+        2,
+        '初始化 farthest = 0。',
+        '起点在下标 0，一开始最远只能确认到达 0。',
+        '还没开始跳，先把“可达最远位置”设为起点。',
+        { i: '-', farthest, currentValue: '-', candidate: '-', n },
+        false,
+        null
+      ));
+
+      for (let i = 0; i < n; i++) {
+        const currentValue = nums[i];
+
+        steps.push(step(
+          3,
+          `for 循环来到 i = ${i}。`,
+          '贪心法按从左到右扫描，每次只关心“当前最远能到哪”。',
+          `正在检查第 ${i} 格，它的数字是 ${currentValue}。`,
+          { i, farthest, currentValue, candidate: '-', n },
+          false,
+          null
+        ));
+
+        steps.push(step(
+          4,
+          `检查 i > farthest 是否成立：${i} > ${farthest}。`,
+          '如果当前位置已经超过可达范围，说明路断了。',
+          i > farthest
+            ? `第 ${i} 格已经走不到，后面也更走不到。`
+            : `第 ${i} 格还在可达范围内，可以继续尝试扩展。`,
+          { i, farthest, currentValue, candidate: '-', n },
+          false,
+          null
+        ));
+
+        if (i > farthest) {
+          steps.push(step(
+            5,
+            '触发 return false。',
+            '出现不可达位置，任务立即失败。',
+            `在 nums = [${nums.join(',')}] 中，卡在下标 ${i}。`,
+            { i, farthest, currentValue, candidate: '-', n },
+            true,
+            false
+          ));
+          return steps;
+        }
+
+        const candidate = i + currentValue;
+        farthest = Math.max(farthest, candidate);
+
+        steps.push(step(
+          7,
+          `更新 farthest = max(旧值, i + nums[i]) = ${farthest}。`,
+          '把“当前能跳出的最远位置”并入全局最远可达范围。',
+          `从 i=${i} 最多跳到 ${candidate}，与旧最远比较后得到 ${farthest}。`,
+          { i, farthest, currentValue, candidate, n },
+          false,
+          null
+        ));
+
+        steps.push(step(
+          8,
+          `检查 farthest >= n - 1 是否成立：${farthest} >= ${n - 1}。`,
+          '一旦可达范围覆盖最后下标，就不必继续遍历。',
+          farthest >= n - 1
+            ? `最后下标是 ${n - 1}，已经覆盖到，直接成功。`
+            : `最后下标是 ${n - 1}，暂时还没覆盖，继续循环。`,
+          { i, farthest, currentValue, candidate, n },
+          false,
+          null
+        ));
+
+        if (farthest >= n - 1) {
+          steps.push(step(
+            9,
+            '触发 return true。',
+            '最远可达位置已到终点或超过终点，判定成功。',
+            `在当前输入中，最晚到 i=${i} 就能确认答案是 true。`,
+            { i, farthest, currentValue, candidate, n },
+            true,
+            true
+          ));
+          return steps;
+        }
+      }
+
+      steps.push(step(
+        12,
+        '循环结束，执行 return true。',
+        '能完整扫完且没遇到不可达点，说明终点可达。',
+        '这是没有提前返回时的兜底成功。',
+        { i: '结束', farthest, currentValue: '-', candidate: '-', n },
+        true,
+        true
+      ));
+
+      return steps;
+    }
+
+    function render() {
+      const currentStep = trace[stepIndex];
+      if (!currentStep) return;
+
+      document.querySelectorAll('.code-line').forEach(el => {
+        const isActive = Number(el.dataset.line) === currentStep.line;
+        el.classList.toggle('active', isActive);
+      });
+
+      explainPanel.innerHTML = `
+        <span class="tag">第 ${stepIndex + 1} 步</span>
+        <div class="explain-item">
+          <h3>在做什么</h3>
+          <p>${escapeHtml(currentStep.action)}</p>
+        </div>
+        <div class="explain-item">
+          <h3>为什么这么做</h3>
+          <p>${escapeHtml(currentStep.reason)}</p>
+        </div>
+        <div class="explain-item">
+          <h3>结合当前例子</h3>
+          <p>${escapeHtml(currentStep.example)}</p>
+        </div>
+      `;
+
+      const s = currentStep.state;
+      arrayVisual.innerHTML = '';
+      currentNums.forEach((v, idx) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+
+        if (typeof s.farthest === 'number' && idx <= s.farthest) {
+          cell.classList.add('reachable');
+        }
+
+        if (s.i === idx) {
+          cell.classList.add('current');
+        }
+
+        if (typeof s.farthest === 'number' && s.i !== '-' && s.i !== '结束' && idx === s.i && s.i > s.farthest) {
+          cell.classList.add('blocked');
+        }
+
+        cell.innerHTML = `<div class="idx">idx ${idx}</div><div class="val">${v}</div>`;
+        arrayVisual.appendChild(cell);
+      });
+
+      stateBox.innerHTML = `
+        <div class="state-item"><strong>i：</strong>${s.i}</div>
+        <div class="state-item"><strong>nums[i]：</strong>${s.currentValue}</div>
+        <div class="state-item"><strong>候选最远位置 i + nums[i]：</strong>${s.candidate}</div>
+        <div class="state-item"><strong>当前 farthest：</strong>${s.farthest}</div>
+      `;
+
+      if (currentStep.done) {
+        const ok = currentStep.result === true;
+        resultBox.className = `result ${ok ? 'ok' : 'bad'}`;
+        resultBox.textContent = `最终结果：${ok} (${ok ? '可以到达最后下标' : '无法到达最后下标'})`;
+      } else {
+        resultBox.className = 'result';
+        resultBox.textContent = '尚未结束：继续点击“下一步”查看执行过程。';
+      }
+
+      stepCounter.textContent = `步骤 ${stepIndex + 1} / ${trace.length}，当前高亮代码行：${currentStep.line}`;
+
+      prevBtn.disabled = stepIndex === 0;
+      nextBtn.disabled = stepIndex === trace.length - 1;
+    }
+
+    function rebuildAndReset(nums) {
+      currentNums = nums;
+      trace = buildTrace(currentNums);
+      stepIndex = 0;
+      render();
+    }
+
+    applyBtn.addEventListener('click', () => {
+      try {
+        const parsed = parseNums(numsInput.value.trim());
+        rebuildAndReset(parsed);
+        inputStatus.textContent = `输入已应用：nums = [${parsed.join(',')}]`;
+      } catch (err) {
+        inputStatus.textContent = err.message;
+      }
+    });
+
+    ex1Btn.addEventListener('click', () => {
+      numsInput.value = '[2,3,1,1,4]';
+      applyBtn.click();
+    });
+
+    ex2Btn.addEventListener('click', () => {
+      numsInput.value = '[3,2,1,0,4]';
+      applyBtn.click();
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (stepIndex > 0) {
+        stepIndex -= 1;
+        render();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (stepIndex < trace.length - 1) {
+        stepIndex += 1;
+        render();
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      rebuildAndReset(currentNums);
+      inputStatus.textContent = '已重置到第 1 步。';
+    });
+
+    renderCode();
+    rebuildAndReset(currentNums);
+    inputStatus.textContent = '页面已就绪：可以直接点击“下一步”。';
+  </script>
+</body>
+</html>
