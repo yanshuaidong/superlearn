@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>134. 加油站 - 题意可视化</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: rgba(255, 255, 255, 0.92);
+      --text: #1e293b;
+      --muted: #64748b;
+      --line: #dbe3ef;
+      --primary: #0f766e;
+      --primary-soft: #dff7f3;
+      --accent: #d97706;
+      --accent-soft: #fff3df;
+      --danger: #be123c;
+      --danger-soft: #ffe4ea;
+      --success: #15803d;
+      --success-soft: #e2f7e8;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #e0f2fe 0%, transparent 24%),
+        radial-gradient(circle at top right, #dcfce7 0%, transparent 28%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+    }
+
+    .page {
+      max-width: 1250px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(219, 227, 239, 0.9);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      backdrop-filter: blur(6px);
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.35;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #0f3d58;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 8px 0;
+      line-height: 1.7;
+    }
+
+    .intro {
+      display: grid;
+      gap: 10px;
+    }
+
+    .hint-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .hint {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+    }
+
+    .hint strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #0f4f4a;
+    }
+
+    .scenario {
+      display: grid;
+      gap: 14px;
+    }
+
+    .code-reading {
+      display: grid;
+      gap: 14px;
+    }
+
+    .code-reading-layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.92fr) minmax(320px, 1.08fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #123b63;
+    }
+
+    .code-box {
+      background: #0f172a;
+      color: #dbe8ff;
+      border-radius: 16px;
+      border: 1px solid #1f2e46;
+      overflow: auto;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .code-box pre {
+      margin: 0;
+      padding: 16px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre;
+    }
+
+    .story-box {
+      display: grid;
+      gap: 10px;
+    }
+
+    .story-step {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .story-step strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #0f4f4a;
+    }
+
+    .story-step p {
+      margin: 6px 0;
+      font-size: 14px;
+    }
+
+    .story-step.code-feel {
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    }
+
+    .inline-formula {
+      display: inline-block;
+      margin: 4px 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .scenario-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .badge.fail {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .array-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #eef3f9;
+      color: #1f2f43;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: #dde8f5;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .primary-btn:hover:not(:disabled) {
+      background: #0b625c;
+    }
+
+    .switches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .switches button.active {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 520px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .ring-panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 14px;
+    }
+
+    .ring {
+      position: relative;
+      width: min(100%, 480px);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+    }
+
+    .ring::before {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      border: 3px dashed #bfd3eb;
+      box-shadow: inset 0 0 0 14px rgba(228, 238, 250, 0.45);
+    }
+
+    .ring-center {
+      position: absolute;
+      inset: 37%;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #f0fdf4 0%, #eff6ff 100%);
+      border: 1px solid #d9e6f5;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 10px;
+      color: #31506f;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .station {
+      position: absolute;
+      width: 94px;
+      min-height: 94px;
+      margin-left: -47px;
+      margin-top: -47px;
+      border-radius: 18px;
+      border: 1px solid #cfdbea;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      padding: 8px 8px 10px;
+      text-align: center;
+      transition: 0.2s ease;
+    }
+
+    .station .idx {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .station .name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #19466c;
+    }
+
+    .station .meta {
+      font-size: 12px;
+      color: #42566d;
+      line-height: 1.45;
+      margin-top: 4px;
+    }
+
+    .station.start {
+      border-color: #0f766e;
+      background: var(--primary-soft);
+    }
+
+    .station.current {
+      transform: scale(1.06);
+      border-color: #2563eb;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .station.arrival {
+      border-color: #d97706;
+      background: var(--accent-soft);
+    }
+
+    .station.fail {
+      border-color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend i {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid rgba(15, 23, 42, 0.18);
+    }
+
+    .detail-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+      min-height: 82px;
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .stat .v {
+      font-size: 22px;
+      font-weight: 800;
+      color: #172554;
+    }
+
+    .formula,
+    .narration,
+    .conclusion {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .formula {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 14px;
+      color: #0f172a;
+      background: #f8fbff;
+    }
+
+    .narration {
+      line-height: 1.75;
+      min-height: 88px;
+    }
+
+    .conclusion.ok {
+      background: var(--success-soft);
+      border-color: #b6e1c1;
+      color: #14532d;
+    }
+
+    .conclusion.bad {
+      background: var(--danger-soft);
+      border-color: #f4b7c6;
+      color: #881337;
+    }
+
+    .steps {
+      display: grid;
+      gap: 10px;
+    }
+
+    .steps-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .step-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 12px;
+      transition: 0.18s ease;
+    }
+
+    .step-card.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+      transform: translateY(-2px);
+    }
+
+    .step-card.done {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+    }
+
+    .step-card.fail {
+      border-color: #fda4af;
+      background: #fff1f2;
+    }
+
+    .step-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #1e3a5f;
+    }
+
+    .step-meta {
+      font-size: 13px;
+      color: #4b5c70;
+      line-height: 1.65;
+    }
+
+    .footnote {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .code-reading-layout,
+      .hint-grid,
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 14px;
+      }
+
+      .code-reading-layout,
+      .hint-grid,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .station {
+        width: 84px;
+        min-height: 84px;
+        margin-left: -42px;
+        margin-top: -42px;
+        border-radius: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="card intro">
+      <h1>134. 加油站：把题目过程“转起来”</h1>
+      <p>这题最容易绕的地方只有一句话：<strong>每到一个站，先加上该站的油 `gas[i]`，再开去下一个站，路上消耗 `cost[i]`。</strong> 下面把示例 1 和示例 2 都做成了动态过程图，你可以一步一步看油箱怎么变化。</p>
+      <div class="hint-grid">
+        <div class="hint">
+          <strong>站点含义</strong>
+          每个站点都标了 `gas` 和 `cost`。`gas` 是你在这个站能拿到多少油，`cost` 是从这个站开到下一个站要花多少油。
+        </div>
+        <div class="hint">
+          <strong>看油箱公式</strong>
+          每一步都遵循：`到站前油量 + 当前站加油 - 开往下一站消耗 = 到达下一站后的油量`。
+        </div>
+        <div class="hint">
+          <strong>成功与失败</strong>
+          只要某一步算出来油量变成负数，就说明这条出发路线走不通；如果能回到起点且油量不为负，就说明能绕一圈。
+        </div>
+      </div>
+    </section>
+
+    <section class="card code-reading">
+      <div>
+        <h2>代码怎么跑：左边看代码，右边看“人话版”执行过程</h2>
+        <p>这里用的是你写的示例 1 推演。左边是标准代码，右边把循环里每一轮发生的事情翻译成自然语言，这样更容易理解为什么最后 `start` 会停在下标 `3`。</p>
+      </div>
+      <div class="code-reading-layout">
+        <div>
+          <div class="panel-title">左侧：算法代码</div>
+          <div class="code-box">
+            <pre><code>/**
+ * @param {number[]} gas
+ * @param {number[]} cost
+ * @return {number}
+ */
+var canCompleteCircuit = function (gas, cost) {
+  let total = 0;
+  let tank = 0;
+  let start = 0;
+
+  for (let i = 0; i &lt; gas.length; i += 1) {
+    const gain = gas[i] - cost[i];
+    total += gain;
+    tank += gain;
+
+    if (tank &lt; 0) {
+      start = i + 1;
+      tank = 0;
+    }
+  }
+
+  if (total &lt; 0) {
+    return -1;
+  }
+
+  return start;
+};</code></pre>
+          </div>
+        </div>
+        <div>
+          <div class="panel-title">右侧：示例 1 的自然语言执行过程</div>
+          <div class="story-box">
+            <div class="story-step code-feel">
+              <strong>先记住 3 个变量分别在干嘛</strong>
+              <p>`total` 表示把每个站点的净收益一个一个加起来以后，整个环路总共还剩多少油。</p>
+              <p>`tank` 表示从当前候选起点出发，走到当前下标时，当前这条路线里还剩多少油。</p>
+              <p>`start` 表示当前这一轮认为最可能成为起点的下标。</p>
+            </div>
+            <div class="story-step">
+              <strong>开始前</strong>
+              <p>输入是：`gas = [1,2,3,4,5]`，`cost = [3,4,5,1,2]`。</p>
+              <p>开始时，`total` 是 0，`tank` 是 0，`start` 是 0。</p>
+              <p>也就是说，一开始先假设可以从 0 号站出发。</p>
+            </div>
+            <div class="story-step">
+              <strong>第 1 轮：i = 0</strong>
+              <p>当前下标是 0。</p>
+              <p>先算当前站点的净收益。0 号站可以加 1 升油，从 0 号站开到 1 号站要花 3 升油，所以这个站点的净收益是负 2。</p>
+              <p>把这个结果累加到全局总油量里。原来的 `total` 是 0，加上负 2 以后，`total` 变成负 2。</p>
+              <p>再把这个结果累加到当前路径剩余油量里。原来的 `tank` 是 0，加上负 2 以后，`tank` 变成负 2。</p>
+              <p>现在 `tank` 已经小于 0，说明如果从 0 号站出发，走到当前这里就已经走不下去了。</p>
+              <p>所以 0 号站不能作为起点。</p>
+              <p>把下一个站，也就是 1 号站，设为新的候选起点，所以 `start` 变成 1。</p>
+              <p>同时把 `tank` 重置为 0，表示从新的起点重新开始计算。</p>
+            </div>
+            <div class="story-step">
+              <strong>第 2 轮：i = 1</strong>
+              <p>当前下标变成 1。</p>
+              <p>先算当前站点的净收益。1 号站可以加 2 升油，从 1 号站开到 2 号站要花 4 升油，所以这个站点的净收益也是负 2。</p>
+              <p>把负 2 累加到全局总油量里。上一轮结束后 `total` 是负 2，再加上负 2，`total` 变成负 4。</p>
+              <p>再把负 2 累加到当前路径剩余油量里。因为上一轮已经重置过，所以现在的 `tank` 是 0，0 加上负 2 以后，`tank` 变成负 2。</p>
+              <p>这说明如果把 1 号站当作起点，走到当前下标 1 时也已经走不下去了。</p>
+              <p>所以 1 号站也不能作为起点。</p>
+              <p>把下一个站，也就是 2 号站，设为新的候选起点，所以 `start` 变成 2。</p>
+              <p>再一次把 `tank` 重置为 0。</p>
+            </div>
+            <div class="story-step">
+              <strong>第 3 轮：i = 2</strong>
+              <p>当前下标变成 2。</p>
+              <p>先算当前站点的净收益。2 号站可以加 3 升油，从 2 号站开到 3 号站要花 5 升油，所以这个站点的净收益还是负 2。</p>
+              <p>把负 2 累加到全局总油量里。原来的 `total` 是负 4，再加上负 2，`total` 变成负 6。</p>
+              <p>再把负 2 累加到当前路径剩余油量里。当前的 `tank` 是 0，加上负 2 以后，`tank` 变成负 2。</p>
+              <p>现在 `tank` 又小于 0，说明从 2 号站出发，走到当前下标 2 时也已经走不下去了。</p>
+              <p>所以 2 号站还是不能作为起点。</p>
+              <p>把下一个站，也就是 3 号站，设为新的候选起点，所以 `start` 变成 3。</p>
+              <p>同时把 `tank` 重置为 0。</p>
+            </div>
+            <div class="story-step">
+              <strong>第 4 轮：i = 3</strong>
+              <p>当前下标变成 3。</p>
+              <p>先算当前站点的净收益。3 号站可以加 4 升油，从 3 号站开到 4 号站要花 1 升油，所以这个站点的净收益是正 3。</p>
+              <p>把正 3 累加到全局总油量里。原来的 `total` 是负 6，加上正 3 以后，`total` 变成负 3。</p>
+              <p>再把正 3 累加到当前路径剩余油量里。原来的 `tank` 是 0，加上正 3 以后，`tank` 变成 3。</p>
+              <p>这一次 `tank` 没有小于 0，说明从候选起点 3 出发，至少走到当前下标 3 时是走得通的。</p>
+              <p>所以这一步不用修改 `start`，`start` 继续保持为 3。</p>
+            </div>
+            <div class="story-step">
+              <strong>第 5 轮：i = 4</strong>
+              <p>当前下标变成 4。</p>
+              <p>先算当前站点的净收益。4 号站可以加 5 升油，从 4 号站开到 0 号站要花 2 升油，所以这个站点的净收益也是正 3。</p>
+              <p>把正 3 累加到全局总油量里。原来的 `total` 是负 3，加上正 3 以后，`total` 变成 0。</p>
+              <p>再把正 3 累加到当前路径剩余油量里。原来的 `tank` 是 3，加上正 3 以后，`tank` 变成 6。</p>
+              <p>现在 `tank` 依然没有小于 0，说明从候选起点 3 出发，继续走到当前下标 4 也没有问题。</p>
+              <p>循环到这里结束，`start` 还是 3。</p>
+            </div>
+            <div class="story-step code-feel">
+              <strong>循环结束后为什么返回 3</strong>
+              <p>循环结束了，先看 `total`。现在 `total` 是 0，它没有小于 0，说明整个环路从总量上看，油量是够的。</p>
+              <p>再看 `start`。前面 0 号站、1 号站、2 号站都已经被一步一步排除了，最后保留下来的候选起点是 3。</p>
+              <p>所以最终返回 3。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card scenario" id="example1"></section>
+    <section class="card scenario" id="example2"></section>
+  </div>
+
+  <script>
+    const scenarios = [
+      {
+        mountId: "example1",
+        title: "示例 1：从 3 号站出发，刚好能绕一圈",
+        badge: "答案是 3",
+        badgeFail: false,
+        gas: [1, 2, 3, 4, 5],
+        cost: [3, 4, 5, 1, 2],
+        views: [
+          {
+            key: "start-3",
+            label: "从 3 号站出发",
+            summary: "这是题目给出的正确起点。每一步之后油量都没有变成负数，所以最终能回到 3 号站。",
+            result: {
+              type: "ok",
+              text: "成功绕行一周。返回起点 3 时，最后一段也刚好够油。"
+            },
+            steps: [
+              {
+                current: 3,
+                next: 4,
+                tankBefore: 0,
+                gasGain: 4,
+                costSpend: 1,
+                tankAfter: 3,
+                currentTank: 4,
+                status: "active",
+                text: "从 3 号站出发，先加 4 升油，油箱从 0 变成 4；开去 4 号站花 1 升，到达后还剩 3 升。"
+              },
+              {
+                current: 4,
+                next: 0,
+                tankBefore: 3,
+                gasGain: 5,
+                costSpend: 2,
+                tankAfter: 6,
+                currentTank: 8,
+                status: "active",
+                text: "到 4 号站时先有 3 升，再加 5 升变成 8；开去 0 号站花 2 升，到达后剩 6 升。"
+              },
+              {
+                current: 0,
+                next: 1,
+                tankBefore: 6,
+                gasGain: 1,
+                costSpend: 3,
+                tankAfter: 4,
+                currentTank: 7,
+                status: "active",
+                text: "到 0 号站后先加 1 升，6 变 7；去 1 号站要 3 升，所以到 1 号站剩 4 升。"
+              },
+              {
+                current: 1,
+                next: 2,
+                tankBefore: 4,
+                gasGain: 2,
+                costSpend: 4,
+                tankAfter: 2,
+                currentTank: 6,
+                status: "active",
+                text: "到 1 号站先加 2 升，4 变 6；去 2 号站花 4 升，到达后剩 2 升。"
+              },
+              {
+                current: 2,
+                next: 3,
+                tankBefore: 2,
+                gasGain: 3,
+                costSpend: 5,
+                tankAfter: 0,
+                currentTank: 5,
+                status: "success",
+                text: "到 2 号站先加 3 升，2 变 5；返回 3 号站正好花掉 5 升，油箱变成 0，但成功回到了起点。"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        mountId: "example2",
+        title: "示例 2：不管从哪出发，都会在某一步断油",
+        badge: "答案是 -1",
+        badgeFail: true,
+        gas: [2, 3, 4],
+        cost: [3, 4, 3],
+        views: [
+          {
+            key: "start-0",
+            label: "尝试从 0 号站出发",
+            summary: "连第一段都走不过去。因为在 0 号站最多只能拿到 2 升，但去 1 号站需要 3 升。",
+            result: {
+              type: "bad",
+              text: "失败。刚出发就不够去下一个站。"
+            },
+            steps: [
+              {
+                current: 0,
+                next: 1,
+                tankBefore: 0,
+                gasGain: 2,
+                costSpend: 3,
+                tankAfter: -1,
+                currentTank: 2,
+                status: "fail",
+                text: "从 0 号站出发，先拿到 2 升油，但去 1 号站需要 3 升，所以还没到下一站就会差 1 升。"
+              }
+            ]
+          },
+          {
+            key: "start-1",
+            label: "尝试从 1 号站出发",
+            summary: "和从 0 号站类似，第一段也走不过去。因为在 1 号站能拿到 3 升，但去 2 号站要 4 升。",
+            result: {
+              type: "bad",
+              text: "失败。还是第一段就断油。"
+            },
+            steps: [
+              {
+                current: 1,
+                next: 2,
+                tankBefore: 0,
+                gasGain: 3,
+                costSpend: 4,
+                tankAfter: -1,
+                currentTank: 3,
+                status: "fail",
+                text: "从 1 号站出发，先有 3 升油，但下一段要花 4 升，所以依然无法到达下一个站。"
+              }
+            ]
+          },
+          {
+            key: "start-2",
+            label: "尝试从 2 号站出发",
+            summary: "这次前两段能走通，但最后回不到 2 号站，所以整体仍然失败。",
+            result: {
+              type: "bad",
+              text: "失败。虽然能走两段，但最后一段不够油返回起点。"
+            },
+            steps: [
+              {
+                current: 2,
+                next: 0,
+                tankBefore: 0,
+                gasGain: 4,
+                costSpend: 3,
+                tankAfter: 1,
+                currentTank: 4,
+                status: "active",
+                text: "从 2 号站出发，先加 4 升，再去 0 号站花 3 升，到达后剩 1 升。"
+              },
+              {
+                current: 0,
+                next: 1,
+                tankBefore: 1,
+                gasGain: 2,
+                costSpend: 3,
+                tankAfter: 0,
+                currentTank: 3,
+                status: "active",
+                text: "到 0 号站后先加 2 升，1 变 3；去 1 号站花 3 升，到达后正好剩 0 升。"
+              },
+              {
+                current: 1,
+                next: 2,
+                tankBefore: 0,
+                gasGain: 3,
+                costSpend: 4,
+                tankAfter: -1,
+                currentTank: 3,
+                status: "fail",
+                text: "到 1 号站后先加 3 升，但想回 2 号站需要 4 升，所以最后差 1 升，还是回不去。"
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    function renderScenario(config) {
+      const mount = document.getElementById(config.mountId);
+      mount.innerHTML = `
+        <div class="scenario-head">
+          <div>
+            <h2>${config.title}</h2>
+            <div class="array-row">
+              <span><strong>gas</strong> = [${config.gas.join(", ")}]</span>
+              <span><strong>cost</strong> = [${config.cost.join(", ")}]</span>
+            </div>
+          </div>
+          <div class="badge ${config.badgeFail ? "fail" : ""}">${config.badge}</div>
+        </div>
+        <div class="switches"></div>
+        <div class="toolbar">
+          <button data-act="prev">上一步</button>
+          <button data-act="next" class="primary-btn">下一步</button>
+          <button data-act="play">自动播放</button>
+          <button data-act="reset">重置</button>
+        </div>
+        <div class="layout">
+          <div class="ring-panel">
+            <div class="ring"></div>
+            <div class="legend">
+              <span><i style="background:#dff7f3"></i>起点</span>
+              <span><i style="background:#eff6ff"></i>当前所在站</span>
+              <span><i style="background:#fff3df"></i>即将到达的站</span>
+              <span><i style="background:#ffe4ea"></i>失败发生处</span>
+            </div>
+          </div>
+          <div class="detail-panel">
+            <div class="stats">
+              <div class="stat"><div class="k">当前站</div><div class="v" data-field="current">-</div></div>
+              <div class="stat"><div class="k">下一站</div><div class="v" data-field="next">-</div></div>
+              <div class="stat"><div class="k">加油后油量</div><div class="v" data-field="afterGas">-</div></div>
+              <div class="stat"><div class="k">到站后油量</div><div class="v" data-field="afterMove">-</div></div>
+            </div>
+            <div class="formula" data-field="formula"></div>
+            <div class="narration" data-field="narration"></div>
+            <div class="conclusion" data-field="conclusion"></div>
+          </div>
+        </div>
+        <div class="steps">
+          <div class="steps-head">
+            <h3>过程卡片</h3>
+            <div class="footnote" data-field="summary"></div>
+          </div>
+          <div class="timeline"></div>
+        </div>
+      `;
+
+      const state = {
+        viewIndex: 0,
+        stepIndex: 0,
+        timer: null,
+      };
+
+      const els = {
+        switches: mount.querySelector(".switches"),
+        prevBtn: mount.querySelector('[data-act="prev"]'),
+        nextBtn: mount.querySelector('[data-act="next"]'),
+        playBtn: mount.querySelector('[data-act="play"]'),
+        resetBtn: mount.querySelector('[data-act="reset"]'),
+        ring: mount.querySelector(".ring"),
+        timeline: mount.querySelector(".timeline"),
+        summary: mount.querySelector('[data-field="summary"]'),
+        current: mount.querySelector('[data-field="current"]'),
+        next: mount.querySelector('[data-field="next"]'),
+        afterGas: mount.querySelector('[data-field="afterGas"]'),
+        afterMove: mount.querySelector('[data-field="afterMove"]'),
+        formula: mount.querySelector('[data-field="formula"]'),
+        narration: mount.querySelector('[data-field="narration"]'),
+        conclusion: mount.querySelector('[data-field="conclusion"]'),
+      };
+
+      function stopAuto() {
+        if (state.timer) {
+          clearInterval(state.timer);
+          state.timer = null;
+          els.playBtn.textContent = "自动播放";
+        }
+      }
+
+      function currentView() {
+        return config.views[state.viewIndex];
+      }
+
+      function renderSwitches() {
+        els.switches.innerHTML = "";
+        config.views.forEach((view, index) => {
+          const btn = document.createElement("button");
+          btn.textContent = view.label;
+          btn.className = index === state.viewIndex ? "active" : "";
+          btn.addEventListener("click", () => {
+            stopAuto();
+            state.viewIndex = index;
+            state.stepIndex = 0;
+            update();
+          });
+          els.switches.appendChild(btn);
+        });
+      }
+
+      function createCenter(view, step, isFinished) {
+        const center = document.createElement("div");
+        center.className = "ring-center";
+        center.innerHTML = `
+          <div>
+            <strong>${view.label}</strong><br />
+            当前第 ${Math.min(state.stepIndex + 1, view.steps.length)} 步 / ${view.steps.length} 步<br />
+            ${isFinished ? "已经看完整个过程" : "跟着箭头看油量变化"}
+          </div>
+        `;
+        return center;
+      }
+
+      function renderRing() {
+        const view = currentView();
+        const step = view.steps[Math.min(state.stepIndex, view.steps.length - 1)];
+        const n = config.gas.length;
+        const start = view.steps[0].current;
+        const isFinished = state.stepIndex >= view.steps.length - 1;
+
+        els.ring.innerHTML = "";
+        els.ring.appendChild(createCenter(view, step, isFinished));
+
+        const rectSize = els.ring.clientWidth;
+        const cx = rectSize / 2;
+        const cy = rectSize / 2;
+        const radius = rectSize * 0.36;
+
+        for (let i = 0; i < n; i += 1) {
+          const angle = (-90 + (360 / n) * i) * Math.PI / 180;
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          const station = document.createElement("div");
+          station.className = "station";
+
+          if (i === start) {
+            station.classList.add("start");
+          }
+          if (i === step.current) {
+            station.classList.add("current");
+          }
+          if (i === step.next) {
+            station.classList.add(step.status === "fail" ? "fail" : "arrival");
+          }
+
+          station.style.left = `${x}px`;
+          station.style.top = `${y}px`;
+          station.innerHTML = `
+            <div class="idx">站点索引</div>
+            <div class="name">${i}</div>
+            <div class="meta">gas = ${config.gas[i]}<br />cost = ${config.cost[i]}</div>
+          `;
+          els.ring.appendChild(station);
+        }
+      }
+
+      function renderTimeline() {
+        const view = currentView();
+        els.timeline.innerHTML = "";
+
+        view.steps.forEach((step, index) => {
+          const card = document.createElement("div");
+          card.className = "step-card";
+          if (index < state.stepIndex) {
+            card.classList.add("done");
+          }
+          if (index === state.stepIndex) {
+            card.classList.add("active");
+          }
+          if (step.status === "fail") {
+            card.classList.add("fail");
+          }
+
+          card.innerHTML = `
+            <div class="step-title">第 ${index + 1} 步：${step.current} -> ${step.next}</div>
+            <div class="step-meta">
+              到站前：${step.tankBefore} 升<br />
+              加油后：${step.currentTank} 升<br />
+              开过去后：${step.tankAfter} 升
+            </div>
+          `;
+
+          card.addEventListener("click", () => {
+            stopAuto();
+            state.stepIndex = index;
+            update();
+          });
+          els.timeline.appendChild(card);
+        });
+      }
+
+      function renderText() {
+        const view = currentView();
+        const step = view.steps[state.stepIndex];
+        const afterGas = step.tankBefore + step.gasGain;
+
+        els.summary.textContent = view.summary;
+        els.current.textContent = step.current;
+        els.next.textContent = step.next;
+        els.afterGas.textContent = `${afterGas} 升`;
+        els.afterMove.textContent = `${step.tankAfter} 升`;
+        els.formula.textContent = `${step.tankBefore} + ${step.gasGain} - ${step.costSpend} = ${step.tankAfter}`;
+        els.narration.textContent = step.text;
+        els.conclusion.textContent = view.result.text;
+        els.conclusion.className = `conclusion ${view.result.type}`;
+      }
+
+      function updateButtons() {
+        const view = currentView();
+        els.prevBtn.disabled = state.stepIndex === 0;
+        els.nextBtn.disabled = state.stepIndex === view.steps.length - 1;
+      }
+
+      function update() {
+        renderSwitches();
+        renderRing();
+        renderTimeline();
+        renderText();
+        updateButtons();
+      }
+
+      els.prevBtn.addEventListener("click", () => {
+        stopAuto();
+        if (state.stepIndex > 0) {
+          state.stepIndex -= 1;
+          update();
+        }
+      });
+
+      els.nextBtn.addEventListener("click", () => {
+        stopAuto();
+        const view = currentView();
+        if (state.stepIndex < view.steps.length - 1) {
+          state.stepIndex += 1;
+          update();
+        }
+      });
+
+      els.resetBtn.addEventListener("click", () => {
+        stopAuto();
+        state.stepIndex = 0;
+        update();
+      });
+
+      els.playBtn.addEventListener("click", () => {
+        const view = currentView();
+        if (state.timer) {
+          stopAuto();
+          return;
+        }
+
+        els.playBtn.textContent = "暂停播放";
+        state.timer = setInterval(() => {
+          if (state.stepIndex >= view.steps.length - 1) {
+            stopAuto();
+            return;
+          }
+          state.stepIndex += 1;
+          update();
+        }, 1400);
+      });
+
+      window.addEventListener("resize", renderRing);
+      update();
+    }
+
+    scenarios.forEach(renderScenario);
+  </script>
+</body>
+</html>
