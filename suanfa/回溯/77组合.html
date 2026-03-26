@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>77. 组合 - 回溯 DFS 交互可视化</title>
+    <style>
+      :root {
+        --bg: #f6efe5;
+        --card: #fffaf2;
+        --ink: #1c2229;
+        --muted: #6f7a85;
+        --line: #d8c7ad;
+        --accent: #cb5f2a;
+        --ok: #1f7a40;
+        --covered: #2b5eaa;
+        --unknown: #9aa4af;
+        --shadow: 0 10px 24px rgba(65, 38, 9, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top left, #fbeed9, var(--bg));
+        color: var(--ink);
+        font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+      }
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        letter-spacing: 0.2px;
+      }
+
+      .intro {
+        margin: 0 0 18px;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .exampleGroup {
+        display: inline-flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        border-radius: 10px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        user-select: none;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow);
+      }
+
+      button.primary {
+        background: var(--accent);
+        border-color: #9e471e;
+        color: #fff;
+      }
+
+      button.active {
+        background: #1f2e33;
+        border-color: #1f2e33;
+        color: #fff;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .speed {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .card h2 {
+        margin: 0;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.52);
+      }
+
+      .tree-box {
+        padding: 12px;
+      }
+
+      .tree-canvas {
+        position: relative;
+        width: 100%;
+        min-height: 560px;
+        border-radius: 12px;
+        border: 1px dashed #d9c9b2;
+        background: linear-gradient(180deg, #fffdfa 0%, #fff6eb 100%);
+        overflow: hidden;
+      }
+
+      .tree-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .node {
+        position: absolute;
+        width: 44px;
+        height: 44px;
+        margin-left: -22px;
+        margin-top: -22px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        border: 2px solid rgba(31, 46, 51, 0.18);
+        background: #2b5eaa;
+        color: #fff;
+        z-index: 1;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+        font-size: 12.5px;
+        padding: 0 2px;
+        text-align: center;
+      }
+
+      .node.leaf {
+        background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.25), transparent 45%), var(--accent);
+        border-color: rgba(203, 95, 42, 0.3);
+      }
+
+      .node.active {
+        transform: scale(1.12);
+        border-color: #ffd59d;
+        box-shadow: 0 0 0 4px rgba(255, 213, 157, 0.35), 0 8px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .legend {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        padding: 0 2px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border: 1px solid rgba(216, 199, 173, 0.75);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.55);
+        gap: 6px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--covered);
+        display: inline-block;
+      }
+
+      .dot.leaf {
+        background: var(--accent);
+      }
+
+      .timeline {
+        padding: 12px;
+      }
+
+      .statRow {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        color: var(--muted);
+      }
+
+      .stat {
+        border: 1px solid rgba(216, 199, 173, 0.75);
+        border-radius: 12px;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.55);
+        display: flex;
+        gap: 10px;
+        align-items: baseline;
+      }
+
+      .stat .k {
+        font-weight: 800;
+        color: #3b464f;
+        font-size: 13px;
+      }
+
+      .stat .v {
+        font-weight: 900;
+        color: #1f2e33;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .progressRow {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+      }
+
+      .message {
+        margin: 0 0 10px;
+        color: #1f2e33;
+        font-size: 14px;
+        line-height: 1.5;
+        border-left: 4px solid rgba(203, 95, 42, 0.6);
+        padding-left: 10px;
+      }
+
+      .steps {
+        max-height: 420px;
+        overflow: auto;
+        border: 1px solid rgba(216, 199, 173, 0.45);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.35);
+      }
+
+      .step {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(216, 199, 173, 0.35);
+        font-size: 13px;
+        color: #2b333a;
+        line-height: 1.4;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .step:last-child {
+        border-bottom: none;
+      }
+
+      .step:hover {
+        background: rgba(203, 95, 42, 0.06);
+      }
+
+      .step.active {
+        background: rgba(203, 95, 42, 0.12);
+        outline: 2px solid rgba(203, 95, 42, 0.28);
+        outline-offset: -2px;
+        font-weight: 700;
+      }
+
+      .footerCard {
+        margin-top: 16px;
+      }
+
+      .found {
+        padding: 12px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        min-height: 58px;
+      }
+
+      .chip {
+        border: 1px solid rgba(216, 199, 173, 0.75);
+        background: rgba(255, 255, 255, 0.65);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-weight: 700;
+        color: #2b333a;
+        font-size: 13px;
+      }
+
+      .hint {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <h1>77. 组合 - 回溯 DFS 交互可视化</h1>
+      <p class="intro">
+        你可以在左侧看到每个 <code>path</code> 状态形成的 DFS 树，在右侧同步浏览 <code>try / push / found / pop</code> 的真实执行顺序。
+        这里固定了 3 个例子，覆盖：剪枝较明显、基例（一步完成）、更深层递归。
+      </p>
+
+      <div class="toolbar">
+        <div class="exampleGroup">
+          <button id="example1Btn" class="active" type="button">例子 1：n=4, k=2</button>
+          <button id="example2Btn" type="button">例子 2：n=1, k=1</button>
+          <button id="example3Btn" type="button">例子 3：n=5, k=3</button>
+        </div>
+        <div class="speed">
+          <label for="speedRange">播放速度</label>
+          <select id="speedRange" style="border-radius:10px;padding:6px 10px;">
+            <option value="4">慢</option>
+            <option value="3" selected>正常</option>
+            <option value="2">快</option>
+            <option value="1">更快</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>DFS 树（按 path 状态）</h2>
+          <div class="tree-box">
+            <div id="treeCanvas" class="tree-canvas">
+              <svg id="treeSvg" class="tree-svg"></svg>
+              <div id="treeNodes"></div>
+            </div>
+            <div class="legend">
+              <span><i class="dot"></i>中间状态</span>
+              <span><i class="dot leaf"></i>叶子（path.length === k）</span>
+              <span><i class="dot" style="background:#ffd59d"></i>当前步骤高亮</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>步骤时间线</h2>
+          <div class="timeline">
+            <div class="statRow">
+              <div class="stat">
+                <div class="k">步骤</div>
+                <div id="stepNum" class="v">0/0</div>
+              </div>
+              <div class="stat">
+                <div class="k">当前高亮</div>
+                <div id="activeInfo" class="v">-</div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <button id="prevBtn" type="button">上一步</button>
+              <button id="playBtn" class="primary" type="button">自动播放</button>
+              <button id="nextBtn" type="button">下一步</button>
+              <button id="resetBtn" type="button">重置</button>
+            </div>
+
+            <div class="progressRow">
+              <input id="progress" type="range" min="0" max="0" value="0" step="1" />
+            </div>
+
+            <div id="message" class="message">-</div>
+
+            <div id="stepsList" class="steps"></div>
+
+            <div class="hint">
+              小提示：你也可以直接点击右侧某一步，立即跳转到对应的树节点高亮位置。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card footerCard">
+        <h2>已找到组合（res）</h2>
+        <div id="foundList" class="found"></div>
+      </div>
+    </div>
+
+    <script>
+      const EXAMPLES = {
+        example1: { n: 4, k: 2, label: "n=4, k=2" },
+        example2: { n: 1, k: 1, label: "n=1, k=1" },
+        example3: { n: 5, k: 3, label: "n=5, k=3" },
+      };
+
+      const dom = {
+        example1Btn: document.getElementById("example1Btn"),
+        example2Btn: document.getElementById("example2Btn"),
+        example3Btn: document.getElementById("example3Btn"),
+        speedRange: document.getElementById("speedRange"),
+        prevBtn: document.getElementById("prevBtn"),
+        playBtn: document.getElementById("playBtn"),
+        nextBtn: document.getElementById("nextBtn"),
+        resetBtn: document.getElementById("resetBtn"),
+        progress: document.getElementById("progress"),
+        message: document.getElementById("message"),
+        stepNum: document.getElementById("stepNum"),
+        activeInfo: document.getElementById("activeInfo"),
+        stepsList: document.getElementById("stepsList"),
+        treeSvg: document.getElementById("treeSvg"),
+        treeNodes: document.getElementById("treeNodes"),
+        foundList: document.getElementById("foundList"),
+      };
+
+      let currentExampleKey = "example1";
+      let runtime = null;
+      let timer = null;
+      let stepIndex = 0; // 当前停在 runtime.events[stepIndex] 上
+
+      function stopPlay() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        dom.playBtn.textContent = "自动播放";
+      }
+
+      function startPlay() {
+        stopPlay();
+        dom.playBtn.textContent = "暂停";
+        const speedMap = {
+          "1": 280,
+          "2": 520,
+          "3": 850,
+          "4": 1250,
+        };
+        const delay = speedMap[String(dom.speedRange.value)] || 850;
+        timer = setInterval(() => {
+          if (!runtime) return;
+          if (stepIndex >= runtime.events.length - 1) {
+            stopPlay();
+            return;
+          }
+          stepIndex += 1;
+          render();
+        }, delay);
+      }
+
+      function nodeId(path) {
+        if (path.length === 0) return "root";
+        return "p_" + path.join("_");
+      }
+
+      function formatPath(path) {
+        if (path.length === 0) return "[]";
+        return "[" + path.join(",") + "]";
+      }
+
+      function formatCombo(combo) {
+        return "[" + combo.join(",") + "]";
+      }
+
+      function lexComparePath(a, b) {
+        const m = Math.min(a.length, b.length);
+        for (let i = 0; i < m; i++) {
+          if (a[i] !== b[i]) return a[i] - b[i];
+        }
+        return a.length - b.length;
+      }
+
+      function generateRuntime(n, k) {
+        const nodesMap = new Map(); // id -> {id, path, depth}
+        const edgesSet = new Set(); // "from->to"
+        const events = [];
+        const path = [];
+
+        function ensureNode(p) {
+          const id = nodeId(p);
+          if (!nodesMap.has(id)) {
+            nodesMap.set(id, { id, path: [...p], depth: p.length });
+          }
+          return id;
+        }
+
+        ensureNode([]); // root
+
+        events.push({
+          type: "start",
+          highlightNodeId: "root",
+          message: `开始：backtrack(1)，path=[]，目标选 k=${k} 个数`,
+          combo: null,
+        });
+
+        function backtrack(start) {
+          if (path.length === k) {
+            const id = nodeId(path);
+            ensureNode(path);
+            events.push({
+              type: "found",
+              highlightNodeId: id,
+              combo: [...path],
+              message: `找到组合 ${formatCombo(path)}`,
+            });
+            return;
+          }
+
+          const remaining = k - path.length;
+          const upper = n - remaining + 1; // 剪枝上界（与你的代码一致）
+
+          for (let i = start; i <= upper; i++) {
+            const parentId = nodeId(path);
+            const childPath = [...path, i];
+            const childId = nodeId(childPath);
+            ensureNode(childPath);
+            edgesSet.add(parentId + "->" + childId);
+
+            events.push({
+              type: "try",
+              i,
+              start,
+              highlightNodeId: childId,
+              message: `尝试选 i=${i}（当前 start=${start}，下一层 start=${i + 1}）`,
+            });
+
+            path.push(i);
+            events.push({
+              type: "push",
+              i,
+              highlightNodeId: childId,
+              message: `push(${i})，path=${formatPath(path)}`,
+            });
+
+            backtrack(i + 1);
+
+            path.pop();
+            events.push({
+              type: "pop",
+              highlightNodeId: nodeId(path),
+              message: `pop() 回溯到 path=${formatPath(path)}`,
+            });
+          }
+        }
+
+        backtrack(1);
+
+        const nodes = Array.from(nodesMap.values());
+        const edges = Array.from(edgesSet).map((s) => {
+          const [from, to] = s.split("->");
+          return { from, to };
+        });
+
+        // 计算布局：按 depth 分层，横向均匀分布，纵向等间距
+        const maxDepth = Math.max(...nodes.map((x) => x.depth), 0);
+        const grouped = Array.from({ length: maxDepth + 1 }, () => []);
+        for (const nd of nodes) grouped[nd.depth].push(nd);
+        for (const g of grouped) {
+          g.sort((a, b) => lexComparePath(a.path, b.path));
+        }
+
+        const pos = {};
+        const left = 8;
+        const right = 92;
+        const top = 10;
+        const bottom = 90;
+        for (let d = 0; d <= maxDepth; d++) {
+          const g = grouped[d];
+          const m = g.length;
+          if (m === 0) continue;
+          const y = maxDepth === 0 ? 50 : top + (bottom - top) * (d / maxDepth);
+          for (let idx = 0; idx < m; idx++) {
+            let x;
+            if (m === 1) x = (left + right) / 2;
+            else x = left + ((right - left) * idx) / (m - 1);
+            pos[g[idx].id] = { x, y };
+          }
+        }
+
+        return {
+          n,
+          k,
+          nodes,
+          edges,
+          events,
+          layout: { pos, maxDepth },
+        };
+      }
+
+      function buildStepsList() {
+        dom.stepsList.innerHTML = "";
+        runtime.events.forEach((e, idx) => {
+          const el = document.createElement("div");
+          el.className = "step";
+          el.dataset.idx = String(idx);
+          el.textContent = `${idx + 1}. ${e.message || "-"}`;
+          el.addEventListener("click", () => {
+            stopPlay();
+            stepIndex = idx;
+            render();
+          });
+          dom.stepsList.appendChild(el);
+        });
+      }
+
+      function renderTree(activeNodeId) {
+        // 清空
+        dom.treeNodes.querySelectorAll(".node").forEach((x) => x.remove());
+        dom.treeSvg.innerHTML = "";
+
+        // 画边
+        for (const ed of runtime.edges) {
+          const p1 = runtime.layout.pos[ed.from];
+          const p2 = runtime.layout.pos[ed.to];
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", `${p1.x}%`);
+          line.setAttribute("y1", `${p1.y}%`);
+          line.setAttribute("x2", `${p2.x}%`);
+          line.setAttribute("y2", `${p2.y}%`);
+          line.setAttribute("stroke", "#bda98a");
+          line.setAttribute("stroke-width", "2");
+          line.setAttribute("stroke-linecap", "round");
+          dom.treeSvg.appendChild(line);
+        }
+
+        // 画节点
+        for (const nd of runtime.nodes) {
+          const p = runtime.layout.pos[nd.id];
+          const el = document.createElement("div");
+          const isLeaf = nd.depth === runtime.k;
+          el.className = "node" + (isLeaf ? " leaf" : "") + (nd.id === activeNodeId ? " active" : "");
+          el.style.left = `${p.x}%`;
+          el.style.top = `${p.y}%`;
+          el.textContent = nd.depth === 0 ? "root" : nd.path.join(",");
+          el.title = `${nd.id} depth=${nd.depth} path=${formatPath(nd.path)}`;
+          dom.treeNodes.appendChild(el);
+        }
+      }
+
+      function renderResults() {
+        const found = [];
+        for (let i = 0; i <= stepIndex; i++) {
+          const e = runtime.events[i];
+          if (e && e.type === "found" && Array.isArray(e.combo)) {
+            found.push(e.combo);
+          }
+        }
+
+        dom.foundList.innerHTML = "";
+        if (found.length === 0) {
+          const empty = document.createElement("div");
+          empty.style.color = "#6f7a85";
+          empty.textContent = "（还没有找到组合）";
+          dom.foundList.appendChild(empty);
+          return;
+        }
+
+        found.forEach((combo) => {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.textContent = formatCombo(combo);
+          dom.foundList.appendChild(chip);
+        });
+      }
+
+      function render() {
+        const e = runtime.events[stepIndex] || null;
+        const activeNodeId = e ? e.highlightNodeId : "root";
+
+        // 更新步骤高亮
+        dom.stepsList.querySelectorAll(".step").forEach((el) => {
+          el.classList.toggle("active", Number(el.dataset.idx) === stepIndex);
+        });
+
+        // 更新树 + 文案
+        renderTree(activeNodeId);
+
+        dom.message.textContent = e?.message || "-";
+        const nd = runtime.nodes.find((x) => x.id === activeNodeId);
+        dom.activeInfo.textContent = nd ? formatPath(nd.path) : "-";
+
+        dom.stepNum.textContent = `${stepIndex + 1}/${runtime.events.length}`;
+
+        dom.progress.max = Math.max(runtime.events.length - 1, 0);
+        dom.progress.value = String(stepIndex);
+
+        renderResults();
+      }
+
+      function loadExample(key) {
+        stopPlay();
+        currentExampleKey = key;
+
+        dom.example1Btn.classList.toggle("active", key === "example1");
+        dom.example2Btn.classList.toggle("active", key === "example2");
+        dom.example3Btn.classList.toggle("active", key === "example3");
+
+        const { n, k } = EXAMPLES[key];
+        runtime = generateRuntime(n, k);
+        stepIndex = 0;
+
+        // 构建右侧步骤列表
+        buildStepsList();
+        render();
+      }
+
+      // controls
+      dom.prevBtn.addEventListener("click", () => {
+        stopPlay();
+        stepIndex = Math.max(0, stepIndex - 1);
+        render();
+      });
+
+      dom.nextBtn.addEventListener("click", () => {
+        stopPlay();
+        stepIndex = Math.min(runtime.events.length - 1, stepIndex + 1);
+        render();
+      });
+
+      dom.resetBtn.addEventListener("click", () => {
+        stopPlay();
+        stepIndex = 0;
+        render();
+      });
+
+      dom.playBtn.addEventListener("click", () => {
+        if (timer) stopPlay();
+        else startPlay();
+      });
+
+      dom.progress.addEventListener("input", (ev) => {
+        stopPlay();
+        stepIndex = Number(ev.target.value);
+        render();
+      });
+
+      dom.speedRange.addEventListener("change", () => {
+        if (timer) startPlay();
+      });
+
+      dom.example1Btn.addEventListener("click", () => loadExample("example1"));
+      dom.example2Btn.addEventListener("click", () => loadExample("example2"));
+      dom.example3Btn.addEventListener("click", () => loadExample("example3"));
+
+      // init
+      loadExample("example1");
+    </script>
+  </body>
+</html>
