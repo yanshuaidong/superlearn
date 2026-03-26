@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>968. 监控二叉树 - 交互动画</title>
+  <style>
+    :root {
+      --bg: #f6efe5;
+      --card: #fffaf2;
+      --ink: #1c2229;
+      --muted: #6f7a85;
+      --line: #d8c7ad;
+      --accent: #cb5f2a;
+      --accent-2: #0c7c79;
+      --danger: #b6423e;
+      --ok: #1f7a40;
+      --covered: #2b5eaa;
+      --unknown: #9aa4af;
+      --shadow: 0 10px 24px rgba(65, 38, 9, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #fbeed9, var(--bg));
+      color: var(--ink);
+      font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 32px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 28px;
+      letter-spacing: 0.3px;
+    }
+
+    .intro {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: #9e471e;
+      color: #fff;
+    }
+
+    button.active {
+      background: #1f2e33;
+      border-color: #1f2e33;
+      color: #fff;
+    }
+
+    .speed {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1.45fr 1fr;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.52);
+    }
+
+    .tree-box {
+      position: relative;
+      min-height: 540px;
+      padding: 12px;
+    }
+
+    .tree-canvas {
+      position: relative;
+      width: 100%;
+      min-height: 470px;
+      border-radius: 12px;
+      border: 1px dashed #d9c9b2;
+      background: linear-gradient(180deg, #fffdfa 0%, #fff6eb 100%);
+      overflow: hidden;
+    }
+
+    .tree-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .node {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      margin-left: -20px;
+      margin-top: -20px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      border: 2px solid transparent;
+      color: #fff;
+      z-index: 1;
+      transition: all 0.25s ease;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16);
+      font-size: 14px;
+    }
+
+    .node.unknown { background: var(--unknown); }
+    .node.uncovered { background: var(--danger); }
+    .node.camera { background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.25), transparent 45%), var(--ok); }
+    .node.covered { background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.25), transparent 45%), var(--covered); }
+
+    .node.empty {
+      opacity: 0.82;
+      border-style: dashed;
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .node.active {
+      transform: scale(1.12);
+      border-color: #ffd59d;
+      box-shadow: 0 0 0 4px rgba(255, 213, 157, 0.4), 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .node::after {
+      content: attr(data-status);
+      position: absolute;
+      top: -18px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #4f5b67;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid #dcc6a8;
+      border-radius: 8px;
+      padding: 1px 6px;
+    }
+
+    .node.empty::after { display: none; }
+    .node.empty.active::after { display: block; }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding: 0 2px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border: 1px solid rgba(216, 199, 173, 0.75);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.55);
+      gap: 6px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .right-pane {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 16px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      background: #fff;
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .stat .v {
+      margin-top: 4px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .message {
+      padding: 12px;
+      line-height: 1.65;
+      min-height: 80px;
+      color: #2a3340;
+    }
+
+    .code {
+      margin: 0;
+      list-style: none;
+      padding: 8px 0;
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      counter-reset: line;
+      max-height: 340px;
+      overflow: auto;
+    }
+
+    .code li {
+      white-space: pre;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 8px;
+      padding: 1px 10px;
+      border-left: 3px solid transparent;
+    }
+
+    .code li::before {
+      counter-increment: line;
+      content: counter(line);
+      color: #a59b8f;
+      text-align: right;
+    }
+
+    .code li.hl {
+      background: #ffe6c9;
+      border-left-color: var(--accent);
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .speed {
+        margin-left: 0;
+      }
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>968. 监控二叉树 - 代码过程交互动画</h1>
+    <p class="intro">
+      按真实后序遍历顺序动态演示：先递归左右孩子，再根据 <code>leftState/rightState</code> 决定当前节点返回 <code>0/1/2</code>。
+      你可以手动逐步、拖动进度条、或自动播放。
+    </p>
+
+    <div class="toolbar">
+      <button id="example1" class="active">示例 1（结果 1）</button>
+      <button id="example2">示例 2（结果 2）</button>
+      <button id="prev">上一步</button>
+      <button id="next" class="primary">下一步</button>
+      <button id="play">自动播放</button>
+      <button id="reset">重置</button>
+      <div class="speed">
+        <label for="speedRange">播放速度</label>
+        <input id="speedRange" type="range" min="1" max="4" value="2" />
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>树结构 + 节点状态</h2>
+        <div class="tree-box">
+          <div id="tree" class="tree-canvas">
+            <svg id="treeSvg" class="tree-svg"></svg>
+          </div>
+          <div class="legend">
+            <span><i class="dot" style="background:#9aa4af"></i>未知</span>
+            <span><i class="dot" style="background:#b6423e"></i>状态 0：未监控</span>
+            <span><i class="dot" style="background:#1f7a40"></i>状态 1：有摄像头</span>
+            <span><i class="dot" style="background:#2b5eaa"></i>状态 2：已监控无摄像头</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="right-pane">
+        <section class="card">
+          <h2>运行变量</h2>
+          <div class="stats">
+            <div class="stat"><div class="k">cameraCount</div><div id="cameraCount" class="v">0</div></div>
+            <div class="stat"><div class="k">当前节点</div><div id="activeNode" class="v">-</div></div>
+            <div class="stat"><div class="k">rootState</div><div id="rootState" class="v">-</div></div>
+            <div class="stat"><div class="k">步骤</div><div id="stepNum" class="v">0/0</div></div>
+          </div>
+          <div id="message" class="message">点击“下一步”开始演示。</div>
+          <div class="progress">
+            <input id="progress" type="range" min="0" max="0" value="0" />
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>代码行高亮</h2>
+          <ol id="code" class="code"></ol>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const CODE_LINES = [
+      "function minCameraCover(root) {",
+      "  let cameraCount = 0;",
+      "  function dfs(node) {",
+      "    if (node === null) return 2;",
+      "    const leftState = dfs(node.left);",
+      "    const rightState = dfs(node.right);",
+      "    if (leftState === 0 || rightState === 0) { cameraCount++; return 1; }",
+      "    if (leftState === 1 || rightState === 1) return 2;",
+      "    return 0;",
+      "  }",
+      "  const rootState = dfs(root);",
+      "  if (rootState === 0) cameraCount++;",
+      "  return cameraCount;",
+      "}"
+    ];
+
+    const EXAMPLES = {
+      example1: {
+        title: "示例 1",
+        arr: [0, 0, null, 0, 0]
+      },
+      example2: {
+        title: "示例 2",
+        arr: [0, 0, null, 0, null, 0, null, null, 0]
+      }
+    };
+
+    function buildTree(arr) {
+      if (!arr.length || arr[0] == null) return null;
+      const depthOfIdx = idx => Math.floor(Math.log2(idx + 1));
+
+      // 深度到最底层真实节点往下“补 1 层空节点”，对应 dfs(null) 的返回状态 2。
+      let maxRealDepth = 0;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] == null) continue;
+        maxRealDepth = Math.max(maxRealDepth, depthOfIdx(i));
+      }
+      const maxDepth = maxRealDepth + 1;
+
+      const nodes = new Map(); // idx -> node(real/empty)
+
+      for (let i = 0; i < arr.length; i++) {
+        const v = arr[i];
+        if (v == null) continue;
+        nodes.set(i, { val: v, left: null, right: null, id: "", idx: i, empty: false });
+      }
+
+      function getOrCreateEmpty(idx) {
+        if (nodes.has(idx)) return nodes.get(idx);
+        if (depthOfIdx(idx) > maxDepth) return null;
+        const emptyNode = { val: null, left: null, right: null, id: "", idx, empty: true };
+        nodes.set(idx, emptyNode);
+        return emptyNode;
+      }
+
+      // 只从真实节点挂接它们的左右孩子；空节点不再继续扩展，保证不会无限膨胀。
+      for (const [idx, node] of nodes.entries()) {
+        if (node.empty) continue;
+        const li = idx * 2 + 1;
+        const ri = idx * 2 + 2;
+        node.left = nodes.has(li) ? nodes.get(li) : getOrCreateEmpty(li);
+        node.right = nodes.has(ri) ? nodes.get(ri) : getOrCreateEmpty(ri);
+      }
+
+      const root = nodes.get(0);
+      if (!root) return null;
+
+      // BFS 给每个节点分配可视化 id，便于高亮与在面板展示。
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let cursor = 0;
+      const q = [root];
+      const seen = new Set();
+      while (q.length) {
+        const n = q.shift();
+        if (!n || seen.has(n)) continue;
+        seen.add(n);
+        n.id = letters[cursor] || `N${cursor + 1}`;
+        cursor += 1;
+        q.push(n.left, n.right);
+      }
+      return root;
+    }
+
+    function collectNodes(root) {
+      const out = [];
+      const st = [root];
+      const seen = new Set();
+      while (st.length) {
+        const n = st.pop();
+        if (!n || seen.has(n)) continue;
+        seen.add(n);
+        out.push(n);
+        st.push(n.right, n.left);
+      }
+      return out;
+    }
+
+    function layoutTree(root) {
+      const nodes = collectNodes(root);
+      const depthOfIdx = idx => Math.floor(Math.log2(idx + 1));
+      const maxDepth = Math.max(...nodes.map(n => depthOfIdx(n.idx)), 0);
+
+      // 使用“堆下标(完全二叉树索引)”来算 x/y，空节点补齐后仍能保持均匀不打架。
+      const pos = {};
+      for (const n of nodes) {
+        const d = depthOfIdx(n.idx);
+        const start = Math.pow(2, d) - 1; // 该层第一个 idx
+        const offset = n.idx - start; // 0..2^d-1
+        const slots = Math.pow(2, d);
+        n.depth = d;
+        const x = ((offset + 1) / (slots + 1)) * 100;
+        const y = ((d + 1) / (maxDepth + 2)) * 100;
+        pos[n.id] = { x, y, node: n, depth: d, idx: n.idx };
+      }
+      return { pos, nodes };
+    }
+
+    function simulate(root) {
+      const events = [];
+      let cameraCount = 0;
+
+      function push(event) {
+        events.push({
+          line: event.line,
+          active: event.active || null,
+          message: event.message,
+          patch: event.patch || {}
+        });
+      }
+
+      push({ line: 1, message: "进入 minCameraCover，初始化 cameraCount = 0", patch: { cameraCount: 0 } });
+      push({ line: 3, message: "开始执行 dfs(root)" });
+
+      function dfs(node) {
+        if (node === null) {
+          push({ line: 4, message: "访问到空节点：返回状态 2（已监控）" });
+          return 2;
+        }
+        if (node.empty) {
+          push({
+            line: 4,
+            active: node.id,
+            message: `访问到空节点：${node.id} 返回状态 2（已监控）`,
+            patch: { nodeStates: { [node.id]: 2 } }
+          });
+          return 2;
+        }
+
+        push({ line: 3, active: node.id, message: `进入 dfs(${node.id})` });
+
+        const leftState = dfs(node.left);
+        push({ line: 5, active: node.id, message: `${node.id} 收到 leftState = ${leftState}` });
+
+        const rightState = dfs(node.right);
+        push({ line: 6, active: node.id, message: `${node.id} 收到 rightState = ${rightState}` });
+
+        push({ line: 7, active: node.id, message: `检查 ${node.id}：leftState/rightState 是否存在 0` });
+        if (leftState === 0 || rightState === 0) {
+          cameraCount += 1;
+          push({
+            line: 7,
+            active: node.id,
+            message: `${node.id} 的孩子有 0，必须放摄像头。cameraCount = ${cameraCount}，${node.id} 返回 1`,
+            patch: {
+              cameraCount,
+              nodeStates: { [node.id]: 1 }
+            }
+          });
+          return 1;
+        }
+
+        push({ line: 8, active: node.id, message: `检查 ${node.id}：leftState/rightState 是否存在 1` });
+        if (leftState === 1 || rightState === 1) {
+          push({
+            line: 8,
+            active: node.id,
+            message: `${node.id} 的孩子有摄像头，所以 ${node.id} 返回 2（已监控）`,
+            patch: {
+              nodeStates: { [node.id]: 2 }
+            }
+          });
+          return 2;
+        }
+
+        push({
+          line: 9,
+          active: node.id,
+          message: `${node.id} 的两个孩子都是 2，所以 ${node.id} 返回 0（未监控）`,
+          patch: {
+            nodeStates: { [node.id]: 0 }
+          }
+        });
+        return 0;
+      }
+
+      const rootState = dfs(root);
+      push({ line: 11, active: root.id, message: `dfs(root) 完成，rootState = ${rootState}`, patch: { rootState } });
+
+      if (rootState === 0) {
+        cameraCount += 1;
+        push({
+          line: 12,
+          active: root.id,
+          message: `rootState 为 0，根节点补 1 个摄像头，cameraCount = ${cameraCount}`,
+          patch: {
+            cameraCount,
+            nodeStates: { [root.id]: 1 },
+            rootState: 1
+          }
+        });
+      } else {
+        push({ line: 12, active: root.id, message: "rootState 不为 0，根节点不需要补摄像头" });
+      }
+
+      push({ line: 13, message: `返回最终答案：${cameraCount}`, patch: { cameraCount } });
+      return events;
+    }
+
+    const dom = {
+      tree: document.getElementById("tree"),
+      treeSvg: document.getElementById("treeSvg"),
+      code: document.getElementById("code"),
+      message: document.getElementById("message"),
+      cameraCount: document.getElementById("cameraCount"),
+      activeNode: document.getElementById("activeNode"),
+      rootState: document.getElementById("rootState"),
+      stepNum: document.getElementById("stepNum"),
+      progress: document.getElementById("progress"),
+      prev: document.getElementById("prev"),
+      next: document.getElementById("next"),
+      play: document.getElementById("play"),
+      reset: document.getElementById("reset"),
+      speedRange: document.getElementById("speedRange"),
+      example1: document.getElementById("example1"),
+      example2: document.getElementById("example2")
+    };
+
+    let currentExample = "example1";
+    let runtime = null;
+    let stepIndex = 0;
+    let timer = null;
+
+    function renderCode() {
+      dom.code.innerHTML = CODE_LINES.map(line => `<li>${line.replace(/</g, "&lt;")}</li>`).join("");
+    }
+
+    function stopPlay() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      dom.play.textContent = "自动播放";
+    }
+
+    function startPlay() {
+      stopPlay();
+      dom.play.textContent = "暂停";
+      const speedMap = { 1: 1600, 2: 1100, 3: 700, 4: 420 };
+      const delay = speedMap[dom.speedRange.value] || 1100;
+      timer = setInterval(() => {
+        if (stepIndex >= runtime.events.length - 1) {
+          stopPlay();
+          return;
+        }
+        stepIndex += 1;
+        render();
+      }, delay);
+    }
+
+    function buildSnapshot() {
+      const snapshot = {
+        cameraCount: 0,
+        rootState: null,
+        nodeStates: {},
+        active: null,
+        line: null,
+        message: "",
+      };
+
+      for (const n of runtime.nodes) snapshot.nodeStates[n.id] = n.empty ? 2 : null;
+
+      for (let i = 0; i <= stepIndex; i++) {
+        const e = runtime.events[i];
+        if (!e) continue;
+        snapshot.active = e.active || null;
+        snapshot.line = e.line || null;
+        snapshot.message = e.message || "";
+
+        const p = e.patch || {};
+        if (typeof p.cameraCount === "number") snapshot.cameraCount = p.cameraCount;
+        if (typeof p.rootState === "number") snapshot.rootState = p.rootState;
+        if (p.nodeStates) {
+          for (const id in p.nodeStates) snapshot.nodeStates[id] = p.nodeStates[id];
+        }
+      }
+      return snapshot;
+    }
+
+    function statusClass(v) {
+      if (v === 0) return "uncovered";
+      if (v === 1) return "camera";
+      if (v === 2) return "covered";
+      return "unknown";
+    }
+
+    function statusText(v) {
+      if (v === 0) return "0";
+      if (v === 1) return "1";
+      if (v === 2) return "2";
+      return "?";
+    }
+
+    function renderTree(snapshot) {
+      dom.tree.querySelectorAll(".node").forEach(el => el.remove());
+      dom.treeSvg.innerHTML = "";
+
+      for (const n of runtime.nodes) {
+        if (n.left) {
+          const child = n.left;
+          const isEmpty = !!child.empty;
+          const p1 = runtime.layout.pos[n.id];
+          const p2 = runtime.layout.pos[child.id];
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", `${p1.x}%`);
+          line.setAttribute("y1", `${p1.y}%`);
+          line.setAttribute("x2", `${p2.x}%`);
+          line.setAttribute("y2", `${p2.y}%`);
+          line.setAttribute("stroke", isEmpty ? "#e3d7c4" : "#bda98a");
+          line.setAttribute("stroke-width", isEmpty ? "1.5" : "2");
+          line.setAttribute("stroke-linecap", "round");
+          if (isEmpty) line.setAttribute("stroke-dasharray", "5 5");
+          dom.treeSvg.appendChild(line);
+        }
+        if (n.right) {
+          const child = n.right;
+          const isEmpty = !!child.empty;
+          const p1 = runtime.layout.pos[n.id];
+          const p2 = runtime.layout.pos[child.id];
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", `${p1.x}%`);
+          line.setAttribute("y1", `${p1.y}%`);
+          line.setAttribute("x2", `${p2.x}%`);
+          line.setAttribute("y2", `${p2.y}%`);
+          line.setAttribute("stroke", isEmpty ? "#e3d7c4" : "#bda98a");
+          line.setAttribute("stroke-width", isEmpty ? "1.5" : "2");
+          line.setAttribute("stroke-linecap", "round");
+          if (isEmpty) line.setAttribute("stroke-dasharray", "5 5");
+          dom.treeSvg.appendChild(line);
+        }
+      }
+
+      for (const n of runtime.nodes) {
+        const p = runtime.layout.pos[n.id];
+        const el = document.createElement("div");
+        const v = snapshot.nodeStates[n.id];
+        el.className = `node ${statusClass(v)}${snapshot.active === n.id ? " active" : ""}${n.empty ? " empty" : ""}`;
+        el.style.left = `${p.x}%`;
+        el.style.top = `${p.y}%`;
+        el.textContent = n.id;
+        el.dataset.status = n.empty ? "空(2)" : statusText(v);
+        dom.tree.appendChild(el);
+      }
+    }
+
+    function renderCodeHighlight(line) {
+      const items = dom.code.querySelectorAll("li");
+      items.forEach(el => el.classList.remove("hl"));
+      if (!line) return;
+      const target = items[line - 1];
+      if (target) target.classList.add("hl");
+    }
+
+    function render() {
+      const snapshot = buildSnapshot();
+      renderTree(snapshot);
+      renderCodeHighlight(snapshot.line);
+
+      dom.message.textContent = snapshot.message || "";
+      dom.cameraCount.textContent = String(snapshot.cameraCount);
+      dom.activeNode.textContent = snapshot.active || "-";
+      dom.rootState.textContent = snapshot.rootState == null ? "-" : String(snapshot.rootState);
+      dom.stepNum.textContent = `${stepIndex + 1}/${runtime.events.length}`;
+
+      dom.progress.max = Math.max(runtime.events.length - 1, 0);
+      dom.progress.value = String(stepIndex);
+    }
+
+    function loadExample(key) {
+      stopPlay();
+      currentExample = key;
+      dom.example1.classList.toggle("active", key === "example1");
+      dom.example2.classList.toggle("active", key === "example2");
+
+      const root = buildTree(EXAMPLES[key].arr);
+      const nodes = collectNodes(root);
+      const layout = layoutTree(root);
+      const events = simulate(root);
+      runtime = { root, nodes, layout, events };
+
+      stepIndex = 0;
+      render();
+    }
+
+    dom.prev.addEventListener("click", () => {
+      stopPlay();
+      stepIndex = Math.max(0, stepIndex - 1);
+      render();
+    });
+
+    dom.next.addEventListener("click", () => {
+      stopPlay();
+      stepIndex = Math.min(runtime.events.length - 1, stepIndex + 1);
+      render();
+    });
+
+    dom.reset.addEventListener("click", () => {
+      stopPlay();
+      stepIndex = 0;
+      render();
+    });
+
+    dom.play.addEventListener("click", () => {
+      if (timer) stopPlay();
+      else startPlay();
+    });
+
+    dom.progress.addEventListener("input", e => {
+      stopPlay();
+      stepIndex = Number(e.target.value);
+      render();
+    });
+
+    dom.speedRange.addEventListener("change", () => {
+      if (timer) startPlay();
+    });
+
+    dom.example1.addEventListener("click", () => loadExample("example1"));
+    dom.example2.addEventListener("click", () => loadExample("example2"));
+
+    renderCode();
+    loadExample("example1");
+  </script>
+</body>
+</html>
